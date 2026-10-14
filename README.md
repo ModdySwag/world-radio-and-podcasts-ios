@@ -10,6 +10,16 @@ built to behave identically: both apps ship the **same** `index.html`, `stations
 `countries.js` as moddys.net, and the **same shell script** (`_shell_shim.js`, byte-identical
 — `SHIM.sha256` proves it). One player, two platforms.
 
+## Screenshots
+
+The door at the top of the list, and the full World View it opens — the same pages the site
+serves, riding inside the app since 1.2.0:
+
+<img src="shots/phone-list.jpg" width="300" alt="MODDYS World Radio on iPhone — the station list with the World View door">
+<img src="shots/phone-world.jpg" width="300" alt="MODDYS World Radio on iPhone — the World View on a phone">
+<img src="shots/desktop-world.jpg" width="720" alt="MODDYS World Radio — the World View at desktop width">
+<img src="shots/desktop-world-drawer.jpg" width="720" alt="MODDYS World Radio — a dot opened: the station drawer and the player">
+
 ## What it does
 
 - **Background playback.** An `AVAudioSession` in the `.playback` category plus the `audio`
