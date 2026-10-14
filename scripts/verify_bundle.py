@@ -30,7 +30,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PROJECT = os.path.dirname(HERE)
 WWW = os.path.join(PROJECT, "Resources", "www")
 
-SITE_FILES = ["index.html", "stations.js", "countries.js", "viz.js", "geo.js", "worldgeo.js", "globe.js", "wr-core.js"]
+SITE_FILES = ["index.html", "stations.js", "countries.js", "viz.js", "geo.js", "worldgeo.js", "globe.js",
+              "wr-core.js", "world.html", "world.js", "globeviz.js"]
+
+# The World View's vendored engine and glyphs: a folder on the site, shipped as www/maplibre/.
+MAPLIBRE_FILES = ["maplibre/maplibre-gl.js", "maplibre/maplibre-gl.css",
+                  "maplibre/fonts/NotoSansRegular/0-255.pbf", "maplibre/LICENSE.txt"]
 SHARED_FILES = ["_shell_shim.js", "compat.json"]
 
 # Strings that only exist in the binary if the code around them was compiled in.
@@ -114,6 +119,16 @@ def main():
 
     # ---------------------------------------------------------------- the web app
     for name in SITE_FILES + SHARED_FILES:
+        source = os.path.join(WWW, name)
+        shipped = find_resource(app, name)
+        check("ships %s" % name, shipped is not None)
+        if shipped is None:
+            continue
+        check("%s is byte-identical to the repo copy" % name,
+              sha256(source) == sha256(shipped),
+              "%s vs %s" % (sha256(source)[:16], sha256(shipped)[:16]))
+
+    for name in MAPLIBRE_FILES:
         source = os.path.join(WWW, name)
         shipped = find_resource(app, name)
         check("ships %s" % name, shipped is not None)

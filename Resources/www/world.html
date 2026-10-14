@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="MODDYS World Radio — the World View: every station on one spinning globe. Search, explore and play thousands of internet radio stations by place.">
+<meta name="robots" content="index, follow">
+<title>MODDYS World Radio — World View</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📻</text></svg>">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="World Radio">
+<style>
+:root{
+  --bg:#101117; --bg2:#171824; --panel:#1a1b28; --panel2:#22233a; --line:#2e3050;
+  --tx:#f4f1ea; --mut:#9aa0b8;
+  --pink:#ff3ea5; --cyan:#1fe3ff; --lime:#c9ff3d; --orange:#ff9f1c; --purp:#a06bff; --yel:#ffe14d;
+  --ok:#7dffa8; --warn:#ffb454;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;height:100%}
+body{background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",sans-serif;overflow:hidden}
+.spraybar{position:fixed;top:0;left:0;right:0;height:7px;z-index:40;display:flex}
+.spraybar i{flex:1;display:block}
+.spraybar i:nth-child(1){background:var(--pink)}.spraybar i:nth-child(2){background:var(--orange)}
+.spraybar i:nth-child(3){background:var(--yel)}.spraybar i:nth-child(4){background:var(--lime)}
+.spraybar i:nth-child(5){background:var(--cyan)}.spraybar i:nth-child(6){background:var(--purp)}
+
+/* the map fills the screen; the chrome floats on top of it */
+#map{position:fixed;inset:0;width:100%;height:100%;z-index:1;background:radial-gradient(120% 90% at 50% 45%,#0c1126 0%,#0a0d1d 55%,#070914 100%)}
+#globe{position:fixed;inset:0;width:100%;height:100%;display:block;z-index:1;cursor:grab;background:radial-gradient(120% 90% at 50% 45%,#0c1126 0%,#0a0d1d 55%,#070914 100%)}
+#globe[hidden]{display:none}
+/* the ambient visualiser (S3c): a decoration layer between the map and the chrome */
+#gViz{position:fixed;inset:0;width:100%;height:100%;z-index:2;pointer-events:none;display:none}
+#gViz.on{display:block}
+
+/* ===== the chrome ===== */
+.btn{appearance:none;border:2px solid var(--line);background:#10111c;color:var(--tx);border-radius:10px;padding:8px 13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px;transition:transform .08s,box-shadow .08s,background .12s,border-color .12s}
+.btn:hover{border-color:var(--cyan);box-shadow:3px 3px 0 rgba(31,227,255,.35);transform:translate(-1px,-1px)}
+.btn:active{transform:translate(1px,1px);box-shadow:none}
+.btn.pink{border-color:var(--pink);color:#ffd3ea}.btn.pink:hover{background:var(--pink);color:#1a0312;box-shadow:3px 3px 0 rgba(255,62,165,.4)}
+
+.topbar{position:fixed;top:14px;left:10px;right:10px;z-index:22;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  background:rgba(13,14,22,.86);border:1px solid var(--line);border-radius:14px 6px 14px 6px;padding:8px 10px;
+  box-shadow:0 10px 34px rgba(0,0,0,.45)}
+.topbar .brand{font-weight:900;font-size:15px;letter-spacing:.5px;text-transform:uppercase;white-space:nowrap;
+  color:#fff;text-shadow:2px 2px 0 rgba(255,62,165,.65)}
+.topbar .brand b{color:var(--lime);text-shadow:2px 2px 0 rgba(0,0,0,.45)}
+.topbar #btnList{flex:0 0 auto}
+#btnFold{display:none}   /* the retractable bar - phones only (see the ≤720px block) */
+#q{flex:1 1 260px;min-width:0;background:#0d0e16;border:2px solid var(--line);color:var(--tx);border-radius:10px;
+  padding:9px 12px;font-size:14px;outline:none;transition:border-color .12s,box-shadow .12s;font-family:inherit}
+#q:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,227,255,.18)}
+.crowbtn{font-size:10.5px;min-height:24px;padding:0 9px;line-height:1;border-width:1px;border-radius:8px;
+  background:rgba(16,17,28,.72);gap:4px;flex:0 0 auto}
+.crowbtn.on{background:rgba(31,227,255,.16);border-color:var(--cyan);color:var(--cyan)}
+.crowbtn .sw{position:relative;flex:0 0 auto;width:20px;height:12px;border-radius:7px;background:rgba(255,255,255,.16);border:1px solid var(--line);transition:background .16s,border-color .16s}
+.crowbtn .sw::after{content:"";position:absolute;top:1px;left:1px;width:8px;height:8px;border-radius:50%;background:#c9ccdd;transition:transform .16s,background .16s}
+.crowbtn.on .sw{background:rgba(31,227,255,.5);border-color:var(--cyan)}
+.crowbtn.on .sw::after{transform:translateX(8px);background:#04161a}
+
+#filters{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.fsel{appearance:none;-webkit-appearance:none;background:#10111c;border:2px solid var(--line);color:var(--tx);border-radius:10px;
+  padding:9px 10px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;min-width:0;max-width:100%;flex:0 1 auto;
+  transition:border-color .12s,box-shadow .12s}
+.fsel:hover{border-color:var(--cyan)}
+.fsel:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,227,255,.18)}
+#btnFly[hidden]{display:none}
+
+/* S3a: the layers panel, the share button's chip, the visualiser strip */
+#layersPanel{position:fixed;top:calc(var(--topH, 68px) + 2px);right:58px;z-index:21;width:min(252px,74vw);
+  background:rgba(13,14,22,.97);border:1px solid var(--line);border-radius:14px 6px 14px 6px;
+  box-shadow:0 14px 44px rgba(0,0,0,.55);padding:8px}
+#layersPanel[hidden]{display:none}
+.lp-h{display:flex;align-items:center;justify-content:space-between;padding:2px 4px 8px}
+.lp-h b{font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:var(--mut)}
+.lp-x{border:0;background:none;color:var(--mut);font-size:14px;cursor:pointer;padding:2px 6px}
+.lp-x:hover{color:var(--tx)}
+.lp-row{display:flex;align-items:center;gap:9px;width:100%;border:1px solid transparent;background:none;color:var(--tx);
+  font:inherit;font-size:13px;font-weight:600;text-align:left;padding:8px 8px;border-radius:9px;cursor:pointer}
+.lp-row:hover{background:rgba(255,255,255,.05);border-color:var(--line)}
+.lp-row .lp-d{flex:0 0 auto;width:12px;height:12px;border-radius:50%}
+.lp-row .sw{position:relative;flex:0 0 auto;margin-left:auto;width:20px;height:12px;border-radius:7px;background:rgba(255,255,255,.16);border:1px solid var(--line);transition:background .16s,border-color .16s}
+.lp-row .sw::after{content:"";position:absolute;top:1px;left:1px;width:8px;height:8px;border-radius:50%;background:#c9ccdd;transition:transform .16s,background .16s}
+.lp-row.on .sw{background:rgba(31,227,255,.5);border-color:var(--cyan)}
+.lp-row.on .sw::after{transform:translateX(8px);background:#04161a}
+.lp-mp{display:none}
+#ctlChip .gbtn.on{border-color:var(--cyan);color:var(--cyan)}
+#tViz{display:none;flex:1 1 220px;min-width:110px;max-width:520px;height:44px;border:2px solid var(--line);border-radius:10px;background:#0b0c12}
+#tVizBtn.pop{border-color:var(--pink);color:var(--pink)}
+#tPop.on{border-color:var(--pink);color:var(--pink)}
+#toast #toastGo{margin-left:9px;font:inherit;font-weight:800;color:var(--lime);background:none;border:1.5px solid currentColor;border-radius:8px;padding:2px 10px;cursor:pointer;vertical-align:1px}
+
+/* S3b: the channels rail — the curated top genres as one-tap filter chips */
+#channels{flex:1 1 100%;display:flex;gap:6px;align-items:center;overflow-x:auto;padding:1px 2px 2px;scrollbar-width:none}
+#channels::-webkit-scrollbar{display:none}
+#channels .ch-lbl{flex:0 0 auto;font-size:10px;font-weight:900;letter-spacing:1.2px;text-transform:uppercase;color:var(--mut);margin-right:2px}
+.chk{flex:0 0 auto;border:1px solid var(--line);background:rgba(16,17,28,.72);color:var(--tx);border-radius:999px;font:inherit;font-size:11.5px;font-weight:700;padding:4px 11px;cursor:pointer;white-space:nowrap}
+.chk:hover{border-color:var(--cyan)}
+.chk.on{background:rgba(31,227,255,.16);border-color:var(--cyan);color:var(--cyan)}
+
+.gchip{position:fixed;z-index:20;background:rgba(13,14,22,.82);border:1px solid var(--line);border-radius:10px;color:var(--tx)}
+#countChip{top:calc(var(--topH, 68px) + 2px);left:10px;font-size:11.5px;padding:6px 10px;color:var(--mut);max-width:min(62%,420px)}
+#countChip b{color:var(--tx)}
+#countChip .cu{appearance:none;font:inherit;color:var(--cyan);background:none;border:1px solid var(--line);
+  border-radius:7px;padding:2px 8px;margin-left:3px;cursor:pointer;white-space:nowrap}
+#countChip .cu b{color:inherit}
+#countChip .cu:hover{border-color:var(--cyan);background:rgba(31,227,255,.12)}
+#ctlChip{top:calc(var(--topH, 68px) + 2px);right:10px;display:flex;flex-direction:column;gap:6px;background:none;border:none;border-radius:0}
+#ctlChip .gbtn{width:42px;height:42px;border-radius:10px;border:2px solid var(--line);background:rgba(13,14,22,.85);
+  color:var(--tx);font-size:17px;font-weight:800;cursor:pointer;line-height:1;padding:0}
+#ctlChip .gbtn:hover{border-color:var(--cyan);color:var(--cyan)}
+#coordsChip{bottom:calc(var(--tbarH, 65px) + 9px);left:10px;font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:6px 9px;color:var(--mut)}
+#legendChip{bottom:calc(var(--tbarH, 65px) + 9px);left:50%;transform:translateX(-50%);font-size:10.5px;color:var(--mut);padding:5px 10px;display:flex;gap:12px;align-items:center}
+#legendChip i{font-style:normal;white-space:nowrap}
+#legendChip .d{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+#attrib{bottom:calc(var(--tbarH, 65px) + 9px);right:10px;width:32px;height:32px;font-size:14px;color:var(--mut);padding:0;display:flex;align-items:center;justify-content:center;line-height:1;cursor:pointer;-webkit-appearance:none;appearance:none;font-family:inherit}
+#attrib:hover,#attrib.open{border-color:var(--cyan);color:var(--cyan)}
+#attribBody{bottom:calc(var(--tbarH, 65px) + 9px + 40px);right:10px;font-size:10px;color:var(--mut);padding:7px 10px;max-width:min(72vw,430px);line-height:1.45;text-align:left}
+#attribBody b{color:#c6cbe2;font-weight:700}
+#attribBody[hidden]{display:none}
+
+#tip{position:fixed;z-index:24;max-width:270px;pointer-events:none;display:none;
+  background:rgba(12,13,20,.96);border:1px solid var(--line);border-radius:10px 4px 10px 4px;
+  padding:8px 11px;font-size:12.5px;line-height:1.45;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#tip b{color:var(--cyan)}
+#tip .mut{color:var(--mut)}
+
+/* ===== the place drawer ===== */
+#placePanel{position:fixed;top:calc(var(--topH, 68px) + 2px);right:58px;bottom:calc(var(--tbarH, 65px) + 71px);width:min(350px,86vw);z-index:26;
+  display:flex;flex-direction:column;background:rgba(13,14,22,.97);border:1px solid var(--line);
+  border-radius:14px 6px 14px 6px;box-shadow:0 18px 60px rgba(0,0,0,.6);overflow:hidden}
+#placePanel[hidden]{display:none}
+#placeHead{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+#placeHead .pt{min-width:0;flex:1}
+#placeHead b{display:block;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#placeHead span{font-size:11.5px;color:var(--mut)}
+#placeClose{flex:0 0 auto;min-width:34px;min-height:34px;justify-content:center}
+#placeList{flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:8px}
+#placeNote{padding:6px 12px;font-size:11px;color:var(--mut);border-top:1px solid var(--line)}
+#placeFoot{padding:8px 10px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap}
+#placeFoot .btn{min-height:38px;font-size:12px;padding:6px 11px}
+#placeSite[hidden]{display:none}
+.srow{display:flex;gap:9px;align-items:center;border:1px solid rgba(255,255,255,.12);
+  border-radius:10px;padding:7px 9px;background:rgba(24,25,40,.55);margin-bottom:6px}
+.srow .sn{min-width:0;flex:1}
+.srow .sn b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.srow .sn b:hover{color:var(--cyan)}
+.srow .sn span{display:block;font-size:11px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srow .sb{border:2px solid var(--line);background:#10111c;color:var(--tx);border-radius:9px;
+  min-width:44px;min-height:42px;font-size:14px;font-weight:800;cursor:pointer;flex:0 0 auto}
+.srow .sb:hover{border-color:var(--cyan)}
+/* S3b-2: the explore rows — a country's places, one tap to fly */
+#placeList .prow{display:flex;width:100%;gap:9px;align-items:center;border:1px solid rgba(255,255,255,.12);
+  border-radius:10px;padding:8px 10px;background:rgba(24,25,40,.55);margin-bottom:6px;color:var(--tx);
+  font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;text-align:left}
+#placeList .prow:hover{border-color:var(--cyan)}
+#placeList .prow .x-n{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#placeList .prow .x-c{flex:0 0 auto;color:var(--mut);font-variant-numeric:tabular-nums}
+#placeList .x-empty{padding:10px 6px;font-size:12.5px;color:var(--mut)}
+#placeList .morebtn{display:block;width:100%;border:1px dashed var(--line);background:none;color:var(--cyan);
+  border-radius:10px;padding:10px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;margin:2px 0 8px}
+#placeList .morebtn:hover{border-color:var(--cyan);background:rgba(31,227,255,.08)}
+#placeFoot .btn[hidden]{display:none}
+#placeCopy[hidden]{display:none}
+
+/* ===== the transport strip ===== */
+#tbar{position:fixed;left:0;right:0;bottom:0;z-index:25;display:flex;align-items:center;gap:10px;
+  padding:9px calc(14px + env(safe-area-inset-right,0px)) calc(9px + env(safe-area-inset-bottom,0px)) calc(14px + env(safe-area-inset-left,0px));
+  background:rgba(13,14,22,.97);border-top:3px solid;border-image:linear-gradient(90deg,var(--pink),var(--orange),var(--yel),var(--lime),var(--cyan),var(--purp)) 1}
+#tArt{width:44px;height:44px;border-radius:10px 4px 10px 4px;object-fit:cover;border:1px solid var(--line);flex:0 0 auto;background:#0b0c12}
+#tbar .t-nm{min-width:0;flex:0 1 auto;display:flex;flex-direction:column}
+#tName{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#tMeta{font-size:11px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bctrl{border:2px solid var(--line);background:#10111c;color:var(--tx);border-radius:50%;width:42px;height:42px;font-size:17px;cursor:pointer;flex:0 0 auto;line-height:1}
+.bctrl:hover{border-color:var(--cyan)}
+#tPlay.playing{background:var(--lime);border-color:var(--lime);color:#151605}
+#tPlay.pop{background:var(--purp);border-color:var(--purp);color:#fff}
+#tVolWrap{display:flex;align-items:center;gap:6px;flex:0 1 150px;min-width:80px}
+#tVol{flex:1;min-width:0;accent-color:var(--pink)}
+#tVolPct{font-size:11px;color:var(--mut);min-width:30px;text-align:right}
+#tbar .grow{flex:1 1 auto}
+.badge{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:1px;border-radius:999px;padding:3px 8px;border:1px solid var(--line);color:var(--mut);flex:0 0 auto}
+.badge.on{background:var(--purp);border-color:var(--purp);color:#fff}
+@keyframes blink{50%{background:var(--lime);border-color:var(--lime);color:#151605}}
+.badge.on{animation:blink 2s steps(2) infinite}
+
+/* ===== modal, toast, notice, loader — the index.html family ===== */
+#modal{position:fixed;inset:0;background:rgba(5,6,10,.78);z-index:30;display:none;align-items:center;justify-content:center;padding:18px}
+#modal .box{background:linear-gradient(160deg,#1d1e30,#14151f);border:2px solid var(--purp);border-radius:18px 6px 18px 6px;max-width:560px;width:100%;max-height:88vh;overflow:auto;padding:20px;box-shadow:8px 8px 0 rgba(0,0,0,.5)}
+#modal .mh{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+#modal .nm{font-size:19px;white-space:normal;font-weight:800}
+#modal .loc{font-size:12px;color:var(--mut)}
+#modal .fav{width:52px;height:52px;border-radius:12px 4px 12px 4px;object-fit:cover;background:#0b0c12;border:1px solid var(--line)}
+#modal table{width:100%;border-collapse:collapse;font-size:13.5px;margin:6px 0 14px}
+#modal td{padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+#modal td:first-child{color:var(--mut);width:100px;font-weight:700}
+#modal .macts{display:flex;gap:8px;flex-wrap:wrap}
+#modal .tags{display:flex;flex-wrap:wrap;gap:4px}
+.tag{background:#262842;border-radius:5px 11px 5px 11px;padding:1px 8px;font-size:11px;font-weight:600}
+.tag.t0{color:#ffd0ea;background:rgba(255,62,165,.16)}
+.tag.t1{color:#c9f5ff;background:rgba(31,227,255,.14)}
+.tag.t2{color:#eaffb8;background:rgba(201,255,61,.13)}
+.tag.t3{color:#ffe0ba;background:rgba(255,159,28,.15)}
+.tag.t4{color:#e5d7ff;background:rgba(160,107,255,.16)}
+code{background:#0b0c12;padding:1px 5px;border-radius:5px;font-size:12px;word-break:break-all}
+#toast{position:fixed;bottom:calc(var(--tbarH, 65px) + 17px);left:50%;transform:translateX(-50%);background:#241207;border:2px solid var(--warn);color:#ffe2bd;border-radius:12px;padding:9px 16px;font-size:13px;display:none;max-width:84vw;z-index:31;font-weight:600}
+#notice{display:none;position:fixed;top:0;left:0;right:0;z-index:32;align-items:flex-start;gap:10px;
+  background:linear-gradient(90deg,rgba(31,227,255,.18),rgba(160,107,255,.16));border-bottom:2px solid var(--cyan);
+  color:#e8f7ff;padding:9px 12px 9px 12px;font-size:13px;line-height:1.45;box-shadow:0 6px 24px rgba(0,0,0,.45)}
+#notice.show{display:flex}
+#notice.warn{background:linear-gradient(90deg,rgba(255,159,28,.24),rgba(255,62,165,.18));border-bottom-color:var(--orange);color:#fff1de}
+#notice span{flex:1}
+#notice a{color:var(--lime);font-weight:700}
+#notice button{background:none;border:0;color:inherit;font-size:15px;font-weight:800;cursor:pointer;padding:0 4px}
+#notice .nbtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.32);border-radius:8px;padding:2px 9px;font-size:12px;cursor:pointer;margin-left:6px}
+#spin{position:fixed;inset:0;background:var(--bg);z-index:40;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;color:var(--mut)}
+#spin .ring{width:38px;height:38px;border-radius:50%;border:4px solid var(--line);border-top-color:var(--pink);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion: reduce){ #spin .ring{animation:none} .badge.on{animation:none} }
+::selection{background:var(--pink);color:#fff}
+*{scrollbar-width:thin;scrollbar-color:var(--purp) #0d0e16}
+a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+
+@media(max-width:720px){
+  .topbar .brand{font-size:12px}
+  #q{flex:1 1 100%;order:3}
+  #filters{order:4;flex:1 1 100%}
+  #filters .fsel{flex:1 1 0;font-size:11.5px;padding:8px 6px}
+  #btnShare{margin-left:auto}
+  /* the retractable bar: ▾ folds the search / filters / channels away so the globe is never
+     buried behind them; the button rides at the right end of the bar's first row */
+  .topbar .brand{min-width:0;overflow:hidden;text-overflow:ellipsis}
+  #btnFold{display:inline-flex;margin-left:auto;min-width:40px;min-height:38px;justify-content:center;font-size:15px;padding:0 10px;flex:0 0 auto}
+  body.foldtop #q,body.foldtop #filters,body.foldtop #channels,body.foldtop #btnShare,body.foldtop #btnPlayable{display:none}
+  #channels{order:5}
+  #countChip{font-size:10.5px}
+  #ctlChip .gbtn{width:34px;height:34px}
+  #layersPanel{top:calc(var(--topH, 68px) + 60px)}
+  #legendChip{display:none}
+  #attribBody{max-width:min(86vw,340px);font-size:9px}
+  #coordsChip{font-size:10px;max-width:47%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #tbar{gap:8px}
+  #tMeta{display:none}
+  #tStop{display:none}
+  #tViz,#tVizBtn{display:none}
+  #tVolWrap{flex:0 1 110px}
+  #placePanel{left:8px;right:8px;top:auto;bottom:calc(var(--tbarH, 65px) + 9px);width:auto;height:clamp(200px,58%,430px);
+    max-height:max(140px,calc(100vh - var(--topH, 68px) - 62px - var(--tbarH, 65px) - 12px))}
+}
+
+/* device tweaks (reviewed 2026-10-14): tablets, landscape and short windows */
+@media(min-width:721px) and (max-width:1100px){
+  /* the legend would run into the attribution chip on tablet widths - stack it above the coords chip */
+  #legendChip{left:10px;transform:none;bottom:calc(var(--tbarH, 65px) + 40px)}
+}
+@media(max-width:1100px){
+  /* the country list's longest option made the select huge - the row must never overflow the bar */
+  .topbar #selCountry{max-width:210px}
+  /* map labels used to ghost through the translucent chrome on a phone - tidied opaque-ish */
+  .topbar{background:rgba(13,14,22,.97)}
+  .gchip{background:rgba(13,14,22,.92)}
+  #ctlChip .gbtn{background:rgba(13,14,22,.92)}
+}
+@media(max-height:620px){
+  /* landscape phones / short windows: the tool column lies down and the top bar tightens */
+  .topbar{gap:6px;padding:6px 8px}
+  #ctlChip{flex-direction:row}
+  #ctlChip .gbtn{width:34px;height:34px}
+  #layersPanel{top:calc(var(--topH, 68px) + 44px);max-height:calc(100vh - var(--topH, 68px) - 44px - var(--tbarH, 65px) - 9px);overflow:auto}
+  #placePanel{bottom:calc(var(--tbarH, 65px) + 9px)}
+}
+@media(min-width:721px) and (max-height:620px){
+  /* the panels live on the right at this height: the drawer starts below the tool row and the
+     count chip, and the attribution shares the panels' right edge so it is either clear or
+     fully behind them - never cut mid-text */
+  #placePanel{top:calc(var(--topH, 68px) + 44px)}
+  #attribBody{right:58px;max-width:252px}
+}
+/* a narrow AND short phone (Android at a large display size; Moddy's Brave report 2026-10-14):
+   the tool row used to sit ON TOP of the count chip and cut its text mid-word. The chip keeps
+   the top slot; the row stacks under it and the panels anchor below the pair. --ctlTop is
+   measured in syncTopH() (bar bottom + chip height + 6). */
+@media(max-width:720px) and (max-height:620px){
+  #countChip{max-width:calc(100% - 20px)}
+  #ctlChip{flex-direction:row;top:calc(var(--ctlTop, 220px))}
+  #layersPanel{top:calc(var(--ctlTop, 220px) + 40px);max-height:calc(100vh - var(--ctlTop, 220px) - 40px - var(--tbarH, 65px) - 9px);overflow:auto}
+  #placePanel{max-height:max(140px,calc(100vh - var(--ctlTop, 220px) - 40px - var(--tbarH, 65px) - 9px))}
+}
+</style>
+</head>
+<body>
+<noscript>
+<div style="position:fixed;inset:0;background:#101117;color:#f4f1ea;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font:16px/1.65 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;z-index:999">
+  <div style="max-width:540px">
+    <h1 style="margin:0 0 12px;font-size:26px">🌍 MODDYS World Radio needs JavaScript</h1>
+    <p style="margin:0;color:#9aa0b8">The World View draws 9,000+ radio stations on a globe and needs JavaScript to do it. Please enable JavaScript for this site and reload the page.</p>
+  </div>
+</div>
+</noscript>
+<div class="spraybar"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+<div id="spin"><div class="ring"></div><div>Spraying on <span id="spinN">…</span> stations…</div></div>
+
+<!-- the two engines: MapLibre's globe (default) and the v1 canvas globe (no-WebGL fallback) -->
+<div id="map" role="img" aria-label="World map of radio stations — drag to rotate, scroll to zoom, click a dot to open a place"></div>
+<canvas id="globe" hidden role="img" aria-label="World map of radio stations — drag to rotate, scroll to zoom, click a dot to open a place"></canvas>
+<canvas id="gViz" aria-hidden="true"></canvas>
+
+<div class="topbar">
+  <a id="btnList" class="btn" href="index.html" title="Back to the station list">📋 LIST</a>
+  <span class="brand">🌍 MODDYS <b>WORLD VIEW</b></span>
+  <button class="btn crowbtn" id="btnFold" aria-expanded="true" aria-label="Hide the search and filters" title="Hide the search, filters and channels">▴</button>
+  <input id="q" type="search" size="12" placeholder="Search stations, cities, countries…  ( / )" autocomplete="off">
+  <button class="btn crowbtn" id="btnPlayable" aria-pressed="true" title="Verified: only stations this browser can really play are mapped"><span class="sw" aria-hidden="true"></span>Verified</button>
+  <span id="filters">
+    <select class="fsel" id="selCodec" title="Format: the stream's codec"><option value="">Format</option></select>
+    <select class="fsel" id="selBit" title="Minimum bitrate">
+      <option value="0" selected>Bitrate</option><option value="64">≥ 64 kbps</option>
+      <option value="128">≥ 128 kbps</option><option value="192">≥ 192 kbps</option>
+    </select>
+    <select class="fsel" id="selCountry" title="Country"><option value="">Country</option></select>
+    <button class="btn crowbtn" id="btnSavedOnly" aria-pressed="false" title="Saved only: map just the stations you kept"><span class="sw" aria-hidden="true"></span><span id="savedLbl">★ Saved</span></button>
+  </span>
+  <button class="btn crowbtn" id="btnShare" title="Copy a link that reopens this exact view — the search, the filters and the open station"><span aria-hidden="true">⧉</span> Share</button>
+  <span id="channels" role="group" aria-label="Channels — filter the globe by a top genre"><b class="ch-lbl">Channels</b></span>
+</div>
+
+<div class="gchip" id="countChip">…</div>
+<div class="gchip" id="ctlChip">
+  <button class="gbtn" id="btnIn" title="Zoom in">＋</button>
+  <button class="gbtn" id="btnOut" title="Zoom out">－</button>
+  <button class="gbtn" id="btnHome" title="Back to the whole world view">⟲</button>
+  <button class="gbtn" id="btnFly" hidden title="Fly to the results — the centre of what your search and filters point at">◎</button>
+  <button class="gbtn" id="btnRand" title="Random flight — fly somewhere and tune it in">🎲</button>
+  <button class="gbtn" id="btnLayers" aria-expanded="false" title="Layers — day / night, density, saved, recently played">☰</button>
+  <button class="gbtn" id="btnGViz" title="Ambient visualiser: off — click to cycle 11 styles" aria-pressed="false">✨</button>
+</div>
+<div id="layersPanel" hidden>
+  <div class="lp-h"><b>Layers</b><button class="lp-x" id="layersClose" aria-label="Close layers" title="Close">✕</button></div>
+  <button class="lp-row" id="lyDay" aria-pressed="true"><span class="lp-d" style="background:#0a1128;box-shadow:inset 0 0 0 1px #bfeaff"></span>Day / night<span class="sw" aria-hidden="true"></span></button>
+  <button class="lp-row lp-mp" id="lyHeat" aria-pressed="false"><span class="lp-d" style="background:linear-gradient(90deg,#1fe3ff,#ff3ea5)"></span>Density<span class="sw" aria-hidden="true"></span></button>
+  <button class="lp-row lp-mp" id="lySaved" aria-pressed="false"><span class="lp-d" style="background:#ffe14d"></span>Saved stations<span class="sw" aria-hidden="true"></span></button>
+  <button class="lp-row lp-mp" id="lyRecent" aria-pressed="false"><span class="lp-d" style="background:#a06bff"></span>Recently played<span class="sw" aria-hidden="true"></span></button>
+</div>
+
+<div class="gchip" id="coordsChip">…</div>
+<div class="gchip" id="legendChip"><i><span class="d" style="background:#1fe3ff"></span>station</i><i><span class="d" style="background:#c9ff3d"></span>yours</i><i><span class="d" style="border:2px solid #c9ff3d;box-sizing:border-box"></span>on air</i></div>
+<button type="button" class="gchip" id="attrib" aria-expanded="false" aria-controls="attribBody" aria-label="Map imagery and data credits" title="Map imagery &amp; data credits">ⓘ</button>
+<div class="gchip" id="attribBody" hidden><b>Imagery © Esri, Maxar, Earthstar Geographics, the GIS User Community</b> · Other imagery: NASA EOSDIS GIBS (public domain) · Maps: MapLibre GL &amp; OpenStreetMap data</div>
+
+<div id="tip"></div>
+
+<div id="placePanel" hidden>
+  <div id="placeHead">
+    <div class="pt"><b id="placeTitle">…</b><span id="placeSub"></span></div>
+    <button class="btn" id="placeClose" title="Close (Esc)">✕</button>
+  </div>
+  <div id="placeList"></div>
+  <div id="placeNote" hidden></div>
+  <div id="placeFoot">
+    <button class="btn" id="placeRand" hidden title="Play a random one of the stations with no coordinates — the globe has nowhere to fly, so it just tunes one in">🎲 Play a random one</button>
+    <a class="btn" id="placeListLink" href="index.html" title="Open this station in the stations list">📋 Open in the list</a>
+    <a class="btn" id="placeSite" href="#" target="_blank" rel="noopener" hidden>🌐 Website</a>
+    <button class="btn" id="placeCopy" title="Copy the stream URL">⧉ Copy stream</button>
+  </div>
+</div>
+
+<div id="tbar">
+  <img id="tArt" alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='80'%3E📻%3C/text%3E%3C/svg%3E">
+  <div class="t-nm"><div id="tName">WORLD VIEW</div><div id="tMeta">click a dot on the globe to play</div></div>
+  <span class="grow"></span>
+  <span class="badge" id="tState" style="display:none"></span>
+  <button class="bctrl" id="tPlay" title="Play / pause">▶</button>
+  <button class="bctrl" id="tStop" title="Stop">⏹</button>
+  <span id="tVolWrap"><input type="range" id="tVol" min="0" max="1" step="0.01" aria-label="Volume"><span id="tVolPct">90%</span></span>
+  <button class="bctrl" id="tPop" title="Pop out the mini player — it keeps playing while you explore the globe" aria-pressed="false">🗗</button>
+  <button class="bctrl" id="tVizBtn" title="Visualiser: off — click to cycle 5 styles" style="font-size:15px">🎛</button>
+  <canvas id="tViz" height="44" title="Decorative visualiser (radio streams are cross-origin, so this is a look, not a live spectrum)"></canvas>
+</div>
+
+<div id="modal"><div class="box">
+  <div class="mh" id="mHead"></div>
+  <div id="mBody"></div>
+  <div class="macts" id="mActs"></div>
+</div></div>
+
+<div id="toast"></div>
+<div id="notice" role="status" aria-live="polite"></div>
+
+<script src="countries.js"></script>
+<script src="stations.js"></script>
+<script src="geo.js"></script>
+<script src="viz.js"></script>
+<script src="wr-core.js?v=20261013b"></script>
+<script src="globeviz.js?v=20261013b"></script>
+<script src="world.js?v=20261014e"></script>
+</body>
+</html>

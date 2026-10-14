@@ -181,6 +181,10 @@
      do nothing, rather than losing the player. (Inside the app, the site's own download block
      hides itself, so this is a safety net rather than the normal path.) */
   function externalLinks() {
+    /* Pages that ship INSIDE this app may be followed in place (the full World View rides in
+       the bundle as world.html; index.html is the way back). Everything else relative stays
+       handed to the shell - the one-page safety net is unchanged. */
+    var IN_APP_PAGES = ["world.html", "index.html"];
     doc.addEventListener("click", function (ev) {
       var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
       if (!a) return;
@@ -193,6 +197,14 @@
         var absolute = "";
         try { absolute = new URL(href, location.href).href; } catch (e) { return; }
         if (!absolute) return;
+        for (var i = 0; i < IN_APP_PAGES.length; i++) {
+          var inApp = "";
+          try { inApp = new URL(IN_APP_PAGES[i], location.href).href; } catch (e3) { }
+          if (inApp && absolute === inApp) {
+            report("bundled page loads in place: " + absolute);
+            return;                                          // let the WebView navigate
+          }
+        }
         href = absolute;
         report("same-site link handed to the shell: " + href);
       }

@@ -485,8 +485,8 @@ code{background:#0b0c12;padding:1px 5px;border-radius:5px;font-size:12px;word-br
    The big obvious door onto the full globe page (world.html), a strip of its own between
    the header and the toolbar: the largest control on the page, gradient-filled and tilted
    like the site's other badges, but a CTA one. The small 🌍 World pill in the stations bar
-   stays as the in-page quick toggle. Inside the app (html.wr-app) it hides until world.html
-   ships in the app bundles — a button that leads nowhere would be worse than no button. */
+   stays as the in-page quick toggle. Inside the app it opens the bundled page too - both
+   apps carry world.html, so the door leads somewhere in-app as well. */
 .worldhero{display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:11px 16px;
   text-decoration:none;color:#0c0d14;border-radius:6px 16px 6px 16px;
   background:linear-gradient(100deg,var(--cyan) 0%,var(--lime) 68%,var(--yel) 100%);
@@ -503,7 +503,6 @@ code{background:#0b0c12;padding:1px 5px;border-radius:5px;font-size:12px;word-br
   opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .worldhero .wh-go{font-size:12px;font-weight:900;background:#0c0d14;color:var(--lime);border-radius:4px;
   padding:7px 11px;white-space:nowrap;letter-spacing:.8px;flex:0 0 auto}
-html.wr-app .worldhero{display:none !important}
 @media(max-width:430px){ .worldhero .wh-txt i{display:none} .worldhero{padding:10px 12px} .worldhero .wh-ico{font-size:22px} }
 
 /* ===== World View (globe) — the panel, its chrome, and the place drawer =====
@@ -767,7 +766,7 @@ body.worldview #list,body.worldview .resbar{display:none}
 
 <!-- The World View hero: one big obvious door onto the full globe page (world.html).
      The small 🌍 World pill in the stations bar stays as the in-page quick toggle, and
-     inside the app (html.wr-app) this hides until world.html ships in the bundle. -->
+     inside the app it opens the bundled page (both apps carry world.html). -->
 <a class="worldhero" id="btnWorldView" href="world.html" aria-label="Open the World View — every station on one globe">
   <span class="wh-ico" aria-hidden="true">🌍</span>
   <span class="wh-txt"><b>WORLD VIEW</b><i>every station, one spinning globe — search it, fly it, listen</i></span>

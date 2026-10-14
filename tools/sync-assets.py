@@ -28,7 +28,11 @@ DEST = os.path.join(PROJECT, "Resources", "www")
 
 # popout.html is deliberately not shipped: it opens a second window for the single-owner
 # handover, and a phone has no second window.
-FILES = ["index.html", "stations.js", "countries.js", "viz.js", "geo.js", "worldgeo.js", "globe.js", "wr-core.js"]
+FILES = ["index.html", "stations.js", "countries.js", "viz.js", "geo.js", "worldgeo.js", "globe.js",
+         "wr-core.js", "world.html", "world.js", "globeviz.js"]
+
+# The full-page World View's vendored engine - a folder, copied recursively.
+DIRS = ["maplibre"]
 
 DEFAULT_SITES = [
     r"C:\Users\Moddy\radio-browser\deploy",
@@ -93,6 +97,11 @@ def main():
             for name in FILES:
                 shutil.copyfile(os.path.join(site, name), os.path.join(DEST, name))
                 print(f"  copied {name}")
+            for name in DIRS:
+                src_dir = os.path.join(site, name)
+                if os.path.isdir(src_dir):
+                    shutil.copytree(src_dir, os.path.join(DEST, name), dirs_exist_ok=True)
+                    print(f"  copied {name}/")
 
     print("\nassets in the project:")
     total = 0
