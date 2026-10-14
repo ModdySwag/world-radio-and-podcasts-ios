@@ -95,7 +95,7 @@ window.WR = (function () {
   var playable = function (s) { return playKind(s) === 1; };
 
   /* ============================== hooks ============================== */
-  var hooks = { onStation: null, onPlaying: null, onVol: null, onFavs: null, toast: null, toastAction: null, notice: null };
+  var hooks = { onStation: null, onPlaying: null, onVol: null, onFavs: null, toast: null, toastAction: null, notice: null, onLive: null };
   function say(msg, ms) { if (hooks.toast) hooks.toast(msg, ms); }
   function warn(html, kind, opts) { if (hooks.notice) hooks.notice(html, kind, opts || {}); else say(String(html).replace(/<[^>]+>/g, ""), 8000); }
 
@@ -405,11 +405,70 @@ window.WR = (function () {
       "warn", { tryAgain: function () { requestPlay(M(s)); } });
   }
 
+  /* ======================= the liveness layer =======================
+     live.json (written by check-liveness.py, uploaded on its own) is a LAYER like curated.json:
+     the mirror still owns the catalogue; this file only says who was reachable at the last
+     sweep. Quiet stations (2+ consecutive failed sweeps) are dimmed out of the list and the
+     globe by the Hide-quiet switch — never deleted. No live.json -> everything reads "live". */
+  var live = { ok: false, meta: null, quiet: new Set(), warn: new Set(), unchecked: new Set() };
+  function loadLive() {
+    try {
+      fetch("live.json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (j) {
+          if (!j || j.v !== 1) return;
+          live.ok = true; live.meta = j;
+          live.quiet = new Set(); live.warn = new Set();
+          live.unchecked = new Set(j.unchecked || []);
+          var f = j.fails || {};
+          for (var k in f) {
+            var e = f[k];
+            if (e && e[1] >= 2) live.quiet.add(k); else live.warn.add(k);
+          }
+          if (hooks.onLive) { try { hooks.onLive(j); } catch (e2) {} }
+        }).catch(function () {});
+    } catch (e) {}
+  }
+  function liveStatus(uuid) {
+    if (!uuid || uuid.indexOf("custom-") === 0) return "none";
+    if (live.quiet.has(uuid)) return "quiet";
+    if (live.warn.has(uuid)) return "warn";
+    if (live.unchecked.has(uuid)) return "unknown";
+    return live.ok ? "ok" : "none";
+  }
+  var LIVE_TEXT = {
+    ok: "Live — passed the last check",
+    warn: "Missed the last check — retrying next sweep",
+    quiet: "Quiet — failed two or more checks in a row",
+    unknown: "Not checked yet",
+    none: ""
+  };
+  /* the one-shot client probe the details panels' "check now" uses — the same truth rules as the
+     add-a-station test: a CORS-readable answer names status + type; a blocked read still proves
+     the host answered; silence is "no answer", never a guess. */
+  function probeStream(url, cb) {
+    var t0 = Date.now(), settled = false;
+    function fin(state, detail) { if (!settled) { settled = true; cb(state, detail || {}, Date.now() - t0); } }
+    try {
+      fetch(url, { mode: "cors", cache: "no-store" })
+        .then(function (r) { var ct = r.headers.get("content-type") || "";
+          if (r.body && r.body.cancel) { try { r.body.cancel(); } catch (e) {} }
+          fin("responds", { code: r.status, ctype: ct }); })
+        .catch(function () {
+          fetch(url, { mode: "no-cors", cache: "no-store" })
+            .then(function () { fin("answered", {}); })
+            .catch(function () { fin("noanswer", {}); });
+        });
+    } catch (e) { fin("noanswer", {}); }
+    setTimeout(function () { fin("timeout", {}); }, 8000);
+  }
+
   /* ======================= filters / state ======================= */
-  var state = { q: "", cc: "", lang: "", codec: "", bit: 0, sort: "k", tags: [], page: 1, favOnly: false, playOnly: ls.get("playonly", true) };
+  var state = { q: "", cc: "", lang: "", codec: "", bit: 0, sort: "k", tags: [], page: 1, favOnly: false, playOnly: ls.get("playonly", true), hideQuiet: ls.get("hidequiet", true) };
+  loadLive();                                    /* the liveness layer, whenever the site has one */
   function matchAll(s, excl) {
     if (state.favOnly && !favSet.has(s.i)) return false;
     if (state.playOnly && !playable(s)) return false;      // default: only stations this browser can really play
+    if (state.hideQuiet && live.quiet.has(s.i)) return false;   // liveness: quiet stations stay out of sight (never deleted)
     if (state.cc && s.cc !== state.cc) return false;
     if (state.lang && normLang(s.l) !== state.lang) return false;
     if (state.codec && s.x !== state.codec) return false;
@@ -455,6 +514,9 @@ window.WR = (function () {
       toggle: toggleFav, save: saveFav, rm: rmFav
     },
     recents: { list: recents, meta: metaMap },
+    live: { load: loadLive, status: liveStatus, TEXT: LIVE_TEXT, raw: function () { return live; } },
+    probe: { stream: probeStream },
     chan: channel
   };
+
 })();

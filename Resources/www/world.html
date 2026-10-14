@@ -106,6 +106,13 @@ body{background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system
   border-radius:7px;padding:2px 8px;margin-left:3px;cursor:pointer;white-space:nowrap}
 #countChip .cu b{color:inherit}
 #countChip .cu:hover{border-color:var(--cyan);background:rgba(31,227,255,.12)}
+#countChip .lvchk{cursor:default}
+#placeLive{font-size:11px;color:var(--mut);padding:8px 14px 0}
+.ldot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.ldot.ok{background:#8ef25c}
+.ldot.warn{background:#ffd166}
+.ldot.quiet{background:#ff6b6b}
+.ldot.unknown{background:#9aa4bd}
 #ctlChip{top:calc(var(--topH, 68px) + 2px);right:10px;display:flex;flex-direction:column;gap:6px;background:none;border:none;border-radius:0}
 #ctlChip .gbtn{width:42px;height:42px;border-radius:10px;border:2px solid var(--line);background:rgba(13,14,22,.85);
   color:var(--tx);font-size:17px;font-weight:800;cursor:pointer;line-height:1;padding:0}
@@ -342,6 +349,7 @@ a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
   <button class="lp-row lp-mp" id="lyHeat" aria-pressed="false"><span class="lp-d" style="background:linear-gradient(90deg,#1fe3ff,#ff3ea5)"></span>Density<span class="sw" aria-hidden="true"></span></button>
   <button class="lp-row lp-mp" id="lySaved" aria-pressed="false"><span class="lp-d" style="background:#ffe14d"></span>Saved stations<span class="sw" aria-hidden="true"></span></button>
   <button class="lp-row lp-mp" id="lyRecent" aria-pressed="false"><span class="lp-d" style="background:#a06bff"></span>Recently played<span class="sw" aria-hidden="true"></span></button>
+  <button class="lp-row" id="lyQuiet" aria-pressed="true" title="Hide quiet: stations that failed the last two liveness sweeps stay off the globe and the list — never deleted"><span class="lp-d" style="background:#ff6b6b"></span>Hide quiet stations<span class="sw" aria-hidden="true"></span></button>
 </div>
 
 <div class="gchip" id="coordsChip">…</div>
@@ -358,11 +366,13 @@ a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
   </div>
   <div id="placeList"></div>
   <div id="placeNote" hidden></div>
+  <div id="placeLive" hidden></div>
   <div id="placeFoot">
     <button class="btn" id="placeRand" hidden title="Play a random one of the stations with no coordinates — the globe has nowhere to fly, so it just tunes one in">🎲 Play a random one</button>
     <a class="btn" id="placeListLink" href="index.html" title="Open this station in the stations list">📋 Open in the list</a>
     <a class="btn" id="placeSite" href="#" target="_blank" rel="noopener" hidden>🌐 Website</a>
     <button class="btn" id="placeCopy" title="Copy the stream URL">⧉ Copy stream</button>
+    <button class="btn" id="placeCheck" hidden title="Ask the station's server right now, without playing it">🛰 Check now</button>
   </div>
 </div>
 
@@ -392,8 +402,8 @@ a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
 <script src="stations.js"></script>
 <script src="geo.js"></script>
 <script src="viz.js"></script>
-<script src="wr-core.js?v=20261014f"></script>
+<script src="wr-core.js?v=20261015a"></script>
 <script src="globeviz.js?v=20261013b"></script>
-<script src="world.js?v=20261014e"></script>
+<script src="world.js?v=20261015a"></script>
 </body>
 </html>

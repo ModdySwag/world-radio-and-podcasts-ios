@@ -108,6 +108,14 @@ header .next:hover{border-color:var(--cyan);color:var(--cyan);transform:translat
   /* The Verified switch is not in here any more - it lives in the stations line below the toolbar -
      so the field keeps its plain padding and the whole row is the input. */
   #btnPlayable{font-size:10px;padding:0 6px;gap:4px}
+#btnHideQuiet{font-size:10px;padding:0 6px;gap:4px}
+.livestrip{font-size:11.5px;color:var(--mut);padding:2px 2px 8px;letter-spacing:.2px}
+.livestrip b{color:var(--tx)}
+.ldot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.ldot.ok{background:var(--lime)}
+.ldot.warn{background:var(--yel)}
+.ldot.quiet{background:#ff6b6b}
+.ldot.unknown{background:var(--mut)}
   .toolbar select{max-width:104px}
   #selCountry{max-width:118px}
 }
@@ -133,7 +141,7 @@ header .next:hover{border-color:var(--cyan);color:var(--cyan);transform:translat
   body.quick:not(.scrolling) #q{flex:1 1 100%;pointer-events:auto}
 }
 @media (prefers-reduced-motion:reduce){
-  .toolbar,body.scrolling .toolbar,#btnPlayable .sw,#btnPlayable .sw::after{transition:none}
+  .toolbar,body.scrolling .toolbar,#btnPlayable .sw,#btnPlayable .sw::after,#btnHideQuiet .sw::after{transition:none}
 }
 @media(max-width:365px){
   header .spraytag{font-size:8.5px;letter-spacing:.2px;padding:4px 7px}
@@ -305,13 +313,13 @@ select:focus{border-color:var(--purp)}
 #btnPlayable{flex:0 0 auto;
   gap:4px;min-height:24px;padding:0 7px;font-size:10.5px;line-height:1;border-width:1px;
   border-radius:8px;background:rgba(16,17,28,.72)}
-#btnPlayable .sw{position:relative;flex:0 0 auto;width:20px;height:12px;border-radius:7px;
+#btnPlayable .sw,#btnHideQuiet .sw{position:relative;flex:0 0 auto;width:20px;height:12px;border-radius:7px;
   background:rgba(255,255,255,.16);border:1px solid var(--line);transition:background .16s,border-color .16s}
-#btnPlayable .sw::after{content:"";position:absolute;top:1px;left:1px;width:8px;height:8px;border-radius:50%;
+#btnPlayable .sw::after,#btnHideQuiet .sw::after{content:"";position:absolute;top:1px;left:1px;width:8px;height:8px;border-radius:50%;
   background:#c9ccdd;transition:transform .16s,background .16s}
-#btnPlayable.on{background:rgba(31,227,255,.16);border-color:var(--cyan);color:var(--cyan)}
-#btnPlayable.on .sw{background:rgba(31,227,255,.5);border-color:var(--cyan)}
-#btnPlayable.on .sw::after{transform:translateX(8px);background:#04161a}
+#btnPlayable.on,#btnHideQuiet.on{background:rgba(31,227,255,.16);border-color:var(--cyan);color:var(--cyan)}
+#btnPlayable.on .sw,#btnHideQuiet.on .sw{background:rgba(31,227,255,.5);border-color:var(--cyan)}
+#btnPlayable.on .sw::after,#btnHideQuiet.on .sw::after{transform:translateX(8px);background:#04161a}
 .btn.on{border-color:var(--cyan);border-radius:14px 6px 14px 6px}
 .play{background:rgba(255,62,165,.14);border-color:var(--pink);color:#ff9fd2}
 .play:hover{background:var(--pink);color:#1a0312;box-shadow:3px 3px 0 rgba(255,62,165,.4)}
@@ -788,6 +796,7 @@ body.worldview #list,body.worldview .resbar{display:none}
     <span id="cntLine">…</span>
     <button class="btn crowbtn" id="btnView" aria-pressed="false" title="Switch the stations list for a world map of every located station (shortcut: w)">🌍 World</button>
     <button class="btn inplay" id="btnPlayable" aria-pressed="true" title="Verified: only list stations this browser can really play — the rest stay hidden"><span class="sw" aria-hidden="true"></span>Verified</button>
+    <button class="btn inplay" id="btnHideQuiet" aria-pressed="true" title="Hide quiet: stations that failed the last two liveness sweeps stay out of the list and the globe — never deleted"><span class="sw" aria-hidden="true"></span>Hide quiet</button>
   </div>
 
   <div class="tbgrid tb3">
@@ -817,6 +826,7 @@ body.worldview #list,body.worldview .resbar{display:none}
 </div>
 
 <div class="resbar"><span class="pager" id="pagerTop" role="group" aria-label="Pages"></span></div>
+<div id="liveStrip" class="livestrip" hidden></div>
 <div class="grid" id="list"></div>
 
 <!-- ===== World View: the same catalogue, on a globe (engine: globe.js) ===== -->
@@ -970,7 +980,7 @@ body.worldview #list,body.worldview .resbar{display:none}
 <!-- The shared core (wr-core.js): data helpers, filters, favourites, the user's own stations
      and the single-owner player. This page's inline script used to carry its own copies; it
      now wires the core's host hooks to its chrome. world.html loads the same file. -->
-<script src="wr-core.js?v=20261014f"></script>
+<script src="wr-core.js?v=20261015a"></script>
 <script>
 "use strict";
 /* ============================= helpers ============================= */
@@ -1770,6 +1780,27 @@ function refreshPlayableUI(){ const b=$("#btnPlayable");
 $("#btnPlayable").addEventListener("click", () => { state.playOnly=!state.playOnly; ls.set("playonly", state.playOnly); state.page=1; apply(); writeHash();
   toast(state.playOnly ? "Verified: showing only stations this browser can play." : "Showing every station — some can't play in this browser.", 5200); });
 
+/* ✅ Hide quiet: the liveness layer's switch (live.json by check-liveness.py). A station that
+   failed the last TWO sweeps is dimmed out of the list and the globe — never deleted (only the
+   curated layer ever deletes). No live.json -> the switch does nothing and says so by count 0. */
+function refreshHideQuietUI(){ const b=$("#btnHideQuiet");
+  b.classList.toggle("on", !!state.hideQuiet); b.setAttribute("aria-pressed", String(!!state.hideQuiet));
+  const n=WR.live.raw().quiet.size;
+  b.title = state.hideQuiet
+    ? `Hide quiet: ${n} station${n===1?"":"s"} failed the last two checks and are hidden — click to show everything`
+    : "Showing quiet stations too — click to hide the ones that failed the last two checks"; }
+$("#btnHideQuiet").addEventListener("click", () => { state.hideQuiet=!state.hideQuiet; ls.set("hidequiet", state.hideQuiet); state.page=1; apply(); writeHash();
+  toast(state.hideQuiet ? "Hiding stations that failed the last checks." : "Quiet stations are shown again — they are dimmed, never removed.", 5200); });
+/* the sweep's own little line: who was checked, when, and when the next pass runs */
+function refreshLiveStrip(){ const el=$("#liveStrip"); const m=WR.live.raw().meta;
+  if(!m){ el.hidden=true; return; }
+  el.hidden=false;
+  let t="Station check · last sweep "+String(m.generated_local||"").replace(" (ACDT)","")
+    +" · "+(m.reachable||0).toLocaleString()+" reachable / "+(m.quiet||0).toLocaleString()+" quiet";
+  if(m.next_local) t+=" · next "+String(m.next_local).replace(" (ACDT)","");
+  el.textContent="🛰 "+t; }
+WR.hooks.onLive = function(){ refreshLiveStrip(); refreshHideQuietUI(); apply(); };
+
 /* ===== decorative visualiser: 5 styles, cycled by the 🎛 button ===== */
 /* The five looks live in viz.js, which the mini player loads too. If it did not load at all,
    the toggle still works and the canvas simply stays empty - the fallback names keep the rest
@@ -1801,6 +1832,7 @@ const vizRestore=ls.get("viz",0); if(vizRestore>0) vizSet(true,Math.min(vizResto
 
 /* ============================== explorer ============================== */
 const state = WR.filters.state;   /* the shared state object (wr-core.js) - same fields, same defaults */
+refreshHideQuietUI(); refreshLiveStrip();   /* the liveness switch + the strip (both need state) */
 const PSZ=240;
 const matchAll = WR.filters.matchAll;   /* the shared matcher (wr-core.js) */
 function buildStatic(){
@@ -1840,6 +1872,8 @@ function showInfo(m){ const s=m, pk=playKind(s); const allTags=tokens(s.t);
   const rows=[["Country",`${flag(s.cc)} ${countryOf(s)}`],["State",s.s],["Language",s.l],
     ["Format",(s.x||"?")+(s.b?" · "+s.b+" kbps":"")+(s.hl?" · HLS":"")],["Votes",fmt(s.v)],["Clicks",fmt(s.k)],
     ["Playback", pk===1 ? "✅ plays in this browser" : "⚠ "+KIND_TEXT[pk].tag+" — "+KIND_TEXT[pk].why],
+    ["Check", (function(){ const st=WR.live.status(s.i); return st==="none" ? "" :
+      `<span id="mCheckRow"><span class="ldot ${st}"></span>${esc(WR.live.TEXT[st])}</span>`; })()],
     ["Stream",`<code>${esc(s.u)}</code>`]].filter(r=>r[1]);
   $("#mHead").innerHTML=`${logoURL(s)?`<img class="fav" style="width:52px;height:52px" src="${esc(logoURL(s))}" alt="">`:""}
    <div class="h1"><span class="nm">${esc(s.n)}</span><div class="loc">${flag(s.cc)} ${esc(countryOf(s))}</div></div>`;
@@ -1850,12 +1884,25 @@ function showInfo(m){ const s=m, pk=playKind(s); const allTags=tokens(s.t);
     <a class="btn" href="${esc(s.u)}" target="_blank" rel="noopener">Open stream</a>
     ${s.hp?`<a class="btn" href="${esc(s.hp)}" target="_blank" rel="noopener">🌐 Station website</a>`:`<button class="btn" disabled>No website listed</button>`}
     <button class="btn" id="mCopy">Copy stream URL</button>
+    <button class="btn" id="mCheck" title="Ask the station's server right now, without playing it">🛰 Check now</button>
     ${isCustom(s)?`<button class="btn" id="mDel" title="Remove this station from your list">🗑 Remove</button>`:""}
     <button class="btn" id="mClose">Close</button>`;
   $("#modal").style.display="flex";
   $("#mPlay").onclick=()=>{$("#modal").style.display="none";doPlay(s)};
   $("#mFav").onclick=()=>{ toggleFav(s); $("#mFav").textContent = favSet.has(s.i) ? "★ Saved" : "☆ Save"; };
   $("#mCopy").onclick=()=>copyText(s.u,"Stream URL");
+  $("#mCheck").onclick=()=>{ const c=$("#mCheck"); c.disabled=true; c.textContent="🛰 Checking…";
+    WR.probe.stream(s.u, function(stt,d,ms){ c.disabled=false; c.textContent="🛰 Check now";
+      const txt = stt==="responds" ? "✅ Server responds"+(d.code?" — HTTP "+d.code:"")+(d.ctype?" · "+d.ctype:"")+" · "+ms+" ms"
+        : stt==="answered" ? "🟡 The host answered, but the response can't be read from here (strict server) · "+ms+" ms"
+        : stt==="timeout" ? "⚠ No answer within 8 s — the station looks quiet right now"
+        : "⚠ No answer — the stream looks quiet right now";
+      const dot = stt==="responds"?"ok":stt==="answered"?"warn":"quiet";
+      let r=$("#mCheckRow");
+      if(!r){ const tb=$("#mBody").querySelector("table"); if(tb){ const tr=document.createElement("tr");
+        tr.innerHTML=`<td>Check</td><td><span id="mCheckRow"></span></td>`; tb.insertBefore(tr, tb.rows[tb.rows.length-1]); r=$("#mCheckRow"); } }
+      if(r) r.innerHTML=`<span class="ldot ${dot}"></span>`+esc(txt);
+      toast(txt, 6000); }); };
   const md=$("#mDel"); if(md) md.onclick=()=>{ $("#modal").style.display="none"; deleteCustomStation(s.i); };
   $("#mClose").onclick=()=>$("#modal").style.display="none"; }
 function doPlay(s){ const k = playKind(s);

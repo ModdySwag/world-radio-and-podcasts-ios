@@ -75,6 +75,7 @@
   WR.hooks.toast = toast;
   WR.hooks.toastAction = toastAction;
   WR.hooks.notice = notice;
+  WR.hooks.onLive = function () { updateChips(); refreshQuietUI(); refreshWorld(); };
 
   /* ============================== the data ==============================
      geo.js: [index into RB_STATIONS, lat, lon]. Custom stations carry their own
@@ -140,10 +141,24 @@
     document.body.dataset.ready = "1";
   }
 
+  function liveStripText() {
+    var m = WR.live.raw().meta;
+    if (!m) return "Station check — not run yet";
+    var t = "Station check · last sweep " + String(m.generated_local || "").replace(" (ACDT)", "") +
+      " · " + WR.fmt(m.reachable) + " reachable / " + WR.fmt(m.quiet) + " quiet";
+    if (m.next_local) t += " · next " + String(m.next_local).replace(" (ACDT)", "");
+    return t;
+  }
+  function liveSeg() {
+    var lv = WR.live.raw();
+    if (!lv.meta) return "";
+    var qn = lv.quiet.size;
+    return ' · <span class="lvchk" title="' + WR.esc(liveStripText()) + '">🛰 ' + (qn ? WR.fmt(qn) + " quiet" : "all clear") + "</span>";
+  }
   function updateChips() {
     var c = $("#countChip"), n = lastUnmapped.length;
     c.innerHTML = "<b>" + WR.fmt(lastLocated) + "</b> on the globe · <b>" + WR.fmt(lastShown) + "</b> shown" +
-      (n ? ' · <button type="button" id="btnUnmapped" class="cu" title="Browse the ' + WR.fmt(n) + ' stations with no coordinates — search, play and save them right here (shortcut: u)"><span aria-hidden="true">📍</span> <b>' + WR.fmt(n) + "</b> unmapped ›</button>" : "");
+      (n ? ' · <button type="button" id="btnUnmapped" class="cu" title="Browse the ' + WR.fmt(n) + ' stations with no coordinates — search, play and save them right here (shortcut: u)"><span aria-hidden="true">📍</span> <b>' + WR.fmt(n) + "</b> unmapped ›</button>" : "") + liveSeg();
     c.title = "Every located station in the current search and filters" +
       (n ? " — " + WR.fmt(n) + " of the shown stations have no coordinates yet; the 📍 unmapped button browses them right here" : "");
     updateFlyBtn();
@@ -675,6 +690,24 @@
     exploreCc = null; exploreFly = null; unmappedOn = false;
     $("#placeRand").hidden = true;
     $("#placeCopy").hidden = false;
+    /* the liveness line + the one-tap probe: this station's own last verdict, right here */
+    var lvSt = WR.live.status(s.i), pl = $("#placeLive"), pc = $("#placeCheck");
+    pl.hidden = (lvSt === "none");
+    pl.innerHTML = lvSt === "none" ? "" : '<span class="ldot ' + lvSt + '"></span>' + WR.esc(WR.live.TEXT[lvSt]);
+    pc.hidden = false;
+    pc.onclick = function () {
+      pc.disabled = true; pc.textContent = "🛰 Checking…";
+      WR.probe.stream(s.u, function (stt, d, ms) {
+        pc.disabled = false; pc.textContent = "🛰 Check now";
+        var txt = stt === "responds" ? "✅ Server responds" + (d.code ? " — HTTP " + d.code : "") + (d.ctype ? " · " + d.ctype : "") + " · " + ms + " ms"
+          : stt === "answered" ? "🟡 The host answered (response not readable from here) · " + ms + " ms"
+          : stt === "timeout" ? "⚠ No answer within 8 s — looks quiet right now"
+          : "⚠ No answer — the stream looks quiet right now";
+        var dot = stt === "responds" ? "ok" : stt === "answered" ? "warn" : "quiet";
+        pl.hidden = false; pl.innerHTML = '<span class="ldot ' + dot + '"></span>' + WR.esc(txt);
+        if (WR.hooks.toast) WR.hooks.toast(txt, 6000);
+      });
+    };
     $("#placeListLink").title = "Open this station in the stations list";
     $("#placeTitle").textContent = s.n || "Unknown station";
     $("#placeSub").textContent = WR.flag(s.cc) + " " + [WR.countryOf(s), s.s].filter(Boolean).join(" · ") +
@@ -771,7 +804,7 @@
     $("#placeRand").hidden = true;
     $("#placeListLink").href = "index.html#q=" + encodeURIComponent(nm);
     $("#placeSite").hidden = true;
-    $("#placeCopy").hidden = true;
+    $("#placeCopy").hidden = true; $("#placeLive").hidden = true; $("#placeCheck").hidden = true;
     $("#placePanel").hidden = false;
     bumpInput();
     if (layersOpen) setLayersOpen(false);
@@ -800,7 +833,7 @@
   function openUnmapped() {
     lastPlace = null; placeGeo = null; exploreCc = null; exploreFly = null;
     unmappedOn = true;
-    $("#placeSite").hidden = true; $("#placeCopy").hidden = true;
+    $("#placeSite").hidden = true; $("#placeCopy").hidden = true; $("#placeLive").hidden = true; $("#placeCheck").hidden = true;
     $("#placeListLink").title = "Open the stations list — carries your search";
     renderUnmapped();
     $("#placePanel").hidden = false;
@@ -1376,6 +1409,22 @@
     if (engine === "maplibre" && mapReady) setTermState(layers.day);
     else if (engine === "canvas" && cvReady) GlobeView.setTerminator(layers.day);
     syncLayersUI();
+  });
+  /* Hide quiet: the liveness layer's switch (live.json by check-liveness.py). Quiet stations
+     (2+ failed sweeps) drop off the globe and the list — never deleted. Works on BOTH engines. */
+  function refreshQuietUI() {
+    var b = $("#lyQuiet"); if (!b) return;
+    var on = !!WR.filters.state.hideQuiet;
+    b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on));
+  }
+  refreshQuietUI();
+  $("#lyQuiet").addEventListener("click", function () {
+    var st = WR.filters.state;
+    st.hideQuiet = !st.hideQuiet; WR.ls.set("hidequiet", st.hideQuiet);
+    refreshQuietUI(); refreshWorld();
+    if (WR.hooks.toast) WR.hooks.toast(st.hideQuiet
+      ? "Hiding stations that failed the last checks."
+      : "Quiet stations are shown again — they are dimmed, never removed.", 5200);
   });
   $("#lyHeat").addEventListener("click", function () {
     layers.heat = !layers.heat; WR.ls.set("heat", layers.heat);
