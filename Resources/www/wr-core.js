@@ -174,8 +174,13 @@ window.WR = (function () {
     audio.play().then(function () { lastPlayErr = ""; setOwner(true); setPlaying(true); bcastState(); })
       .catch(function (e) {
         lastPlayErr = (e && e.name) || "error"; setPlaying(false); setOwner(false); P.mine = false;
-        /* a carry-over attempt stays quiet on a refusal: this page's own one-tap offer is the message */
-        if (!quiet || lastPlayErr !== "NotAllowedError") say("⚠ Your browser blocked playback — press ▶ to start.");
+        /* a carry-over attempt stays quiet WHATEVER the failure: this page's own one-tap offer
+           below is the message. (A quiet failure with any error other than NotAllowedError used
+           to show a misleading "browser blocked" toast here AND skip the offer - the worst of
+           both: a scary wrong message and no way back. It no longer does.) */
+        if (!quiet) say(lastPlayErr === "NotAllowedError"
+          ? "⚠ Your browser blocked playback — press ▶ to start."
+          : "⚠ Playback didn't start — press ▶ to try again.");
         bcastState();
       });
   }
@@ -232,8 +237,13 @@ window.WR = (function () {
     else say("Press ▶ to resume " + ((m && m.n) || "the station") + ".", 9000);
   }
   function resumePlay(m) {
-    requestPlay(m, true);                            /* the attempt is quiet; a refusal gets the offer */
-    setTimeout(function () { if (!P.playing && lastPlayErr === "NotAllowedError") resumeOffer(m); }, 1600);
+    requestPlay(m, true);                            /* the attempt is quiet; a failure gets the offer */
+    /* Offer on any FAILED attempt (a settled error of any name), not just NotAllowedError: a play
+       that is merely still connecting is not a failure. Whatever stopped the music from coming
+       back, the one tap is the way home (and a tap turns a refusal into a real play). Two checks:
+       the second catches a failure that only settles after the first (a slow dead mount). */
+    setTimeout(function () { if (!P.playing && lastPlayErr) resumeOffer(m); }, 1600);
+    setTimeout(function () { if (!P.playing && lastPlayErr) resumeOffer(m); }, 5200);
   }
   function setVol(v) {
     P.vol = +v; audio.volume = P.vol; ls.set("vol", P.vol);
