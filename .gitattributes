@@ -11,3 +11,8 @@ Resources/www/* -text
 *.yml text
 *.md text
 *.py text
+
+# tools/shim_harness.py is pinned by BYTES in SHIM.sha256 and checked in CI, so it needs the
+# same LF bytes on every platform (a Windows checkout used to hand the check a CRLF copy the
+# recorded hash could never match).
+tools/shim_harness.py text eol=lf

@@ -104,6 +104,15 @@ def main():
             return 1
         os.makedirs(os.path.dirname(target), exist_ok=True)
         shutil.copyfile(source, target)
+        if target_rel.endswith(".py"):
+            # Source files live as LF in this repo and SHIM.sha256 pins BYTES: a copy taken
+            # straight from a Windows checkout (CRLF) would be pinned CRLF and then fail
+            # CI's LF checkout. Normalise the text on the way in.
+            with open(target, "rb") as f:
+                data = f.read()
+            if b"\r\n" in data:
+                with open(target, "wb") as f:
+                    f.write(data.replace(b"\r\n", b"\n"))
         print("copied %s -> %s" % (source_rel, target_rel))
 
     write_record()
