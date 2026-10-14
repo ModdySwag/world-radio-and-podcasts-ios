@@ -4,7 +4,8 @@
 # rewrite line endings inside it: a newline inside a JS template literal is content, and
 # byte-identity is what makes hash comparisons against the live site meaningful. The same goes
 # for the shim, which is byte-identical to the Android app's copy.
-Resources/www/* -text
+# `**` so the nested maplibre/ engine and glyphs are covered too, not just the top level.
+Resources/www/** -text
 
 # Source files: normalise to LF in the repository (checked out per platform default).
 *.swift text
