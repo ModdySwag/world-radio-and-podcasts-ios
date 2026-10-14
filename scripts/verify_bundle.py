@@ -30,7 +30,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 PROJECT = os.path.dirname(HERE)
 WWW = os.path.join(PROJECT, "Resources", "www")
 
-SITE_FILES = ["index.html", "stations.js", "countries.js", "viz.js"]
+SITE_FILES = ["index.html", "stations.js", "countries.js", "viz.js", "geo.js", "worldgeo.js", "globe.js", "wr-core.js"]
 SHARED_FILES = ["_shell_shim.js", "compat.json"]
 
 # Strings that only exist in the binary if the code around them was compiled in.

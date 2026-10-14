@@ -28,7 +28,7 @@ DEST = os.path.join(PROJECT, "Resources", "www")
 
 # popout.html is deliberately not shipped: it opens a second window for the single-owner
 # handover, and a phone has no second window.
-FILES = ["index.html", "stations.js", "countries.js", "viz.js"]
+FILES = ["index.html", "stations.js", "countries.js", "viz.js", "geo.js", "worldgeo.js", "globe.js", "wr-core.js"]
 
 DEFAULT_SITES = [
     r"C:\Users\Moddy\radio-browser\deploy",
@@ -110,7 +110,7 @@ def main():
     idx = os.path.join(DEST, "index.html")
     if os.path.isfile(idx):
         html = open(idx, encoding="utf-8", errors="replace").read()
-        for name in ("countries.js", "stations.js"):
+        for name in ("countries.js", "stations.js", "geo.js", "worldgeo.js", "globe.js", "wr-core.js"):
             print(f"  references {name}: {'yes' if name in html else 'NO'}")
     return 0
 
