@@ -509,6 +509,11 @@ code{background:#0b0c12;padding:1px 5px;border-radius:5px;font-size:12px;word-br
 #spin{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;color:var(--mut)}
 #spin .ring{width:38px;height:38px;border-radius:50%;border:4px solid var(--line);border-top-color:var(--pink);animation:spin 1s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* No accidental text selection: dragging across the chrome used to paint selection highlights
+   over the cards, chips and labels (his ask, 2026-10-15). Real text surfaces opt back in; same
+   pattern as the Anvil and Forge pages. */
+body{-webkit-user-select:none;user-select:none}
+input,textarea,select,[contenteditable="true"]{-webkit-user-select:text;user-select:text}
 ::selection{background:var(--pink);color:#fff}
 @media (prefers-reduced-motion: reduce){ .play.on{animation:none} .badge.on{animation:none} #spin .ring{animation:none} }
 *{scrollbar-width:thin;scrollbar-color:var(--purp) #0d0e16}

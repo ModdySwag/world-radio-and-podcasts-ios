@@ -20,6 +20,11 @@
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;height:100%}
 body{background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",sans-serif;overflow:hidden}
+/* No accidental text selection: dragging across the chrome used to paint selection highlights
+   over the chips and labels (his ask, 2026-10-15). Real text surfaces opt back in; same
+   pattern as the Anvil and Forge pages. */
+body{-webkit-user-select:none;user-select:none}
+input,textarea,select,[contenteditable="true"]{-webkit-user-select:text;user-select:text}
 .spraybar{position:fixed;top:0;left:0;right:0;height:7px;z-index:40;display:flex}
 .spraybar i{flex:1;display:block}
 .spraybar i:nth-child(1){background:var(--pink)}.spraybar i:nth-child(2){background:var(--orange)}
