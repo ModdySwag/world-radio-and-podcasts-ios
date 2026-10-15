@@ -47,7 +47,12 @@ body{background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system
   color:#fff;text-shadow:2px 2px 0 rgba(255,62,165,.65)}
 .topbar .brand b{color:var(--lime);text-shadow:2px 2px 0 rgba(0,0,0,.45)}
 .topbar #btnList{flex:0 0 auto}
-#btnFold{display:none}   /* the retractable bar - phones only (see the ≤720px block) */
+#btnFold{display:inline-flex;justify-content:center;min-width:40px;min-height:38px;font-size:15px;padding:0 10px;flex:0 0 auto}
+/* The retractable bar, at every width (his ask, 2026-10-15 night): folded, the search field, the
+   filters, the channels rail, Share and Verified step aside and the brand row stays. A phone
+   boots folded and a committed search re-folds them; the wide bar boots expanded and folds only
+   when the reader asks. The width logic lives in applyFold() / foldPhone() in world.js. */
+body.foldtop #q,body.foldtop #filters,body.foldtop #channels,body.foldtop #btnShare,body.foldtop #btnPlayable{display:none}
 #q{flex:1 1 260px;min-width:0;background:#0d0e16;border:2px solid var(--line);color:var(--tx);border-radius:10px;
   padding:9px 12px;font-size:14px;outline:none;transition:border-color .12s,box-shadow .12s;font-family:inherit}
 #q:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,227,255,.18)}
@@ -239,7 +244,6 @@ a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
      buried behind them; the button rides at the right end of the bar's first row */
   .topbar .brand{min-width:0;overflow:hidden;text-overflow:ellipsis}
   #btnFold{display:inline-flex;margin-left:auto;min-width:40px;min-height:38px;justify-content:center;font-size:15px;padding:0 10px;flex:0 0 auto}
-  body.foldtop #q,body.foldtop #filters,body.foldtop #channels,body.foldtop #btnShare,body.foldtop #btnPlayable{display:none}
   #channels{order:5}
   #countChip{font-size:10.5px}
   #ctlChip .gbtn{width:34px;height:34px}
@@ -404,6 +408,6 @@ a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
 <script src="viz.js"></script>
 <script src="wr-core.js?v=20261015a"></script>
 <script src="globeviz.js?v=20261013b"></script>
-<script src="world.js?v=20261015a"></script>
+<script src="world.js?v=20261015b"></script>
 </body>
 </html>

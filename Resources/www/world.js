@@ -582,7 +582,7 @@
         cv.hidden = false;
         cvReady = !!window.GlobeView.mount(cv, { onSelect: canvasSelect, onHover: canvasHover, onView: function (v) { updateCoords(v.lon, v.lat, v.zoom); } });
         if (!cvReady) { notice("⚠ The map could not start in this browser.", "warn"); return; }
-        GlobeView.setTerminator(WR.ls.get("globe-day", true));
+        GlobeView.setTerminator(WR.ls.get("globe-day", false));
         GlobeView.setSpin(!REDUCED);
         pushData();
         updateNowMarker();
@@ -1232,16 +1232,18 @@
   }
   window.addEventListener("resize", function () { applyFold(); syncTopH(); });
 
-  /* ---- the retractable phone bar (2026-10-14) ----
-     On a phone (≤720px) the top bar folds to a single row so the globe is never buried behind
-     the search, filters and channels; the ▾ button unfolds it. The choice sticks per device
-     (rbg "foldtop"); the fold never applies above 720px; folding re-measures the chrome, so
-     every floating chip follows. An applied search (Enter) or a channel tap folds it back. */
+  /* ---- the retractable bar, live at every width (2026-10-14; wide bars 2026-10-15 night) ----
+     Folded, the search / filters / channels / Share / Verified step aside and the brand row
+     stays. A phone (≤720px) boots folded - the globe is never buried - and an applied search
+     (Enter) or a channel tap re-folds it; the wide bar boots expanded and folds only when the
+     reader asks. An explicit choice sticks per device (rbg "foldtop") at EVERY width; folding
+     re-measures the chrome, so every floating chip follows. */
   function narrowTop() { try { return matchMedia("(max-width: 720px)").matches; } catch (e) { return window.innerWidth <= 720; } }
   function foldStored() { var v = WR.ls.get("foldtop", null); return v === null ? null : !!v; }
   function foldActive() { return document.body.classList.contains("foldtop"); }
   function applyFold() {
-    var f = narrowTop() && foldStored() !== false;
+    var st = foldStored();
+    var f = st === null ? narrowTop() : st;   // phones boot folded; the wide bar boots expanded
     document.body.classList.toggle("foldtop", f);
     var b = $("#btnFold");
     if (b) {
@@ -1266,7 +1268,7 @@
   }
 
   var layers = {
-    day: WR.ls.get("globe-day", true) !== false,
+    day: WR.ls.get("globe-day", false) === true,   // default OFF (plain day) - his ask 2026-10-15 night
     heat: !!WR.ls.get("heat", false),
     saved: !!WR.ls.get("ly-saved", false),
     recent: !!WR.ls.get("ly-recent", false)

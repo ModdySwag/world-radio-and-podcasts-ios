@@ -866,7 +866,7 @@ body.worldview #list,body.worldview .resbar{display:none}
     <div class="gchip" id="globeCount">…</div>
     <div class="gchip" id="globeCoords">…</div>
     <div class="gchip" id="globeCtl">
-      <button class="gbtn" id="btnGlobeDay" aria-pressed="true" title="Day / night on the globe — where the sun is right now">🌗</button>
+      <button class="gbtn" id="btnGlobeDay" aria-pressed="false" title="Day / night on the globe — where the sun is right now">🌗</button>
       <button class="gbtn" id="btnGlobeIn" title="Zoom in">＋</button>
       <button class="gbtn" id="btnGlobeOut" title="Zoom out">－</button>
     </div>
@@ -2317,7 +2317,7 @@ function setWorld(on, silent){
         document.body.classList.remove("worldview");
         b.textContent = "🌍 World"; b.setAttribute("aria-pressed", "false");
         toast("World view couldn't start in this browser.", 6000); return; }
-      const day = ls.get("globe-day", true);
+      const day = ls.get("globe-day", false);   // default OFF: the globe opens on plain day (his ask)
       GlobeView.setTerminator(day);
       $("#btnGlobeDay").classList.toggle("on", day); $("#btnGlobeDay").setAttribute("aria-pressed", String(day)); }
     GlobeView.setActive(true);
