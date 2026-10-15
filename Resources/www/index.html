@@ -50,8 +50,10 @@ header .next:hover{border-color:var(--cyan);color:var(--cyan);transform:translat
   box-shadow:3px 3px 0 rgba(31,227,255,.35)}
 /* The five-door wrapper (DOWNLOADS / SYNTHHUB / MUSIC HUB / PATTERN FORGE / RESONANCE):
    display:contents on wide screens, so the links lay out exactly as they always did; on a
-   phone it becomes one wrapped cluster (see the ≤900px block). */
+   phone it becomes one wrapped cluster (see the ≤900px block) - and INSIDE THE APP they are
+   hidden outright: they lead to pages the app does not carry (dead links in a pure radio). */
 .nextrow{display:contents}
+html.wr-app .nextrow{display:none !important}
 /* Phone and tablet: the tagline and the app button are placed, not left to the wrap. As two
    flex items they stacked whenever the title happened to fill the line, which drops the whole
    page down a row; a two-column grid row keeps them side by side at every width, with the
@@ -139,6 +141,7 @@ header .next:hover{border-color:var(--cyan);color:var(--cyan);transform:translat
   body.quick:not(.scrolling) #btnSaved,
   body.quick:not(.scrolling) #btnReset{position:absolute;top:0;left:0;visibility:hidden;pointer-events:none}
   body.quick:not(.scrolling) #q{flex:1 1 100%;pointer-events:auto}
+  body.quick:not(.scrolling) .qbtn{pointer-events:auto}
 }
 @media (prefers-reduced-motion:reduce){
   .toolbar,body.scrolling .toolbar,#btnPlayable .sw,#btnPlayable .sw::after,#btnHideQuiet .sw::after{transition:none}
@@ -152,8 +155,10 @@ header .next:hover{border-color:var(--cyan);color:var(--cyan);transform:translat
 .toolbar{position:sticky;top:6px;z-index:50;padding:8px 0 10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
   background:linear-gradient(180deg,rgba(16,17,23,.92) 0%,rgba(16,17,23,.92) 78%,transparent)}
 /* min-width:0 overrides the intrinsic minimum an input gets from its placeholder text, which was
-   wide enough to claim a whole line of the toolbar on a desktop and push everything else down. */
-#q{flex:1 1 300px;min-width:220px;background:#0d0e16;border:2px solid var(--line);color:var(--tx);border-radius:12px;padding:10px 14px;font-size:15px;outline:none;transition:border-color .12s,box-shadow .12s}
+   wide enough to claim a whole line of the toolbar on a desktop and push everything else down.
+   The right padding is the field's own control corner - the go magnifier (and, on a phone, the
+   fold chevron) ride there: .qbtn below. 52px = 4px inset + a 42px button + 6px of air. */
+#q{flex:1 1 300px;min-width:220px;background:#0d0e16;border:2px solid var(--line);color:var(--tx);border-radius:12px;padding:10px 52px 10px 14px;font-size:15px;outline:none;transition:border-color .12s,box-shadow .12s}
 #q:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,227,255,.18)}
 select{background:#0d0e16;border:2px solid var(--line);color:var(--tx);border-radius:10px;padding:8px 9px;font-size:13.5px;outline:none;max-width:220px}
 select:focus{border-color:var(--purp)}
@@ -162,6 +167,17 @@ select:focus{border-color:var(--purp)}
    min-width:0 on both the row and the field: a search input otherwise holds a stubborn intrinsic
    minimum, and the whole page ends up wider than a narrow phone can show. */
 .searchwrap{position:relative;display:flex;align-items:center;flex:1 1 100%;min-width:0}
+/* The field's own two controls, inside its right end: the 🔍 go button (commits the search
+   exactly like the keyboard's search key - the affordance a phone user expects to see) and the
+   ▾/▴ fold chevron that tucks the toolbar's lower rows away (phones only, see the ≤720px
+   block). Both are real buttons overlaid on the field, so the field keeps its full width. */
+.qbtn{position:absolute;top:3px;bottom:3px;width:42px;display:inline-flex;align-items:center;justify-content:center;
+  border:none;background:none;color:var(--mut);font-size:15px;line-height:1;cursor:pointer;border-radius:10px;padding:0;font-family:inherit}
+.qbtn:hover,.qbtn:focus-visible{color:var(--cyan);background:rgba(31,227,255,.1)}
+#btnFold:hover,#btnFold:focus-visible{color:var(--cyan)}   /* the id out-specifies .qbtn:hover */
+.qbtn:active{transform:translateY(1px)}
+#btnQGo{right:4px}
+#btnFold{right:4px;display:none;font-size:22px;color:#cfd4e6}   /* phones only - the ≤720px block shows it; a bare small-triangle glyph needs the extra size and a lighter ink */
 /* Every toolbar control is a finger target: the toolbar is where a mis-tap costs you the thing
    you were reading. */
 .toolbar .btn{min-height:44px}
@@ -581,6 +597,20 @@ body.worldview #list,body.worldview .resbar{display:none}
   #globeLegend{display:none}
   #globeActs .btn{padding:6px 9px;font-size:11.5px}
 }
+/* ---- the foldable search module (his ask, 2026-10-15) ----
+   On a phone the ▾ in the search field folds the toolbar's lower three rows away - the
+   stations bar, the Format/Bitrate/Country selects and Add/Saved/Reset - so the results own
+   the screen once a search is done; the field itself stays. applyFold() only ever applies the
+   class ≤720px (the width world.html's retractable bar uses too), but the rules are gated
+   here as well, so a stray class can never bend a wide layout. 100px of right padding on the
+   field = the fold's 42px + the go magnifier's 42px + insets and air. */
+@media(max-width:720px){
+  .toolbar #q{padding-right:100px}
+  #btnQGo{right:52px}
+  #btnFold{display:inline-flex}
+  body.toolfold .countrow,
+  body.toolfold .tbgrid{display:none}
+}
 </style>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="World Radio">
@@ -787,9 +817,14 @@ body.worldview #list,body.worldview .resbar{display:none}
        bar shape as the field above it), row 3 Format / Bitrate / Country as equal thirds, row 4
        Add / Saved / Reset as equal thirds. There is no genre pull-down any more: the search field finds
        genres, so a second control for them only cluttered the page and fell apart in landscape.
-       The DOM order IS the order on screen - flex-wrap fills the lines as the controls are written. -->
+       The DOM order IS the order on screen - flex-wrap fills the lines as the controls are written.
+       The field carries its own two controls, inside its right end: the 🔍 go button (the same
+       commit as the keyboard's search key) and - on a phone - the ▾ that folds rows 2-4 away once
+       the search is done (see the foldable-search note in the script and the ≤720px block). -->
   <div class="searchwrap">
     <input id="q" type="search" size="12" placeholder="Search stations by name, genre, country, language…  ( / focuses )" autocomplete="off">
+    <button type="button" class="qbtn" id="btnQGo" aria-label="Search now" title="Search now — the same as your keyboard's search key">🔍</button>
+    <button type="button" class="qbtn" id="btnFold" aria-expanded="true" aria-label="Minimize the search — the field stays, the filters and buttons fold away" title="Minimize the search — the field stays, the filters and buttons fold away">▴</button>
   </div>
 
   <div class="countrow">
@@ -1730,6 +1765,41 @@ window.addEventListener("scroll", () => {
   clearTimeout(hideTimer);
   hideTimer = setTimeout(() => document.body.classList.remove("scrolling"), CHROME_STILL_MS);
 }, { passive:true });
+
+/* ---- the foldable search module (his ask, 2026-10-15) ----
+   On a phone (≤720px - the width world.html's retractable bar uses too) the ▾ in the search
+   field folds the toolbar's lower three rows away - the stations bar, the Format/Bitrate/
+   Country selects and Add/Saved/Reset - so the results get the screen once a search is done;
+   the field itself stays, it is the thing you reach for again. The ▴ brings everything back.
+   A committed search (Enter, the keyboard's go key, the field's ✕, or the 🔍 beside it) folds
+   it automatically on a phone, exactly like world.html's bar does. The choice sticks per
+   device (rbg "foldbar"); above 720px the class is never applied and the button is hidden in
+   CSS, so a desktop can never see a folded toolbar. Folding re-measures the chrome, so the
+   quick bar's --tbh budget follows the shorter toolbar. */
+function foldNarrow(){ try{ return matchMedia("(max-width: 720px)").matches; }catch(e){ return window.innerWidth <= 720; } }
+function foldStored(){ const v = ls.get("foldbar", null); return v === null ? null : !!v; }
+function foldActive(){ return document.body.classList.contains("toolfold"); }
+function applyFold(){
+  const f = foldNarrow() && foldStored() === true;
+  document.body.classList.toggle("toolfold", f);
+  const b = $("#btnFold"); if(!b) return;
+  b.textContent = f ? "▾" : "▴";
+  b.title = f ? "Show the filters and buttons again" : "Minimize the search — the field stays, the filters and buttons fold away";
+  b.setAttribute("aria-label", f ? "Show the filters and buttons" : "Minimize the search, filters and buttons");
+  b.setAttribute("aria-expanded", f ? "false" : "true");
+}
+function setFold(f){
+  if(f && menuName) openMenu("");     // a pull-down cannot hang from a row that is folding away
+  ls.set("foldbar", !!f);
+  applyFold();
+  measureChrome();
+}
+function foldPhone(){ if(foldNarrow()) setFold(true); }
+applyFold();
+measureChrome();
+window.addEventListener("resize", () => { applyFold(); measureChrome(); });
+$("#btnFold").addEventListener("click", () => setFold(!foldActive()));
+$("#btnQGo").addEventListener("click", () => endSearchTyping($("#q")));
 /* There is no filter read-out on this page and no "clear filters": a search is a search, and it
    must never leave a little "dub ✕" chip behind under the toolbar. What a control is set to is
    visible on the control itself - the select shows its value, Reset puts everything back. */
@@ -2345,6 +2415,10 @@ function endSearchTyping(field){ const q=field || $("#q"); if(!q || !q.blur) ret
      away there, so say out loud that a search was committed and let the shell finish the job.
      Nothing listens in a plain browser. */
   try{ document.dispatchEvent(new CustomEvent("wr-search-commit")); }catch(e){}
+  /* A committed search is also the moment a phone claims its screen back: the filters and
+     the action row fold away under the ▾ in the field (the field itself stays put). Above
+     720px - and on every desktop - foldPhone() does nothing. */
+  foldPhone();
 }
 $("#q").addEventListener("keydown",e=>{ if(e.key==="Enter"||e.keyCode===13){ e.preventDefault(); endSearchTyping($("#q")); } });
 $("#q").addEventListener("search",()=>endSearchTyping($("#q")));
