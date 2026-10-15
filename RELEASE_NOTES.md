@@ -1,25 +1,24 @@
-# MODDYS World Radio for iOS v1.2.0
+# MODDYS World Radio for iOS v1.3.0
 
-The whole World View now rides in the app: the door opens the full-page globe, served from the bundle, online or off.
+The app becomes the pure radio it always was on a phone: the site links that led nowhere are gone from the header, the search module folds away when you are done searching, and the search field gets a go magnifier.
 
 ## What changed
 
-**The full World View page ships in the app.** The WORLD VIEW door above the toolbar was hidden inside the app while the app could not carry the page it opens - it can now, so the door shows and opens `world.html`, the whole standalone globe, from the bundle. Everything the site's page does, in the app: the MapLibre imagery globe with the day/night terminator and the density, saved and recent layers; search and the Format / Bitrate / Country filters pruning the dots and an open drawer live, with ◎ fly-to-results and 🎲 a random flight that tunes the station in; the place drawer, whose ▶ plays through the same single-owner player (lock-screen controls and notification included), and the "📍 N unmapped" chip browsing every station the catalogue cannot place - playable right there; the channels rail; deep links (`#q=` / `#cc=` / `#st=`) and the ⧉ share link; the LIST back-link home; and the ambient visualiser - all ten space styles plus the garden.
+**The header drops the five site links.** DOWNLOADS / SYNTHHUB / MUSIC HUB / PATTERN FORGE / RESONANCE open pages the app does not carry - in a pure radio app they were five dead links. They are hidden inside the app now; the website keeps them, where they lead somewhere.
 
-**A bundled page opens in place instead of being refused.** The shell was written when the app was one page: every relative link was handed to the native side, and the native side refuses `file://` addresses - so a second bundled page was unreachable. Pages that ship in the bundle (`world.html`, `index.html`) now navigate in the WebView; everything else keeps the old one-page behaviour.
+**The search module folds.** A ▾ sits at the right end of the search field on a phone: tap it and the stations bar, the Format / Bitrate / Country selects and the Add / Saved / Reset row tuck away, so the results get the screen - about 150px of it back on a 390px phone. The field itself stays, it is the thing you reach for again. Committing a search folds it for you (the keyboard's enter/go key, the field's ✕, or the new magnifier - the same habit the World View page's bar has); the ▴ brings everything straight back, and the choice is remembered on the device. Desktops never fold.
 
-**The page keeps its loopback origin.** The iOS shell already serves the bundled page from `127.0.0.1`, so the globe's labels fetch their bundled glyph set exactly as they do on the site - no file:// exceptions needed.
+**A go magnifier in the search bar.** The 🔍 inside the field commits the search exactly like the keyboard's search key - and inside the app it drops the on-screen keyboard the moment you tap it.
 
-**The last pass's smaller fixes ride along:** bigger, softly glowing dots with a tap area that reaches past the dot; hold-to-zoom that keeps climbing on a busy page; the phone's retractable top bar; the one-tap ⓘ credits.
-
-**The bundled web app is the current one**, byte for byte - the same `index.html`, `world.html`, `world.js`, `globeviz.js`, world data and `maplibre/` engine moddys.net serves, and the same file Android 1.8.0 carries.
+**The bundled web app is the current one**, byte for byte - the same `index.html` moddys.net serves, and the same file Android 1.9.0 carries.
 
 ## Verified
 
 - `tools/shim_harness.py --only ios` over the iOS bridge, against the bundled page: 35 checks, 0 failed - the same harness file Android runs
-- `scripts/verify_bundle.py` reads the published `.app`: every bundled web file - the world page, its `world.js` / `globeviz.js`, the vendored `maplibre/` engine and the glyph set included - is byte-identical to the repo copy
+- `scripts/verify_bundle.py` reads the published `.app`: every bundled web file is byte-identical to the repo copy
 - the shared shell is pinned to the same revision Android ships (`SHIM.sha256`)
-- the site's globe suites: the in-page globe 78 checks, the standalone World View page 194 checks, 0 failed
+- the site's page suite against this page: 275 checks, 0 failed (twelve of them new: the five doors, the fold, the magnifier)
+- the same suite against what moddys.net serves: 275 checks, 0 failed
 
 ## Install
 
