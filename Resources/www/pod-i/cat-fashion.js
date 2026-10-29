@@ -1,0 +1,1 @@
+window.POD_SHELF=window.POD_SHELF||{};window.POD_SHELF["cat:fashion"]=[["The Nancy Stevens Lifestyle Show","https://www.horizonradio.com/podcasts/35.xml","https://mmo.aiircdn.com/593/674f620142211.png","fashion","en",50]];

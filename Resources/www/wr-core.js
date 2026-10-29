@@ -481,6 +481,171 @@ window.WR = (function () {
     return true;
   }
 
+  /* ---- the geography tables: ONE copy for every globe on the site ----
+     These used to live inside world.js only, so world.html named all 226 countries while the
+     app's own World View (radio.html, a separate inline implementation) kept a `.slice(0, 24)`
+     cap and the mirror's legal-form names. Whoever draws a globe reads them from here. */
+  var CONT_OF = {AD:"EU",AE:"AS",AF:"AS",AG:"NA",AI:"NA",AL:"EU",AM:"AS",AN:"NA",AO:"AF",AQ:"AN",AR:"SA",AS:"OC",AT:"EU",AU:"OC",AW:"NA",AX:"EU",AZ:"AS",BA:"EU",BB:"NA",BD:"AS",BE:"EU",BF:"AF",BG:"EU",BH:"AS",BI:"AF",BJ:"AF",BL:"NA",BM:"NA",BN:"AS",BO:"SA",BQ:"NA",BR:"SA",BS:"NA",BT:"AS",BV:"AN",BW:"AF",BY:"EU",BZ:"NA",CA:"NA",CC:"AS",CD:"AF",CF:"AF",CG:"AF",CH:"EU",CI:"AF",CK:"OC",CL:"SA",CM:"AF",CN:"AS",CO:"SA",CR:"NA",CS:"EU",CU:"NA",CV:"AF",CW:"NA",CX:"OC",CY:"EU",CZ:"EU",DE:"EU",DJ:"AF",DK:"EU",DM:"NA",DO:"NA",DZ:"AF",EC:"SA",EE:"EU",EG:"AF",EH:"AF",ER:"AF",ES:"EU",ET:"AF",FI:"EU",FJ:"OC",FK:"SA",FM:"OC",FO:"EU",FR:"EU",GA:"AF",GB:"EU",GD:"NA",GE:"AS",GF:"SA",GG:"EU",GH:"AF",GI:"EU",GL:"NA",GM:"AF",GN:"AF",GP:"NA",GQ:"AF",GR:"EU",GS:"AN",GT:"NA",GU:"OC",GW:"AF",GY:"SA",HK:"AS",HM:"AN",HN:"NA",HR:"EU",HT:"NA",HU:"EU",ID:"AS",IE:"EU",IL:"AS",IM:"EU",IN:"AS",IO:"AS",IQ:"AS",IR:"AS",IS:"EU",IT:"EU",JE:"EU",JM:"NA",JO:"AS",JP:"AS",KE:"AF",KG:"AS",KH:"AS",KI:"OC",KM:"AF",KN:"NA",KP:"AS",KR:"AS",KW:"AS",KY:"NA",KZ:"AS",LA:"AS",LB:"AS",LC:"NA",LI:"EU",LK:"AS",LR:"AF",LS:"AF",LT:"EU",LU:"EU",LV:"EU",LY:"AF",MA:"AF",MC:"EU",MD:"EU",ME:"EU",MF:"NA",MG:"AF",MH:"OC",MK:"EU",ML:"AF",MM:"AS",MN:"AS",MO:"AS",MP:"OC",MQ:"NA",MR:"AF",MS:"NA",MT:"EU",MU:"AF",MV:"AS",MW:"AF",MX:"NA",MY:"AS",MZ:"AF",NA:"AF",NC:"OC",NE:"AF",NF:"OC",NG:"AF",NI:"NA",NL:"EU",NO:"EU",NP:"AS",NR:"OC",NU:"OC",NZ:"OC",OM:"AS",PA:"NA",PE:"SA",PF:"OC",PG:"OC",PH:"AS",PK:"AS",PL:"EU",PM:"NA",PN:"OC",PR:"NA",PS:"AS",PT:"EU",PW:"OC",PY:"SA",QA:"AS",RE:"AF",RO:"EU",RS:"EU",RU:"EU",RW:"AF",SA:"AS",SB:"OC",SC:"AF",SD:"AF",SE:"EU",SG:"AS",SH:"AF",SI:"EU",SJ:"EU",SK:"EU",SL:"AF",SM:"EU",SN:"AF",SO:"AF",SR:"SA",SS:"AF",ST:"AF",SV:"NA",SX:"NA",SY:"AS",SZ:"AF",TC:"NA",TD:"AF",TF:"AN",TG:"AF",TH:"AS",TJ:"AS",TK:"OC",TL:"OC",TM:"AS",TN:"AF",TO:"OC",TR:"AS",TT:"NA",TV:"OC",TW:"AS",TZ:"AF",UA:"EU",UG:"AF",UM:"OC",US:"NA",UY:"SA",UZ:"AS",VA:"EU",VC:"NA",VE:"SA",VG:"NA",VI:"NA",VN:"AS",VU:"OC",WF:"OC",WS:"OC",XK:"EU",YE:"AS",YT:"AF",ZA:"AF",ZM:"AF",ZW:"AF"};
+  var CONTINENTS = [{k:'AF',name:'Africa',la:1.5,lo:20},{k:'AS',name:'Asia',la:34,lo:90},
+    {k:'EU',name:'Europe',la:52,lo:15},{k:'NA',name:'North America',la:45,lo:-100},
+    {k:'SA',name:'South America',la:-15,lo:-60},{k:'OC',name:'Oceania',la:-25,lo:145},
+    {k:'AN',name:'Antarctica',la:-78,lo:0}];
+  var SHORT_NAME = {
+    "The United States Of America": "United States",
+    "The Russian Federation": "Russia",
+    "The United Kingdom Of Great Britain And Northern Ireland": "United Kingdom",
+    "The Netherlands": "Netherlands",
+    "The Philippines": "Philippines",
+    "The United Arab Emirates": "UAE",
+    "The Democratic Republic Of The Congo": "DR Congo",
+    "The Republic Of The Congo": "Congo",
+    "The Dominican Republic": "Dominican Rep.",
+    "The Bolivarian Republic Of Venezuela": "Venezuela",
+    "The Republic Of Korea": "South Korea",
+    "The Democratic People'S Republic Of Korea": "North Korea",
+    "The Islamic Republic Of Iran": "Iran",
+    "The Syrian Arab Republic": "Syria",
+    "The United Republic Of Tanzania": "Tanzania",
+    "The Czech Republic": "Czechia",
+    "The Republic Of Moldova": "Moldova",
+    "The Republic Of North Macedonia": "North Macedonia",
+    "The Republic Of Serbia": "Serbia",
+    "The Republic Of Colombia": "Colombia",
+    "The Republic Of Peru": "Peru",
+    "The Republic Of Argentina": "Argentina",
+    "The Plurinational State Of Bolivia": "Bolivia",
+    "The Oriental Republic Of Uruguay": "Uruguay",
+    "The Republic Of Paraguay": "Paraguay",
+    "The Republic Of Ecuador": "Ecuador",
+    "The Republic Of Chile": "Chile",
+    "The Republic Of Guatemala": "Guatemala",
+    "The Republic Of Honduras": "Honduras",
+    "The Republic Of Nicaragua": "Nicaragua",
+    "The Republic Of Costa Rica": "Costa Rica",
+    "The Republic Of Panama": "Panama",
+    "The Republic Of Cuba": "Cuba",
+    "The Republic Of Haiti": "Haiti",
+    "The Republic Of Kenya": "Kenya",
+    "The Republic Of Uganda": "Uganda",
+    "The Republic Of Ghana": "Ghana",
+    "The Republic Of Nigeria": "Nigeria",
+    "The Republic Of South Africa": "South Africa",
+    "The Republic Of Zambia": "Zambia",
+    "The Republic Of Zimbabwe": "Zimbabwe",
+    "The Republic Of Cameroon": "Cameroon",
+    "The Republic Of Senegal": "Senegal",
+    "The Republic Of Mali": "Mali",
+    "The Republic Of Angola": "Angola",
+    "The Republic Of Mozambique": "Mozambique",
+    "The Republic Of Namibia": "Namibia",
+    "The Republic Of Botswana": "Botswana",
+    "The Kingdom Of Morocco": "Morocco",
+    "The People'S Democratic Republic Of Algeria": "Algeria",
+    "The Republic Of Tunisia": "Tunisia",
+    "The Republic Of Sudan": "Sudan",
+    "The Republic Of South Sudan": "South Sudan",
+    "The Republic Of Madagascar": "Madagascar",
+    "The Republic Of Mauritius": "Mauritius",
+    "The Republic Of Turkey": "Türkiye",
+    "The Republic Of India": "India",
+    "The Republic Of Indonesia": "Indonesia",
+    "The Republic Of Singapore": "Singapore",
+    "The Republic Of The Union Of Myanmar": "Myanmar",
+    "The Kingdom Of Thailand": "Thailand",
+    "The Socialist Republic Of Viet Nam": "Vietnam",
+    "The Republic Of Kazakhstan": "Kazakhstan",
+    "The Republic Of Uzbekistan": "Uzbekistan",
+    "The Republic Of Azerbaijan": "Azerbaijan",
+    "The Republic Of Armenia": "Armenia",
+    "The Republic Of Georgia": "Georgia",
+    "The Republic Of Belarus": "Belarus",
+    "The Republic Of Ukraine": "Ukraine",
+    "The Republic Of Poland": "Poland",
+    "The Republic Of Romania": "Romania",
+    "The Republic Of Bulgaria": "Bulgaria",
+    "The Republic Of Croatia": "Croatia",
+    "The Republic Of Slovenia": "Slovenia",
+    "The Republic Of Slovakia": "Slovakia",
+    "The Republic Of Hungary": "Hungary",
+    "The Republic Of Austria": "Austria",
+    "The Swiss Confederation": "Switzerland",
+    "The Republic Of Finland": "Finland",
+    "The Kingdom Of Sweden": "Sweden",
+    "The Kingdom Of Norway": "Norway",
+    "The Kingdom Of Denmark": "Denmark",
+    "The Kingdom Of Belgium": "Belgium",
+    "The Republic Of Portugal": "Portugal",
+    "The Hellenic Republic": "Greece",
+    "The Republic Of Cyprus": "Cyprus",
+    "The Republic Of Malta": "Malta",
+    "The Republic Of Iceland": "Iceland",
+    "The Republic Of Ireland": "Ireland",
+    "The Republic Of Estonia": "Estonia",
+    "The Republic Of Latvia": "Latvia",
+    "The Republic Of Lithuania": "Lithuania",
+    "The Republic Of Albania": "Albania",
+    "The Republic Of Kosovo": "Kosovo",
+    "The Republic Of Montenegro": "Montenegro",
+    "The Republic Of Bosnia And Herzegovina": "Bosnia",
+    "The Republic Of Iraq": "Iraq",
+    "The Republic Of Lebanon": "Lebanon",
+    "The Republic Of Jordan": "Jordan",
+    "The State Of Israel": "Israel",
+    "The Kingdom Of Saudi Arabia": "Saudi Arabia",
+    "The Republic Of Yemen": "Yemen",
+    "The Sultanate Of Oman": "Oman",
+    "The State Of Qatar": "Qatar",
+    "The State Of Kuwait": "Kuwait",
+    "The Kingdom Of Bahrain": "Bahrain",
+    "The Republic Of Afghanistan": "Afghanistan",
+    "The Islamic Republic Of Pakistan": "Pakistan",
+    "The People'S Republic Of Bangladesh": "Bangladesh",
+    "The Democratic Socialist Republic Of Sri Lanka": "Sri Lanka",
+    "The Republic Of Nepal": "Nepal",
+    "The Republic Of The Maldives": "Maldives",
+    "The Republic Of The Fiji Islands": "Fiji",
+    "The Independent State Of Samoa": "Samoa",
+    "The Republic Of Vanuatu": "Vanuatu",
+    "The Republic Of The Marshall Islands": "Marshall Is.",
+    "The Federated States Of Micronesia": "Micronesia",
+    "The Republic Of Palau": "Palau",
+    "The Republic Of Nauru": "Nauru",
+    "The Republic Of Kiribati": "Kiribati",
+    "The Kingdom Of Tonga": "Tonga",
+    "The Republic Of The Solomon Islands": "Solomon Is.",
+    "The Republic Of Panama ": "Panama",
+    "The Republic Of China": "Taiwan",
+    "The Hong Kong Special Administrative Region Of China": "Hong Kong",
+    "The Macao Special Administrative Region Of China": "Macao",
+    "The Territories Of The United States Minor Outlying Islands": "US Minor Is."
+  };
+  var GEO = (function () {
+    var DER = null, derSig = "";
+    function derMap() {
+      var g = window.RB_GEO || {};
+      var sig = (g.der || []).length + ":" + (g.pts || []).length;
+      if (DER && derSig === sig) return DER;
+      derSig = sig; DER = new Map();
+      (g.der || []).forEach(function (d) { if (Array.isArray(d)) DER.set(d[0] | 0, d[1] | 0); });
+      return DER;
+    }
+    return {
+      CONT_OF: CONT_OF, CONTINENTS: CONTINENTS, SHORT_NAME: SHORT_NAME,
+      TIER_CITY: 1, TIER_REGION: 2, TIER_COUNTRY: 3, TIER_STRAY: 4,
+      /* 0 = no derived row: the mirror's own coordinate, which is a real place */
+      tierOf: function (catalogueIndex) { return derMap().get(catalogueIndex | 0) || 0; },
+      /* A blank country code is not "unnamed" - it is a real bucket of ~4,700 stations that
+         used to be drawn with no label at all. Legal-form names get their everyday name, and
+         the canvas glyph atlas only carries latin-1, so anything above it becomes a space. */
+      label: function (cc) {
+        if (!cc) return "Unknown country";
+        var n = ccName[cc] || cc || "";
+        n = SHORT_NAME[n] || n;
+        return String(n).replace(/[^\x20-\xFF]/g, " ").replace(/\s+/g, " ").trim();
+      }
+    };
+  })();
+
   return {
     VERSION: "1.0",
     hooks: hooks,
@@ -488,6 +653,7 @@ window.WR = (function () {
     CAP: CAP,
     REDUCED: REDUCED,
     esc: esc, fmt: fmt, flag: flag, tokens: tokens, normLang: normLang, ccName: ccName, countryOf: countryOf,
+    geo: GEO,
     copyText: copyText,
     data: {
       META: META, ALL: ALL,

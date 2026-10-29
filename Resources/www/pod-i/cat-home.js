@@ -1,0 +1,1 @@
+window.POD_SHELF=window.POD_SHELF||{};window.POD_SHELF["cat:home"]=[["The Crackman Podcast","https://app.talkshoe.com/rss-the-crackman-podcast.xml","https://show-profile-images.s3.amazonaws.com/production/3451/the-crackman-podcast_1531863896_itunes.png","home","en",480]];

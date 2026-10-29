@@ -1,0 +1,1 @@
+window.POD_SHELF=window.POD_SHELF||{};window.POD_SHELF["cat:astronomy"]=[["Pod pokrovko","https://podcast.rtvslo.si/pod_pokrovko.xml","https://img.rtvcdn.si/_up/ava/ava_misc/show_logos/152363420/logo_1.jpg","astronomy","sl",100]];

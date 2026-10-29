@@ -31,7 +31,15 @@ PROJECT = os.path.dirname(HERE)
 WWW = os.path.join(PROJECT, "Resources", "www")
 
 SITE_FILES = ["index.html", "stations.js", "countries.js", "viz.js", "geo.js", "worldgeo.js", "globe.js",
-              "wr-core.js", "world.html", "world.js", "globeviz.js"]
+              "wr-core.js", "world.html", "world.js", "globeviz.js",
+              # 2.0.0: the podcast directory, its shelf manifest and its local corpus.
+              "podcasts.html", "pod-index.js", "pod-search.js"]
+
+# The directory's shelves, one file per shelf: 81 of them, so the check samples the first and
+# last (a whole-folder recursion would be 81 x 2 checks that all say the same thing) plus the
+# count, which is what would actually go wrong if the copy were interrupted.
+PODI_SAMPLE = ["pod-i/cat-animation.js", "pod-i/lang-zh.js"]
+PODI_EXPECT = 81
 
 # The World View's vendored engine and glyphs: a folder on the site, shipped as www/maplibre/.
 MAPLIBRE_FILES = ["maplibre/maplibre-gl.js", "maplibre/maplibre-gl.css",
@@ -94,7 +102,7 @@ def main():
           info.get("CFBundleIdentifier") == "com.moddys.worldradio",
           info.get("CFBundleIdentifier"))
     check("display name",
-          info.get("CFBundleDisplayName") == "MODDYS World Radio",
+          info.get("CFBundleDisplayName") == "Radio & Podcasts",
           info.get("CFBundleDisplayName"))
 
     # The install-time floor. Read compat.json rather than hard-code the number twice.
@@ -137,6 +145,22 @@ def main():
         check("%s is byte-identical to the repo copy" % name,
               sha256(source) == sha256(shipped),
               "%s vs %s" % (sha256(source)[:16], sha256(shipped)[:16]))
+
+    # The podcast directory's shelves: sampled (see PODI_SAMPLE) plus the count, which is what
+    # a half-finished copy - or an XcodeGen folder reference that dropped a subfolder - breaks.
+    for name in PODI_SAMPLE:
+        source = os.path.join(WWW, name)
+        shipped = find_resource(app, name)
+        check("ships %s" % name, shipped is not None)
+        if shipped is None:
+            continue
+        check("%s is byte-identical to the repo copy" % name,
+              sha256(source) == sha256(shipped),
+              "%s vs %s" % (sha256(source)[:16], sha256(shipped)[:16]))
+    shipped_podi = os.path.join(app, "www", "pod-i")
+    shelf_count = len(os.listdir(shipped_podi)) if os.path.isdir(shipped_podi) else 0
+    check("all %d shelf files ride in the bundle" % PODI_EXPECT,
+          shelf_count == PODI_EXPECT, shelf_count)
 
     shim = find_resource(app, "_shell_shim.js")
     if shim:

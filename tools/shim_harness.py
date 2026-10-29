@@ -13,7 +13,7 @@ What this covers, per bridge:
   web       neither bridge: the check panel must degrade to "not reported", not crash
 
 Usage:
-    python3 tools/shim_harness.py                 # uses ../radio-browser/deploy/index.html
+    python3 tools/shim_harness.py                 # the page the app actually loads
     python3 tools/shim_harness.py --page PATH
     python3 tools/shim_harness.py --headed        # watch it
 """
@@ -32,13 +32,17 @@ SHIM_CANDIDATES = [
 ]
 SHIM = next((p for p in SHIM_CANDIDATES if os.path.isfile(p)), SHIM_CANDIDATES[0])
 
-# The bundled copies are byte-identical to what the site serves, so either will do - prefer the
-# live site folder when it is on this machine, else the copy inside whichever project this is
-# (the Android repo keeps it under app/src/main/assets, the iOS repo under Resources/www).
+# The page with the player on it. NOT deploy/index.html: since 2026-10-26 that is the site's
+# front DOOR (four cards, no player), so a harness pointed at it waits for a #bar that is never
+# coming and reports "player sheet built: FAIL" on a perfectly good shim - which is exactly what
+# happened between 2026-10-26 and 2026-10-30. The app's own bundled index.html IS the radio page
+# (sync-assets writes radio.html into index.html), so that is the first choice; the site's
+# radio.html is the same bytes when the bundle is in sync.
 PAGE_CANDIDATES = [
-    r"C:\Users\Moddy\radio-browser\deploy\index.html",
     os.path.join(PROJECT, "app", "src", "main", "assets", "www", "index.html"),
+    r"C:/Users/Moddy/radio-browser/deploy/radio.html",
     os.path.join(PROJECT, "Resources", "www", "index.html"),
+    os.path.join(PROJECT, "Resources", "www", "radio.html"),
 ]
 DEFAULT_PAGE = next((p for p in PAGE_CANDIDATES if os.path.isfile(p)), PAGE_CANDIDATES[0])
 
@@ -248,6 +252,33 @@ def run_platform(page, name, global_name, setup, device, headed):
     check("%s: it is handed over as an absolute URL" % name,
           len(urls) == 2 and urls[1][1].startswith("file://") and
           urls[1][1].endswith("downloads.html"), urls[1][1] if len(urls) == 2 else None)
+
+    # 2.0.0: the podcast directory, and the radio it returns to, ship INSIDE the app - so those
+    # two links must be FOLLOWED by the WebView. The shim's click guard is a capture listener on
+    # document, so a bubble listener sees its verdict as defaultPrevented: true = handed to the
+    # browser, false = the page navigates. The bubble listener then cancels the navigation, so
+    # this check reads the decision without loading a 107 KB page four times.
+    # (The hand-to-the-browser case cannot be observed from the anchor: the shim stops
+    # propagation for it, which is why the "handed to the native side" check above exists and
+    # why this loop only covers the two pages the app carries.)
+    for target in ("podcasts.html", "radio.html"):
+        decision = page.evaluate("""(t) => {
+          const a = document.createElement('a');
+          a.href = t;
+          a.textContent = 'probe';
+          a.style.position = 'absolute';
+          a.style.left = '-9999px';
+          document.body.appendChild(a);
+          let verdict = null;
+          a.addEventListener('click', function (ev) {
+            verdict = ev.defaultPrevented;      // the shim's capture listener has already run
+            ev.preventDefault();                // and we never actually navigate
+          }, false);
+          a.click();
+          a.remove();
+          return verdict;
+        }""", target)
+        check("%s: %s is followed inside the app" % (name, target), decision is False, decision)
 
     # The pager inside the app. Reported from a phone: the arrows did nothing at all. The page
     # turns them on a click, and a WebView can drop the click that should follow a touch - so the

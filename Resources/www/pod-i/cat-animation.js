@@ -1,0 +1,1 @@
+window.POD_SHELF=window.POD_SHELF||{};window.POD_SHELF["cat:animation"]=[["The Simpai Podcast","https://feeds.resonaterecordings.com/the-simpai-podcast","https://prod-podcast-media-public.nyc3.cdn.digitaloceanspaces.com/migrations/com-resonaterecordings-public/cover-art/b5uhPHyAehrw3cecHqGqnBsTDvTPn6n3WUYCqCp5.jpg","animation","en",68]];

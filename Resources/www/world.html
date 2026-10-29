@@ -7,9 +7,11 @@
 <meta name="description" content="MODDYS World Radio — the World View: every station on one spinning globe. Search, explore and play thousands of internet radio stations by place.">
 <meta name="robots" content="index, follow">
 <title>MODDYS World Radio — World View</title>
+<link rel="canonical" href="https://moddys.net/world.html">
+
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📻</text></svg>">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="apple-mobile-web-app-title" content="World Radio">
+<meta name="apple-mobile-web-app-title" content="MODDYS Radio">
 <style>
 :root{
   --bg:#101117; --bg2:#171824; --panel:#1a1b28; --panel2:#22233a; --line:#2e3050;
@@ -324,7 +326,7 @@ a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
 <canvas id="gViz" aria-hidden="true"></canvas>
 
 <div class="topbar">
-  <a id="btnList" class="btn" href="index.html" title="Back to the station list">📋 LIST</a>
+  <a id="btnList" class="btn" href="radio.html" title="Back to the station list">📋 LIST</a>
   <span class="brand">🌍 MODDYS <b>WORLD VIEW</b></span>
   <button class="btn crowbtn" id="btnFold" aria-expanded="true" aria-label="Hide the search and filters" title="Hide the search, filters and channels">▴</button>
   <input id="q" type="search" size="12" placeholder="Search stations, cities, countries…  ( / )" autocomplete="off">
@@ -347,6 +349,7 @@ a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
   <button class="gbtn" id="btnIn" title="Zoom in">＋</button>
   <button class="gbtn" id="btnOut" title="Zoom out">－</button>
   <button class="gbtn" id="btnHome" title="Back to the whole world view">⟲</button>
+  <button class="gbtn" id="btnLock" aria-pressed="false" title="Lock the globe: stops a drag or a page scroll from spinning the map (L)">🔓</button>
   <button class="gbtn" id="btnFly" hidden title="Fly to the results — the centre of what your search and filters point at">◎</button>
   <button class="gbtn" id="btnRand" title="Random flight — fly somewhere and tune it in">🎲</button>
   <button class="gbtn" id="btnLayers" aria-expanded="false" title="Layers — day / night, density, saved, recently played">☰</button>
@@ -378,7 +381,7 @@ a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
   <div id="placeLive" hidden></div>
   <div id="placeFoot">
     <button class="btn" id="placeRand" hidden title="Play a random one of the stations with no coordinates — the globe has nowhere to fly, so it just tunes one in">🎲 Play a random one</button>
-    <a class="btn" id="placeListLink" href="index.html" title="Open this station in the stations list">📋 Open in the list</a>
+    <a class="btn" id="placeListLink" href="radio.html" title="Open this station in the stations list">📋 Open in the list</a>
     <a class="btn" id="placeSite" href="#" target="_blank" rel="noopener" hidden>🌐 Website</a>
     <button class="btn" id="placeCopy" title="Copy the stream URL">⧉ Copy stream</button>
     <button class="btn" id="placeCheck" hidden title="Ask the station's server right now, without playing it">🛰 Check now</button>
@@ -410,9 +413,10 @@ a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
 <script src="countries.js"></script>
 <script src="stations.js"></script>
 <script src="geo.js"></script>
+<script src="places.js"></script>
 <script src="viz.js"></script>
-<script src="wr-core.js?v=20261015a"></script>
+<script src="wr-core.js?v=20261030d"></script>
 <script src="globeviz.js?v=20261013b"></script>
-<script src="world.js?v=20261015b"></script>
+<script src="world.js?v=20261030e"></script>
 </body>
 </html>

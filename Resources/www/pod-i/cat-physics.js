@@ -1,0 +1,1 @@
+window.POD_SHELF=window.POD_SHELF||{};window.POD_SHELF["cat:physics"]=[["My Nuclear Life","https://feeds.resonaterecordings.com/my-nuclear-life","https://prod-podcast-media-public.nyc3.cdn.digitaloceanspaces.com/migrations/com-resonaterecordings-public/cover-art/reg0O0vIjsa0qNV3uG79rajbVmV9cc9yxQZfWkT8.jpg","physics","en",85]];

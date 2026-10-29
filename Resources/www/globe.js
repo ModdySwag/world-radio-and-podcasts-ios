@@ -24,6 +24,9 @@ window.GlobeView = (function () {
   "use strict";
 
   var D2R = Math.PI / 180, R2D = 180 / Math.PI;
+  /* below this zoom the globe names continents; above it, countries (world.html's map
+     does the same with minzoom, but the canvas has to pick the list itself). */
+  var CONT_ZOOM = 1.45;
   var REDUCED = false;
   try { REDUCED = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) {}
 
@@ -47,6 +50,7 @@ window.GlobeView = (function () {
   var qFrames = 0;
 
   var pts = [], idxToPt = new Map(), clusters = [], labels = [], tier = -1;
+  var contLabels = [], ctryLabels = [];   /* the label ladder: continents -> countries */
   var proj = null, projR = 0, projCx = 0, projCy = 0;
   var cb = { select: null, hover: null, view: null };
 
@@ -105,13 +109,15 @@ window.GlobeView = (function () {
     tier = -1;
   }
   function setLabels(list) {
-    labels = [];
+    labels = []; contLabels = []; ctryLabels = [];
     var src = list || [];
     for (var i = 0; i < src.length; i++) {
       var l = src[i], la = +l.la, lo = +l.lo;
       if (!isFinite(la) || !isFinite(lo)) continue;
-      labels.push({ name: String(l.name || ""), n: l.n | 0, la: la, lo: lo,
-                    cl: cosd(lo), sl: sind(lo), mu: cosd(la), nu: sind(la) });
+      var o = { name: String(l.name || ""), n: l.n | 0, la: la, lo: lo, cont: l.cont ? 1 : 0,
+                cl: cosd(lo), sl: sind(lo), mu: cosd(la), nu: sind(la) };
+      labels.push(o);
+      (o.cont ? contLabels : ctryLabels).push(o);          /* both keep the caller's size order */
     }
   }
   function setNow(i, la, lo) {
@@ -357,19 +363,34 @@ window.GlobeView = (function () {
   }
 
   function drawLabels(now, cx, cy, R, c0, s0, cf, sf) {
-    var placed = [], k, obj, dl, dc, z, x, y, alpha, txt;
+    var placed = [], plates = [], k, obj, dl, dc, z, x, y, alpha, txt;
+    /* Reserve the bubble boxes first: a continent name printed through a cluster count reads as
+       noise, so the names step around the bubbles instead of fighting them. */
+    for (k = 0; k < clusters.length; k++) {
+      var cb = clusters[k];
+      if (!cb._vis || cb._r < 7.5 || cb.n < 3) continue;
+      placed.push({ x: cb._x - cb._r, y: cb._y - cb._r, w: cb._r * 2, h: cb._r * 2 });
+    }
     ctx.font = "600 10.5px system-ui,-apple-system,'Segoe UI',Roboto,sans-serif";
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    if (zoom < 1.9 && labels.length) {
-      for (k = 0; k < labels.length; k++) {
-        obj = labels[k];
+    /* The label ladder, the same one world.html's map runs: the whole sphere names its land
+       masses; country names take over as it turns in; the place bubbles label themselves past
+       that. One list, chosen by zoom, so continents never fight country names for the middle of
+       Europe (the canvas has no collision engine beyond putLabel()). */
+    /* Continents keep the whole sphere named; countries take over as it turns in, capped so the
+       densest continent does not become a wall of text. Both get a plate: a name printed through
+       a cluster count is unreadable, and dodging every bubble leaves nothing in Europe. */
+    var list = zoom < CONT_ZOOM ? contLabels : (zoom < 1.9 ? ctryLabels.slice(0, 12) : []);
+    if (list.length) {
+      for (k = 0; k < Math.min(list.length, 34); k++) {
+        obj = list[k];
         dl = obj.sl * c0 - obj.cl * s0; dc = obj.cl * c0 + obj.sl * s0;
         z = sf * obj.nu + cf * obj.mu * dc;
         if (z <= 0.08) continue;
         x = cx + R * obj.mu * dl; y = cy - R * (cf * obj.nu - sf * obj.mu * dc);
         alpha = clamp(z * 2.6, 0, 0.95);
         txt = obj.name + (obj.n > 1 ? " · " + obj.n : "");
-        if (putLabel(placed, txt, x, y, alpha)) { /* drawn */ }
+        drawPlate(plates, txt, x, y, alpha);
       }
     } else {
       var shown = 0;
@@ -383,21 +404,61 @@ window.GlobeView = (function () {
     }
   }
 
-  function putLabel(placed, txt, x, y, alpha) {
+  /* the continent plates: names that must survive a dense map, so they carry their own backing */
+  function roundBox(box, r) {
+    if (ctx.roundRect) { ctx.beginPath(); ctx.roundRect(box.x, box.y, box.w, box.h, r); return; }
+    ctx.beginPath();
+    ctx.moveTo(box.x + r, box.y);
+    ctx.arcTo(box.x + box.w, box.y, box.x + box.w, box.y + box.h, r);
+    ctx.arcTo(box.x + box.w, box.y + box.h, box.x, box.y + box.h, r);
+    ctx.arcTo(box.x, box.y + box.h, box.x, box.y, r);
+    ctx.arcTo(box.x, box.y, box.x + box.w, box.y, r);
+    ctx.closePath();
+  }
+  function drawPlate(plates, txt, x, y, alpha) {
     var w = ctx.measureText(txt).width;
-    var box = { x: x - w / 2 - 3, y: y - 7, w: w + 6, h: 14 };
-    for (var i = 0; i < placed.length; i++) {
-      var b = placed[i];
+    var box = { x: x - w / 2 - 6, y: y - 9, w: w + 12, h: 18 };
+    for (var i = 0; i < plates.length; i++) {          /* plates only yield to other plates */
+      var b = plates[i];
       if (box.x < b.x + b.w && box.x + box.w > b.x && box.y < b.y + b.h && box.y + box.h > b.y) return false;
     }
-    placed.push(box);
+    plates.push(box);
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.shadowColor = "rgba(0,0,0,.75)"; ctx.shadowBlur = 3;
-    ctx.fillStyle = "#d9f4ff";
+    roundBox(box, 5);
+    ctx.fillStyle = "rgba(7,11,26,.74)"; ctx.fill();
+    ctx.strokeStyle = "rgba(31,227,255,.22)"; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = "#e8f7ff";
     ctx.fillText(txt, x, y);
     ctx.restore();
     return true;
+  }
+
+  /* Small nudge set, in the spirit of a map label engine: straight on first, then a step up,
+     down and sideways. A name that finds no hole at all is dropped - clutter is worse than a
+     missing name, and every continent has another zoom where it fits. */
+  var LBL_OFFS = [[0, 0], [0, -15], [0, 15], [20, 0], [-20, 0], [0, -28], [0, 28], [34, 0], [-34, 0]];
+  function putLabel(placed, txt, x, y, alpha) {
+    var w = ctx.measureText(txt).width;
+    for (var o = 0; o < LBL_OFFS.length; o++) {
+      var bx = x + LBL_OFFS[o][0], by = y + LBL_OFFS[o][1];
+      var box = { x: bx - w / 2 - 3, y: by - 7, w: w + 6, h: 14 };
+      var clash = false;
+      for (var i = 0; i < placed.length; i++) {
+        var b = placed[i];
+        if (box.x < b.x + b.w && box.x + box.w > b.x && box.y < b.y + b.h && box.y + box.h > b.y) { clash = true; break; }
+      }
+      if (clash) continue;
+      placed.push(box);
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.shadowColor = "rgba(0,0,0,.75)"; ctx.shadowBlur = 3;
+      ctx.fillStyle = "#d9f4ff";
+      ctx.fillText(txt, bx, by);
+      ctx.restore();
+      return true;
+    }
+    return false;
   }
 
   /* ---------------- picking ---------------- */

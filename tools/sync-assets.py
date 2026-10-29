@@ -28,11 +28,22 @@ DEST = os.path.join(PROJECT, "Resources", "www")
 
 # popout.html is deliberately not shipped: it opens a second window for the single-owner
 # handover, and a phone has no second window.
-FILES = ["index.html", "stations.js", "countries.js", "viz.js", "geo.js", "worldgeo.js", "globe.js",
-         "wr-core.js", "world.html", "world.js", "globeviz.js"]
+FILES = ["index.html", "radio.html", "stations.js", "countries.js", "viz.js", "geo.js", "worldgeo.js", "globe.js",
+         "wr-core.js", "world.html", "world.js", "globeviz.js",
+         # 2.0.0: the podcast directory - the page, the shelf manifest and the local corpus.
+         "podcasts.html", "pod-index.js", "pod-search.js",
+         # radio.html loads this for its download block, which hides itself in-app
+         # (html.wr-app #wrDownload). Without it the bundle 404s on every load.
+         "app-install.js"]
 
-# The full-page World View's vendored engine - a folder, copied recursively.
-DIRS = ["maplibre"]
+# The site's radio page moved to radio.html on 2026-10-26 (the front door took /).
+# The app still loads www/index.html, so the radio is written twice: index.html (what the
+# shell opens) and radio.html (so world.html's "Open in the list" links resolve in-app).
+SOURCE_OF = {"index.html": "radio.html", "radio.html": "radio.html"}
+
+# The full-page World View's vendored engine - a folder, copied recursively. pod-i/ is the
+# podcast directory's 81 shelf files (13 MB), loaded one shelf at a time.
+DIRS = ["maplibre", "pod-i"]
 
 DEFAULT_SITES = [
     r"C:\Users\Moddy\radio-browser\deploy",
@@ -61,7 +72,7 @@ def find_site(explicit):
 def from_url(dest):
     os.makedirs(dest, exist_ok=True)
     for name in FILES:
-        url = LIVE + name
+        url = LIVE + SOURCE_OF.get(name, name)
         out = os.path.join(dest, name)
         print(f"  fetching {url}")
         with urllib.request.urlopen(url, timeout=120) as r, open(out, "wb") as f:
@@ -88,14 +99,14 @@ def main():
             print("Could not find the site folder. Pass --site DIR or --from-url.", file=sys.stderr)
             return 1
         print(f"syncing from {site}")
-        missing = [f for f in FILES if not os.path.isfile(os.path.join(site, f))]
+        missing = [f for f in FILES if not os.path.isfile(os.path.join(site, SOURCE_OF.get(f, f)))]
         if missing:
             print(f"  missing in source: {', '.join(missing)}", file=sys.stderr)
             return 1
         if not a.check:
             os.makedirs(DEST, exist_ok=True)
             for name in FILES:
-                shutil.copyfile(os.path.join(site, name), os.path.join(DEST, name))
+                shutil.copyfile(os.path.join(site, SOURCE_OF.get(name, name)), os.path.join(DEST, name))
                 print(f"  copied {name}")
             for name in DIRS:
                 src_dir = os.path.join(site, name)

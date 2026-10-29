@@ -83,6 +83,15 @@
   var RBG = (window.RB_GEO && Array.isArray(window.RB_GEO.pts)) ? window.RB_GEO.pts : [];
   var geoBy = new Map();
   for (var gi = 0; gi < RBG.length; gi++) { var gp = RBG[gi]; if (Array.isArray(gp) && gp.length === 3) geoBy.set(gp[0] | 0, gp); }
+  /* Which of those coordinates are precise, and which are a country centroid (tier 3) or the
+     Random Land placeholder (tier 4). Both are COUNTED as placed — a station without a dot is
+     still not "unmapped" — but they are not drawn individually: 32k points stacked on 245
+     country centroids added no information and cost the page its life under load. */
+  var DER_T = new Map();
+  (window.RB_GEO && Array.isArray(window.RB_GEO.der) ? window.RB_GEO.der : []).forEach(function (d) {
+    if (Array.isArray(d)) DER_T.set(d[0] | 0, d[1] | 0);
+  });
+  var TIER_CITY = 1, TIER_REGION = 2, TIER_COUNTRY = 3, TIER_STRAY = 4;
 
   var wpts = [];                 // the located, filtered set (probes + fly targets)
   var idxGeo = new Map();        // station uuid -> [la, lo] for the now-playing marker
@@ -95,11 +104,11 @@
     return p ? [p[1], p[2]] : null;
   }
 
-  function ccLabel(cc) {
-    var n = WR.ccName[cc] || cc || "";
-    n = String(n).replace(/[^\x20-\xFF]/g, " ").replace(/\s+/g, " ").trim();   // the glyph PBF is 0-255 only
-    return n;
-  }
+  /* ISO country -> continent (GeoNames country table). Used only to total the continent labels. */
+  var CONT_OF = WR.geo.CONT_OF, CONTINENTS = WR.geo.CONTINENTS, SHORT_NAME = WR.geo.SHORT_NAME;   /* one copy, in wr-core.js, shared with the app's own globe */
+  
+  
+  function ccLabel(cc) { return WR.geo.label(cc); }   /* one implementation, in wr-core.js */
 
   var lastData = null;
   function refreshWorld() {
@@ -114,7 +123,9 @@
       var g = geoOf(s, oi, ccOff); if (!g) { un.push(oi); continue; }
       located++;
       var la = +g[0], lo = +g[1];
-      pts.push({ i: oi, la: la, lo: lo, cu: WR.data.isCustom(s), pk: WR.filters.playable(s), st: s.s || "", cc: s.cc || "" });
+      if ((DER_T.get(oi - ccOff) || 0) < TIER_COUNTRY) {
+        pts.push({ i: oi, la: la, lo: lo, cu: WR.data.isCustom(s), pk: WR.filters.playable(s), st: s.s || "", cc: s.cc || "" });
+      }
       idxGeo.set(s.i, g);
       var rla = la * RAD, rlo = lo * RAD, mu = Math.cos(rla);
       var vx = mu * Math.cos(rlo), vy = mu * Math.sin(rlo), vz = Math.sin(rla);
@@ -124,13 +135,26 @@
     wpts = pts; lastLocated = located; lastShown = shown; lastUnmapped = un;
     var slen = Math.sqrt(sx * sx + sy * sy + sz * sz);
     worldCentroid = slen ? { la: Math.asin(sz / slen) * R2D, lo: Math.atan2(sy, sx) * R2D } : null;
-    var labels = [];
-    Array.from(byCc.entries()).sort(function (a, b) { return b[1].n - a[1].n; }).slice(0, 24).forEach(function (en) {
+    /* EVERY country gets a label, biggest first — the old .slice(0, 24) silently dropped 202
+       countries (all of Africa's smaller ones among them) while still drawing their dots, so the
+       map read as "unnamed country" over a real cluster. MapLibre culls what does not fit at the
+       current zoom by itself, and the canvas engine takes the head of the list, so no cap here. */
+    var labels = [], byCont = {};
+    Array.from(byCc.entries()).sort(function (a, b) { return b[1].n - a[1].n; }).forEach(function (en) {
       var m = en[1], len = Math.sqrt(m.x * m.x + m.y * m.y + m.z * m.z) || 1;
       var name = ccLabel(en[0]);
       if (!name) return;
       labels.push({ name: name, n: m.n, cc: en[0], la: Math.asin(m.z / len) * R2D, lo: Math.atan2(m.y, m.x) * R2D });
+      var cont = CONT_OF[en[0]] || "";
+      if (cont) { var c = byCont[cont] || (byCont[cont] = { n: 0 }); c.n += m.n; }
     });
+    /* Continents, so a zoomed-out globe names its land masses instead of a scatter of codes.
+       They ride the same label tier with cont:1 so a later style pass can set them larger. */
+    CONTINENTS.forEach(function (c) {
+      var agg = byCont[c.k];
+      if (agg && agg.n) labels.push({ name: c.name, n: agg.n, cc: "", la: c.la, lo: c.lo, cont: 1 });
+    });
+    labels.sort(function (x, y) { return y.n - x.n; });   // continents first, then by size
     lastLabels = labels.length;
     lastData = { pts: pts, labels: labels };
     pushData();
@@ -159,15 +183,36 @@
     var c = $("#countChip"), n = lastUnmapped.length;
     c.innerHTML = "<b>" + WR.fmt(lastLocated) + "</b> on the globe · <b>" + WR.fmt(lastShown) + "</b> shown" +
       (n ? ' · <button type="button" id="btnUnmapped" class="cu" title="Browse the ' + WR.fmt(n) + ' stations with no coordinates — search, play and save them right here (shortcut: u)"><span aria-hidden="true">📍</span> <b>' + WR.fmt(n) + "</b> unmapped ›</button>" : "") + liveSeg();
-    c.title = "Every located station in the current search and filters" +
+    c.title = "Every located station in the current search and filters — country-level placements are counted here, but drawn as their country's cluster rather than as individual dots" +
       (n ? " — " + WR.fmt(n) + " of the shown stations have no coordinates yet; the 📍 unmapped button browses them right here" : "");
     updateFlyBtn();
     syncTopH();   /* the chip's height just moved - the phone chrome anchors under it */
   }
+  function localTimeAt(lon) {
+    var d = new Date();
+    var mins = d.getUTCHours() * 60 + d.getUTCMinutes() + Math.round(lon / 15 * 60);
+    mins = ((mins % 1440) + 1440) % 1440;
+    var hh = Math.floor(mins / 60), mm = mins % 60;
+    return (hh < 10 ? "0" : "") + hh + ":" + (mm < 10 ? "0" : "") + mm + " local";
+  }
+
+  function loadPlaces() {
+    if (!map || !window.RB_PLACES || !map.getSource) return;
+    try {
+      map.getSource("wr-places").setData({
+        type: "FeatureCollection",
+        features: window.RB_PLACES.map(function (p) {
+          return { type: "Feature", geometry: { type: "Point", coordinates: [p.lo, p.la] },
+                   properties: { label: p.n + " · " + p.c, cnt: p.c, nm: p.n } };
+        })
+      });
+    } catch (e) {}
+  }
+
   function updateCoords(lon, lat, zoom) {
     var la = lat >= 0 ? lat.toFixed(1) + "°N" : (-lat).toFixed(1) + "°S";
     var lo = lon >= 0 ? lon.toFixed(1) + "°E" : (-lon).toFixed(1) + "°W";
-    $("#coordsChip").textContent = la + " · " + lo + " · zoom " + (+zoom).toFixed(1);
+    $("#coordsChip").textContent = la + " · " + lo + " · zoom " + (+zoom).toFixed(1) + " · " + localTimeAt(lon);
   }
 
   /* ============================ the engines ============================
@@ -247,6 +292,7 @@
           clusterProperties: { cus: ["+", ["case", ["==", ["get", "cu"], 1], 1, 0]] }
         },
         "wr-labels": { type: "geojson", data: emptyFC() },
+        "wr-places": { type: "geojson", data: emptyFC() },
         "wr-now": { type: "geojson", data: emptyFC() },
         "wr-hov": { type: "geojson", data: emptyFC() },
         "wr-heat": { type: "geojson", data: emptyFC() },
@@ -288,6 +334,15 @@
             "text-max-width": 20, "text-padding": 3, "text-allow-overlap": false, "text-line-height": 1.15 },
           paint: { "text-color": "#eaf2ff", "text-halo-color": "rgba(4, 7, 12, 0.9)", "text-halo-width": 1.5,
             "text-opacity": ["interpolate", ["linear"], ["zoom"], 3, 1, 5.5, 0.6, 6.6, 0] } },
+        /* the place tier: named cities between the country names (which stop at z7) and the
+           individual dots (from z3.5). Labels come from places.js — Laut.FM locations + NSR city
+           data clustered to ~city cells, so a bubble reads "Berlin · 446" instead of a bare number. */
+        { id: "wr-place-labels", type: "symbol", source: "wr-places", minzoom: 5.2, maxzoom: 11.2,
+          layout: { "text-field": ["get", "label"], "text-font": ["NotoSansRegular"],
+            "text-size": ["step", ["get", "cnt"], 10, 60, 11.5, 250, 13],
+            "text-max-width": 14, "text-padding": 2, "text-allow-overlap": false, "text-line-height": 1.1 },
+          paint: { "text-color": "#cfe8ff", "text-halo-color": "rgba(4, 10, 20, 0.92)", "text-halo-width": 1.3,
+            "text-opacity": ["interpolate", ["linear"], ["zoom"], 5.2, 0, 6, 0.92, 10.4, 0.92, 11.2, 0] } },
         { id: "wr-points-glow", type: "circle", source: "wr-pts", minzoom: 3.5,
           /* the halo — one per playable / custom station, under the dot itself */
           filter: ["all", ["!", ["has", "point_count"]], ["any", ["==", ["get", "pk"], 1], ["==", ["get", "cu"], 1]]],
@@ -399,6 +454,26 @@
       map.on("style.load", function () {
         try { map.setProjection({ type: "globe" }); } catch (e) {}
         mapReady = true;
+        loadPlaces();
+        (function () {
+          var lk = document.getElementById("btnLock");
+          if (!lk || !map) return;
+          function setLock(on) {
+            lk.setAttribute("aria-pressed", on ? "true" : "false");
+            lk.textContent = on ? "🔒" : "🔓";
+            try {
+              if (on) { map.dragPan.disable(); map.scrollZoom.disable(); map.touchZoomRotate.disable(); }
+              else { map.dragPan.enable(); map.scrollZoom.enable(); map.touchZoomRotate.enable(); }
+            } catch (e) {}
+          }
+          lk.addEventListener("click", function () { setLock(lk.getAttribute("aria-pressed") !== "true"); });
+          document.addEventListener("keydown", function (e) {
+            if (e.key === "l" || e.key === "L") {
+              var t = e.target; if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+              setLock(lk.getAttribute("aria-pressed") !== "true");
+            }
+          });
+        })();
         pushData();
         updateNowMarker();
         startPulse();
@@ -575,7 +650,7 @@
   function startCanvas(why) {
     engine = "canvas";
     return loadScript("worldgeo.js")
-      .then(function () { return loadScript("globe.js"); })
+      .then(function () { return loadScript("globe.js?v=20261030h"); })
       .then(function () {
         var cv = $("#globe");
         $("#map").style.display = "none";
@@ -719,7 +794,7 @@
       + '<button class="sb" data-pact="play" title="Play ' + WR.esc(nm) + '">▶</button>'
       + '<button class="sb" data-pact="fav" title="' + (WR.fav.has(s.i) ? "Remove from" : "Save to") + ' My stations">' + (WR.fav.has(s.i) ? "★" : "☆") + '</button></div>';
     $("#placeNote").hidden = true;
-    $("#placeListLink").href = "index.html#q=" + encodeURIComponent(s.n || "");
+    $("#placeListLink").href = "radio.html#q=" + encodeURIComponent(s.n || "");
     var site = $("#placeSite");
     if (s.hp) { site.hidden = false; site.href = s.hp; } else site.hidden = true;
     placeGeo = { la: la, lo: lo };
@@ -802,7 +877,7 @@
     var pn = $("#placeNote"); pn.textContent = notes.join(" · "); pn.hidden = !notes.length;
     lastPlace = null; placeGeo = null; exploreCc = cc; exploreFly = null; unmappedOn = false;
     $("#placeRand").hidden = true;
-    $("#placeListLink").href = "index.html#q=" + encodeURIComponent(nm);
+    $("#placeListLink").href = "radio.html#q=" + encodeURIComponent(nm);
     $("#placeSite").hidden = true;
     $("#placeCopy").hidden = true; $("#placeLive").hidden = true; $("#placeCheck").hidden = true;
     $("#placePanel").hidden = false;
@@ -852,7 +927,7 @@
     $("#placeTitle").textContent = "📍 Unmapped stations";
     $("#placeSub").textContent = WR.fmt(rows.length) + " in this search — the catalogue lists no coordinates for them, so they have no dot to sit on";
     var st = WR.filters.state;
-    $("#placeListLink").href = "index.html" + (st.q ? "#q=" + encodeURIComponent(st.q) : "");
+    $("#placeListLink").href = "radio.html" + (st.q ? "#q=" + encodeURIComponent(st.q) : "");
     var list = $("#placeList");
     if (!rows.length) {
       list.innerHTML = '<div class="x-empty">Nothing here — every station in this search has coordinates.</div>';
@@ -1611,7 +1686,7 @@
       if ($("#modal").style.display === "flex") { $("#modal").style.display = "none"; return; }
       var tt = e.target;
       if (tt && (tt.tagName === "INPUT" || tt.tagName === "TEXTAREA")) return;   // let the search box clear itself
-      location.href = "index.html";       /* nothing to close: Esc backs out to the list */
+      location.href = "radio.html";       /* nothing to close: Esc backs out to the list */
       return;
     }
     var t = e.target, typing = t && (t.tagName === "INPUT" || t.tagName === "SELECT" || t.tagName === "TEXTAREA");
@@ -1621,7 +1696,7 @@
     else if (e.key === "-" || e.key === "_") vZoomOut();
     else if (e.key === "r" || e.key === "R") flyRandom();
     else if (e.key === "h" || e.key === "H") vHome();
-    else if (e.key === "l" || e.key === "L") location.href = "index.html";
+    else if (e.key === "l" || e.key === "L") location.href = "radio.html";
     else if (e.key === "v" || e.key === "V") vizNext();
     else if (e.key === "u" || e.key === "U") {
       if (unmappedListOpen()) closePlace();
@@ -1707,14 +1782,18 @@
     ALL: function () { return (window.RB_STATIONS || []).length; },
     ready: function () { return { catalogue: !!(window.RB_STATIONS && window.RB_STATIONS.length), engine: engine, engineReady: !!(engine === "maplibre" ? mapReady : cvReady), mapReady: !!mapReady, points: lastLocated, shown: lastShown }; },
     state: function () { var st = WR.filters.state; return { q: st.q, playOnly: !!st.playOnly, favOnly: !!st.favOnly, cc: st.cc || "", codec: st.codec || "", bit: st.bit || 0 }; },
-    counts: function () { return { located: lastLocated, shown: lastShown, total: WR.data.all().length, unmapped: lastUnmapped.length }; },
+    counts: function () { return { located: lastLocated, shown: lastShown, total: WR.data.all().length, unmapped: lastUnmapped.length,
+      /* drawn is the array the globe really renders — tier 3/4 are counted as located but not
+         pushed, so located (the HUD number) and drawn (the dots) are different numbers. */
+      drawn: (lastData ? lastData.pts.length : 0) }; },
     engine: function () { return engine; },
     globe: function () {
       if (engine === "maplibre" && mapReady) {
         var c = map.getCenter();
         var clusters = 0; try { clusters = map.queryRenderedFeatures({ layers: CLUSTER_LAYERS }).length; } catch (e) {}
         return { engine: "maplibre", ready: true, projection: (map.getProjection ? map.getProjection().type : "globe"),
-          points: lastLocated, labels: lastLabels, zoom: Math.round(map.getZoom() * 100) / 100,
+          points: (lastData ? lastData.pts.length : 0), drawn: (lastData ? lastData.pts.length : 0),
+          located: lastLocated, labels: lastLabels, zoom: Math.round(map.getZoom() * 100) / 100,
           lon: Math.round(c.lng * 100) / 100, lat: Math.round(c.lat * 100) / 100,
           spin: spinActive(), marker: nowShown, hover: hoverLabel, clusters: clusters,
           loaded: map.loaded(), centroid: worldCentroid, night: !!map.getLayer("wr-night-fill") };
@@ -1722,6 +1801,8 @@
       if (engine === "canvas" && cvReady) {
         var st = GlobeView.state();
         st.engine = "canvas";
+        st.drawn = st.points;            // the canvas engine already counts the drawn array
+        st.located = lastLocated;
         st.marker = !!st.marker;
         st.centroid = worldCentroid;
         st.night = !!GlobeView.getTerminator();

@@ -1,0 +1,1 @@
+window.POD_SHELF=window.POD_SHELF||{};window.POD_SHELF["cat:running"]=[["Centurion Running Podcast","https://www.centurionrunning.com/podcast/podcast.xml","https://res.cloudinary.com/centurion/image/upload/c_scale,h_2000,q_auto,w_2000/v1589289013/Artboard_1_4x-SQ-CR_xnuotg.jpg","running","en",192]];

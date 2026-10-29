@@ -1,0 +1,1 @@
+window.POD_SHELF=window.POD_SHELF||{};window.POD_SHELF["cat:drama"]=[["Algemas Quebradas","https://radioseara.fm/podcasts/algemas-quebradas.rss","https://radioseara.fm/recursos/capas/marca/algemas-quebradas.jpg","drama","pt",126]];

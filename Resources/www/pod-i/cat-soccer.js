@@ -1,0 +1,1 @@
+window.POD_SHELF=window.POD_SHELF||{};window.POD_SHELF["cat:soccer"]=[["Scottish Football Podcast","https://podcasts.files.bbci.co.uk/p02nrsc7.rss","http://ichef.bbci.co.uk/images/ic/3000x3000/p0gf9mzp.jpg","soccer","en",39]];

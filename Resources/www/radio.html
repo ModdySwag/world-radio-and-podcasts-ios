@@ -1,0 +1,2514 @@
+<!DOCTYPE html>
+<!-- MODDYS World Radio - the radio page, at /radio.html since 2026-10-26
+     (before that it was the site root; the bytes are unchanged apart from this note and
+     the canonical/SoftwareApplication URLs below). -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="MODDYS World Radio &amp; Podcasts — browse and play thousands of internet radio stations by country, genre and language, and search 58,000 podcasts. No account, no tracking.">
+<meta name="robots" content="index, follow">
+<title>MODDYS World Radio &amp; Podcasts</title>
+<link rel="canonical" href="https://moddys.net/radio.html">
+<script>
+/* The two-mode deep link. The app shells and any older link may still say
+   radio.html?mode=podcasts; forward it to the podcasts page (carrying ?show=) instead of
+   showing a radio page that quietly ignores the mode. Runs before anything renders. */
+try {
+  var __p = new URLSearchParams(location.search);
+  if (__p.get("mode") === "podcasts") {
+    var __s = __p.get("show");
+    location.replace("podcasts.html" + (__s ? "?show=" + encodeURIComponent(__s) : ""));
+  }
+} catch (e) {}
+</script>
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"Organization","name":"MODDYS","url":"https://moddys.net/","logo":"https://moddys.net/apple-touch-icon.png"},{"@context":"https://schema.org","@type":"WebSite","name":"MODDYS","url":"https://moddys.net/"},{"@context":"https://schema.org","@type":"SoftwareApplication","name":"MODDYS World Radio & Podcasts","url":"https://moddys.net/radio.html","applicationCategory":"MultimediaApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"alternateName":"MODDYS Podcasts"}]</script>
+
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📻</text></svg>">
+<style>
+:root{
+  --bg:#101117; --bg2:#171824; --panel:#1a1b28; --panel2:#22233a; --line:#2e3050;
+  --tx:#f4f1ea; --mut:#9aa0b8;
+  --pink:#ff3ea5; --cyan:#1fe3ff; --lime:#c9ff3d; --orange:#ff9f1c; --purp:#a06bff; --yel:#ffe14d;
+  --ok:#7dffa8; --warn:#ffb454;
+  --rough:7px 18px 8px 20px/22px 6px 24px 8px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.09'/%3E%3C/svg%3E")}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.16;
+  background:
+   radial-gradient(260px 120px at 8% 12%, rgba(255,62,165,.55), transparent 70%),
+   radial-gradient(300px 160px at 92% 8%, rgba(31,227,255,.4), transparent 70%),
+   radial-gradient(340px 190px at 85% 88%, rgba(201,255,61,.28), transparent 70%),
+   radial-gradient(240px 130px at 12% 85%, rgba(255,159,28,.3), transparent 70%)}
+.spraybar{position:fixed;top:0;left:0;right:0;height:7px;z-index:90;display:flex}
+.spraybar i{flex:1;display:block}
+.spraybar i:nth-child(1){background:var(--pink)}.spraybar i:nth-child(2){background:var(--orange)}
+.spraybar i:nth-child(3){background:var(--yel)}.spraybar i:nth-child(4){background:var(--lime)}
+.spraybar i:nth-child(5){background:var(--cyan)}.spraybar i:nth-child(6){background:var(--purp)}
+.wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:26px 16px 120px}
+header{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;margin:4px 0 14px}
+h1{margin:0;font-size:clamp(26px,4.6vw,44px);line-height:.95;font-weight:900;letter-spacing:-1px;text-transform:uppercase;
+  color:#fff;transform:rotate(-1.2deg);
+  text-shadow:3px 3px 0 var(--pink),6px 6px 0 rgba(0,0,0,.45)}
+h1 .brand{font-size:1.08em;letter-spacing:.2px;color:#fff;text-shadow:2px 2px 0 var(--lime),5px 5px 0 var(--pink),8px 8px 0 rgba(0,0,0,.45)}
+h1 .g{color:var(--lime)}h1 .o{color:var(--cyan)}
+header .spraytag{margin-left:auto;transform:rotate(1.6deg);font-weight:800;text-transform:uppercase;font-size:12px;letter-spacing:1px;
+  color:#0c0d14;background:linear-gradient(90deg,var(--yel),var(--lime));padding:6px 12px;border-radius:3px;box-shadow:4px 4px 0 rgba(0,0,0,.4)}
+/* The downloads link: the mirror of the .back badge on the downloads page, so the two pages
+   read as one site. Outlined rather than filled - it is a quiet forward pointer, not a CTA. */
+header .next{font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.5px;
+  text-decoration:none;border:2px solid var(--line);border-radius:10px;padding:7px 12px;
+  color:var(--tx);background:var(--bg);transition:transform .08s,box-shadow .08s,border-color .12s}
+header .next:hover{border-color:var(--cyan);color:var(--cyan);transform:translate(-1px,-1px);
+  box-shadow:3px 3px 0 rgba(31,227,255,.35)}
+/* The five-door wrapper (DOWNLOADS / SYNTHHUB / MUSIC HUB / PATTERN FORGE / RESONANCE):
+   display:contents on wide screens, so the links lay out exactly as they always did; on a
+   phone it becomes one wrapped cluster (see the ≤900px block). INSIDE THE APP exactly one
+   door survives - the podcast directory, because that is the one the app carries (2.0.0
+   bundles podcasts.html + its index + its corpus). The other four lead to pages the app does
+   not ship, and a door that opens nothing is worse than no door at all. */
+.nextrow{display:contents}
+html.wr-app .nextrow .next:not([href="podcasts.html"]){display:none !important}
+/* Phone and tablet: the tagline and the app button are placed, not left to the wrap. As two
+   flex items they stacked whenever the title happened to fill the line, which drops the whole
+   page down a row; a two-column grid row keeps them side by side at every width, with the
+   title above and the chips below. Both keep their tilt - that is what makes them badges. */
+@media(max-width:900px){
+  /* One flexible track and one sized by its content, with each badge pinned inside its own cell:
+     a badge has to keep the size of its own text. Three other arrangements were measured and all
+     fail - `auto` tracks swell to fill the grid (the tagline becomes a 345px yellow slab),
+     `max-content` tracks get inflated by the title (which spans both columns), and without
+     nowrap any track narrow enough for a phone folds the tagline inside its badge. */
+  header{display:grid;grid-template-columns:1fr auto;align-items:end;column-gap:10px;row-gap:6px}
+  header h1{grid-column:1 / -1}
+  header .spraytag{grid-column:1;justify-self:start;margin-left:0;white-space:nowrap}
+  header .wr-dl{grid-column:2;justify-self:end;margin-left:0}
+  .wr-dl-btn{white-space:nowrap}
+  /* The five doors wrap as ONE horizontal cluster under the two badges - they used to take
+     five right-pinned rows of their own, which ate far too much of a small screen. */
+  .nextrow{display:flex;flex-wrap:wrap;gap:5px;grid-column:1 / -1;justify-content:flex-end}
+  .nextrow .next{font-size:9.5px;letter-spacing:.3px;padding:5px 6px;white-space:nowrap}
+}
+/* The narrowest phones: 320px leaves 288px of content, and the two badges together are about
+   300px at the sizes above, so they step down once more rather than one of them folding. */
+/* Phone: let the controls shrink and pack instead of wrapping one per line. The selects give up
+   width first (their text ellipsises); the buttons never shrink. */
+@media(max-width:900px){
+  .toolbar{gap:6px}
+  .toolbar select{font-size:12.5px;padding:8px 6px;min-width:0;flex:0 1 auto;max-width:118px}
+  #selCountry{flex:1 1 96px}
+  .toolbar .btn{padding:8px 10px;font-size:12.5px;white-space:nowrap}
+  /* Phone and tablet: the pager takes a line of its own under the stations count and fills it -
+     back arrow at the left end, forward arrow at the right end, and the page numbers centred as a
+     group between them - rather than bunching up on the left with dead space beside it. */
+  .resbar .pager{flex:1 1 100%;justify-content:space-between}
+  .resbar .pager .pgnums{flex:1 1 auto}
+}
+/* Landscape phones: the same four bars, just tighter. A 390px-tall viewport must not hand half of
+   itself to chrome - and nothing else changes, the order and the shapes stay put. */
+@media(max-height:520px) and (max-width:900px){
+  .toolbar{gap:6px;padding:6px 0 8px}
+  .tbgrid{gap:6px}
+}
+/* Narrowest phones: the labels give up their carets and a little padding. The layout is the same
+   four bars (search / stations / Format-Bitrate-Country / Saved-Reset) whatever the width - this
+   only stops a label from pushing its cell wider. Nothing here may be wider than the row: a toolbar
+   wider than the screen zooms a phone page out. */
+@media(max-width:430px){
+  .cv{display:none}
+  .toolbar .btn{padding:8px 9px;font-size:12px}
+  /* .toolbar #q, not #q: the base rule for the field comes later in this sheet, so the phone
+     override has to out-specify it to win. flex-basis 0 + min-width 0 is what stops the input's
+     intrinsic width (a search box comes with a stubborn one) from setting a minimum width for the
+     whole page - without it a 320px phone gets zoomed out to fit. */
+  .toolbar #q{flex:1 1 0;min-width:0}
+  /* The Verified switch is not in here any more - it lives in the stations line below the toolbar -
+     so the field keeps its plain padding and the whole row is the input. */
+  #btnPlayable{font-size:10px;padding:0 6px;gap:4px}
+#btnHideQuiet{font-size:10px;padding:0 6px;gap:4px}
+.livestrip{font-size:11.5px;color:var(--mut);padding:2px 2px 8px;letter-spacing:.2px}
+.livestrip b{color:var(--tx)}
+.ldot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.ldot.ok{background:var(--lime)}
+.ldot.warn{background:var(--yel)}
+.ldot.quiet{background:#ff6b6b}
+.ldot.unknown{background:var(--mut)}
+  .toolbar select{max-width:104px}
+  #selCountry{max-width:118px}
+}
+/* Scrolling is reading time. Whatever the page is doing, the bar gets out of the way by sliding
+   off to the LEFT, and what comes back 1.5s after the page stops is the SEARCH FIELD ONLY - the
+   selects, the pull-downs and Reset are for the top of the page, where the whole toolbar sits in
+   its normal place. No fades: one plain slide, in and out.
+   Phone and tablet only - a desktop has the room and keeps its toolbar throughout. */
+@media(max-width:900px){
+  .toolbar{transition:transform .45s ease}
+  body.scrolling .toolbar{transform:translateX(-115%);pointer-events:none}
+  /* The quick bar: pinned at the top carrying the search field and nothing else. The other
+     controls leave the flow but the box keeps their height (--tbh, measured in JS), so nothing
+     below the toolbar jumps when the state changes; the box is transparent and passes touches
+     through, so the list keeps scrolling under it. */
+  body.quick:not(.scrolling) .toolbar{align-items:flex-start;align-content:flex-start;
+    min-height:var(--tbh,0px);background:none;pointer-events:none}
+  body.quick:not(.scrolling) .toolbar select,
+  body.quick:not(.scrolling) .countrow,
+  body.quick:not(.scrolling) .tbgrid,
+  body.quick:not(.scrolling) #btnSaved,
+  body.quick:not(.scrolling) #btnReset{position:absolute;top:0;left:0;visibility:hidden;pointer-events:none}
+  body.quick:not(.scrolling) #q{flex:1 1 100%;pointer-events:auto}
+  body.quick:not(.scrolling) .qbtn{pointer-events:auto}
+}
+@media (prefers-reduced-motion:reduce){
+  .toolbar,body.scrolling .toolbar,#btnPlayable .sw,#btnPlayable .sw::after,#btnHideQuiet .sw::after{transition:none}
+}
+@media(max-width:365px){
+  header .spraytag{font-size:8.5px;letter-spacing:.2px;padding:4px 7px}
+  .wr-dl-btn{font-size:10px;padding:6px 8px}
+  header{column-gap:8px}
+  .nextrow .next{font-size:9px;padding:4px 5px}
+}
+.toolbar{position:sticky;top:6px;z-index:50;padding:8px 0 10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  background:linear-gradient(180deg,rgba(16,17,23,.92) 0%,rgba(16,17,23,.92) 78%,transparent)}
+/* min-width:0 overrides the intrinsic minimum an input gets from its placeholder text, which was
+   wide enough to claim a whole line of the toolbar on a desktop and push everything else down.
+   The right padding is the field's own control corner - the go magnifier and the fold chevron
+   ride there at every width: .qbtn below. 100px = the fold's 42px + the magnifier's 42px +
+   insets and air. */
+#q{flex:1 1 300px;min-width:220px;background:#0d0e16;border:2px solid var(--line);color:var(--tx);border-radius:12px;padding:10px 100px 10px 14px;font-size:15px;outline:none;transition:border-color .12s,box-shadow .12s}
+#q:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,227,255,.18)}
+select{background:#0d0e16;border:2px solid var(--line);color:var(--tx);border-radius:10px;padding:8px 9px;font-size:13.5px;outline:none;max-width:220px}
+select:focus{border-color:var(--purp)}
+/* Row 1 is the search field, full length, and nothing else: the Verified switch that used to sit in
+   its right-hand corner moved down to the stations line.
+   min-width:0 on both the row and the field: a search input otherwise holds a stubborn intrinsic
+   minimum, and the whole page ends up wider than a narrow phone can show. */
+.searchwrap{position:relative;display:flex;align-items:center;flex:1 1 100%;min-width:0}
+/* The field's own two controls, inside its right end: the 🔍 go button (commits the search
+   exactly like the keyboard's search key) and the ▾/▴ fold chevron - the retractable search
+   module, the reader's toggle at EVERY width (his ask, 2026-10-15 night; a committed search
+   folds it for you on a phone). Both are real buttons overlaid on the field, so the field
+   keeps its full width. */
+.qbtn{position:absolute;top:3px;bottom:3px;width:42px;display:inline-flex;align-items:center;justify-content:center;
+  border:none;background:none;color:var(--mut);font-size:15px;line-height:1;cursor:pointer;border-radius:10px;padding:0;font-family:inherit}
+.qbtn:hover,.qbtn:focus-visible{color:var(--cyan);background:rgba(31,227,255,.1)}
+#btnFold:hover,#btnFold:focus-visible{color:var(--cyan)}   /* the id out-specifies .qbtn:hover */
+.qbtn:active{transform:translateY(1px)}
+#btnQGo{right:52px}
+#btnFold{right:4px;font-size:22px;color:#cfd4e6}   /* the corner, at every width - a bare small-triangle glyph needs the extra size and a lighter ink */
+/* Folded: the stations bar, the Format/Bitrate/Country selects and Add/Saved/Reset step aside;
+   the search field itself stays. applyFold() applies the class when the stored choice says so -
+   the choice is the user's everywhere; only the auto-fold on a committed search is phone-gated
+   (≤720px, foldPhone()). */
+body.toolfold .countrow,
+body.toolfold .tbgrid{display:none}
+/* Every toolbar control is a finger target: the toolbar is where a mis-tap costs you the thing
+   you were reading. */
+.toolbar .btn{min-height:44px}
+.btn{appearance:none;border:2px solid var(--line);background:#10111c;color:var(--tx);border-radius:10px;padding:8px 13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px;
+  transition:transform .08s,box-shadow .08s,background .12s,border-color .12s}
+.btn:hover{border-color:var(--cyan);box-shadow:3px 3px 0 rgba(31,227,255,.35);transform:translate(-1px,-1px)}
+.btn:active{transform:translate(1px,1px);box-shadow:none}
+.btn.pink{border-color:var(--pink);color:#ffd3ea}.btn.pink:hover{background:var(--pink);color:#1a0312;box-shadow:3px 3px 0 rgba(255,62,165,.4)}
+/* The toolbar's pull-down (Saved). It FLOATS over the list: opening it must not push a single
+   result down the page, which is what the in-flow filter panel used to do. */
+.menu{position:absolute;top:100%;right:0;z-index:60;width:min(540px,calc(100vw - 26px));
+  max-height:min(64vh,460px);overflow:auto;-webkit-overflow-scrolling:touch;
+  background:rgba(15,16,24,.985);border:1px solid var(--line);border-radius:14px 6px 14px 6px;
+  padding:10px 12px;box-shadow:0 22px 46px rgba(0,0,0,.62)}
+.mrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.mrow+.mrow{margin-top:8px}
+.mttl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 8px;color:var(--mut);
+  font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px}
+.mttl b{color:var(--tx);font-size:14px;letter-spacing:0;text-transform:none}
+.mttl span{text-transform:none;letter-spacing:.2px}
+.ftag{border:2px dashed rgba(255,255,255,.28);background:rgba(20,21,36,.85);color:#e6e9ff;border-radius:6px 14px 6px 14px;padding:3px 11px;font-size:12.5px;cursor:pointer;user-select:none;font-weight:600;transition:all .1s}
+.ftag:hover{border-style:solid;border-color:var(--cyan);transform:rotate(-1deg)}
+.ftag.on{background:var(--pink);border:2px solid var(--pink);color:#fff;box-shadow:2px 2px 0 rgba(0,0,0,.4);border-radius:14px 6px 14px 6px}
+.ftag .n{opacity:.75;margin-left:5px;font-size:11px}
+.menu[hidden],.chiprow[hidden]{display:none}
+/* Active filters: one slim line under the toolbar, there only while something is filtered. The
+   toolbar itself keeps its height, and this line scrolls away with the results. */
+.chiprow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:10px 0 0}
+.chips{display:flex;gap:4px;flex-wrap:wrap}
+/* My stations, listed inside the Saved pull-down */
+.slist{display:flex;flex-direction:column;gap:6px}
+.sempty{color:var(--mut);font-size:12.5px;line-height:1.6;padding:2px 2px 4px}
+.srow{display:flex;gap:9px;align-items:center;border:1px solid rgba(255,255,255,.12);
+  border-radius:10px;padding:7px 9px;background:rgba(24,25,40,.55)}
+.srow img{width:34px;height:34px;border-radius:9px 3px 9px 3px;object-fit:cover;background:#0b0c12;flex:0 0 auto}
+.srow .sn{min-width:0;flex:1}
+.srow .sn b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.srow .sn b:hover{color:var(--cyan)}
+.srow .sn span{display:block;font-size:11px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.srow .sb{border:2px solid var(--line);background:#10111c;color:var(--tx);border-radius:9px;
+  min-width:44px;min-height:42px;font-size:14px;font-weight:800;cursor:pointer;flex:0 0 auto}
+.srow .sb:hover{border-color:var(--cyan)}
+.fclear{border:2px solid var(--warn);background:rgba(255,159,28,.12);color:#ffd9a3;border-radius:6px 14px 6px 14px;padding:2px 10px;font-size:12px;font-weight:800;cursor:pointer}
+.fclear:hover{background:var(--warn);color:#231a05}
+#toTop{position:fixed;right:16px;bottom:calc(var(--barh,0px) + 16px);z-index:55;width:44px;height:44px;border-radius:50%;border:2px solid var(--pink);
+  background:rgba(13,14,22,.92);color:#fff;font-size:16px;cursor:pointer;display:none}
+#toTop.show{display:block}
+#toTop:hover{background:var(--pink);color:#1a0312}
+/* ===== Add a station: one discreet toolbar button, one centred form =====
+   The panel is NOT one of the toolbar pull-downs (MENUS) - it covers the page, so it is opened and
+   closed on its own. z-index 90 keeps it above the toolbar (50) and the pull-down (60) but below
+   the toast (95) and the notice bar (97): a notification about a stream the browser cannot play has
+   to be readable while the panel that caused it is still open. */
+#addPanel{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;
+  padding:18px;background:rgba(5,6,10,.78);overflow:auto;-webkit-overflow-scrolling:touch}
+#addPanel.show{display:flex}
+#addPanel[hidden]{display:none}
+#addBox{width:min(560px,100%);max-height:calc(100vh - 36px);overflow:auto;-webkit-overflow-scrolling:touch;
+  background:linear-gradient(160deg,#1a1b28 0%,#14151f 100%);border:1px solid var(--line);
+  border-radius:14px 6px 14px 6px;box-shadow:0 24px 60px rgba(0,0,0,.72);padding:16px 18px 18px}
+#addBox h3{margin:0 0 3px;font-size:19px;font-weight:900;letter-spacing:-.3px;text-transform:uppercase;
+  color:#fff;text-shadow:2px 2px 0 var(--pink)}
+#addBox .sub{margin:0 0 14px;color:var(--mut);font-size:12.5px;line-height:1.55}
+.afields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.af{display:flex;flex-direction:column;gap:4px;min-width:0}
+.af.wide{grid-column:1 / -1}
+.af label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--mut)}
+.af label .opt{text-transform:none;letter-spacing:0;font-weight:600;opacity:.72}
+.af input,.af select{width:100%;min-width:0;background:#0d0e16;border:2px solid var(--line);color:var(--tx);
+  border-radius:10px;padding:9px 11px;font:inherit;font-size:14px;outline:none}
+.af input:focus,.af select:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,227,255,.16)}
+#stStatus{margin:11px 0 0;font-size:12.5px;line-height:1.5;border-radius:10px;padding:8px 11px;display:none}
+#stStatus.show{display:block}
+#stStatus.ok{background:rgba(125,255,168,.12);border:1px solid rgba(125,255,168,.5);color:#c9ffd9}
+#stStatus.warn{background:rgba(255,180,84,.12);border:1px solid rgba(255,180,84,.55);color:#ffe0b5}
+#stStatus.bad{background:rgba(255,62,165,.13);border:1px solid rgba(255,62,165,.55);color:#ffd3ea}
+#addBox .howto{margin:12px 0 0;font-size:12px;line-height:1.6;color:var(--mut);
+  background:rgba(255,255,255,.035);border:1px dashed rgba(255,255,255,.16);border-radius:10px;padding:9px 12px}
+#addBox .howto b{color:var(--tx)}
+#addBox .howto code{color:var(--lime);font-size:11.5px;word-break:break-all}
+#addBox .aacts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0 0;
+  /* Pinned to the bottom of the scrolling dialog: the form is nine fields and a how-to, and on a
+     phone the Add button would otherwise sit below the fold with the on-screen keyboard over it.
+     The fade is the dialog's own colour, so the fields scroll away underneath it cleanly. */
+  position:sticky;bottom:-18px;z-index:2;padding:10px 0 18px;
+  background:linear-gradient(180deg,rgba(20,21,31,0) 0%,#14151f 32%,#14151f 100%)}
+#addBox .aacts .grow{flex:1 1 auto}
+#addBox .aacts .btn{min-height:42px}
+/* The discreet button: the same shape as its neighbours in the row, quieter until it is wanted. */
+#btnAdd{background:transparent;border-color:rgba(255,255,255,.16);color:#c3c8dd;font-weight:700}
+#btnAdd:hover{border-color:var(--lime);color:var(--lime);box-shadow:3px 3px 0 rgba(201,255,61,.3)}
+#btnAdd[aria-expanded="true"]{border-color:var(--lime);color:var(--lime)}
+@media(max-width:560px){ .afields{grid-template-columns:1fr} #addBox{padding:14px 13px 15px} #addBox h3{font-size:17px} }
+.more,.less{color:var(--cyan);font-size:12px;cursor:pointer;border:none;background:none;padding:4px 2px;font-weight:700}
+.resbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin:14px 0 8px;font-size:13.5px;color:var(--mut)}
+.resbar b{color:var(--tx)}
+/* The pager sits at the right-hand end of its own row on a desktop; a phone gives it the whole
+   line (see the 900px media query). The stations count used to live on this row - it is up in the
+   toolbar now, straight under the search field. */
+.resbar .pager{margin-left:auto}
+/* The stations line: the same full-length bar shape as the search field above it, with the count at
+   the left and the Verified switch inset at its right-hand end. Same height, same border, same
+   radius - the two bars are a pair, which is what "formatted equally" means here. */
+.countrow{display:flex;align-items:center;gap:8px;flex:1 1 100%;min-width:0;min-height:42px;
+  background:#0d0e16;border:2px solid var(--line);border-radius:12px;padding:0 5px 0 14px}
+.countrow #cntLine{flex:1 1 auto;min-width:0;font-size:13.5px;color:var(--mut);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* The remaining controls in equal cells: Format / Bitrate / Country as thirds, Saved / Reset as
+   halves. A grid, not flex, so each cell is the same width whatever its label says. */
+.tbgrid{display:grid;gap:8px;flex:1 1 100%;min-width:0}
+.tbgrid.tb3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.tbgrid.tb2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.tbgrid > select{max-width:none;width:100%;min-width:0}
+.tbgrid > .btn{width:100%;min-width:0;justify-content:center}
+/* min(320px,100%) rather than a flat 320px: a 320px phone leaves 288px of content width, and a
+   320px minimum column then sticks 32px out of it - which is what makes the whole page 16px
+   wider than the phone and gets it scaled down to fit. Above 320px of room nothing changes. */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:12px}
+.card{background:linear-gradient(160deg,#191a29 0%,#14151f 100%);border:1px solid rgba(255,255,255,.14);border-radius:var(--rough);padding:12px 14px;display:flex;flex-direction:column;gap:8px;position:relative;transition:border-color .12s,box-shadow .12s,transform .08s}
+.card:hover{border-color:var(--pink);box-shadow:4px 4px 0 rgba(255,62,165,.22);transform:translate(-1px,-1px)}
+.card::before{content:"";position:absolute;top:-1px;left:-1px;right:calc(100% - 26px);height:4px;background:linear-gradient(90deg,var(--pink),var(--orange),var(--yel));opacity:0;transition:opacity .15s}
+.card:hover::before{opacity:1;right:-1px}
+.row1{display:flex;gap:10px;align-items:center;min-width:0}
+.fav{width:44px;height:44px;border-radius:12px 4px 12px 4px;object-fit:cover;background:#0b0c12;flex:0 0 auto;border:1px solid var(--line)}
+.h1{min-width:0;flex:1}
+.nm{font-weight:800;font-size:14.5px;color:var(--tx);display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+.nm:hover{color:var(--cyan)}
+.loc{font-size:12px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tags{display:flex;flex-wrap:wrap;gap:4px}
+.tag{background:#262842;border-radius:5px 11px 5px 11px;padding:1px 8px;font-size:11px;font-weight:600}
+.tag.t0{color:#ffd0ea;background:rgba(255,62,165,.16)}
+.tag.t1{color:#c9f5ff;background:rgba(31,227,255,.14)}
+.tag.t2{color:#eaffb8;background:rgba(201,255,61,.13)}
+.tag.t3{color:#ffe0ba;background:rgba(255,159,28,.15)}
+.tag.t4{color:#e5d7ff;background:rgba(160,107,255,.16)}
+.meta{display:flex;flex-wrap:wrap;gap:3px 12px;font-size:12px;color:var(--mut)}
+.meta b{color:var(--tx)}
+.meta .up{color:var(--ok)}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;align-items:center}
+.iconbtn{background:none;border:2px solid var(--line);color:var(--mut);border-radius:8px;cursor:pointer;font-size:14px;line-height:1;padding:6px 8px}
+.iconbtn:hover{color:var(--yel);border-color:var(--yel)}
+.icongrp{margin-left:auto;display:flex;gap:4px;align-items:center;flex:0 0 auto}
+.iconbtn.star{color:var(--mut)}
+.iconbtn.star.on{color:#151605;background:var(--yel);border-color:var(--yel)}
+/* "Verified" is a setting, not an action, so it is drawn as a switch - and it lives at the right end
+   of the stations line under the toolbar, where he asked for it (it used to sit inside the search
+   field). On = the list only holds stations this browser can really play (the default). Kept
+   deliberately small and quiet so it reads as a hint beside the count, not a second control. */
+#btnPlayable{flex:0 0 auto;
+  gap:4px;min-height:24px;padding:0 7px;font-size:10.5px;line-height:1;border-width:1px;
+  border-radius:8px;background:rgba(16,17,28,.72)}
+#btnPlayable .sw,#btnHideQuiet .sw{position:relative;flex:0 0 auto;width:20px;height:12px;border-radius:7px;
+  background:rgba(255,255,255,.16);border:1px solid var(--line);transition:background .16s,border-color .16s}
+#btnPlayable .sw::after,#btnHideQuiet .sw::after{content:"";position:absolute;top:1px;left:1px;width:8px;height:8px;border-radius:50%;
+  background:#c9ccdd;transition:transform .16s,background .16s}
+#btnPlayable.on,#btnHideQuiet.on{background:rgba(31,227,255,.16);border-color:var(--cyan);color:var(--cyan)}
+#btnPlayable.on .sw,#btnHideQuiet.on .sw{background:rgba(31,227,255,.5);border-color:var(--cyan)}
+#btnPlayable.on .sw::after,#btnHideQuiet.on .sw::after{transform:translateX(8px);background:#04161a}
+.btn.on{border-color:var(--cyan);border-radius:14px 6px 14px 6px}
+.play{background:rgba(255,62,165,.14);border-color:var(--pink);color:#ff9fd2}
+.play:hover{background:var(--pink);color:#1a0312;box-shadow:3px 3px 0 rgba(255,62,165,.4)}
+.play.on{background:var(--pink);border-color:#fff;color:#fff;animation:blink 1.1s steps(2) infinite}
+@keyframes blink{50%{background:var(--lime);border-color:var(--lime);color:#151605}}
+/* ============================== the pager ==============================
+   One row of 44px controls, the same on every format: the two arrows, then the page numbers in a
+   group of their own, then the read-out. The arrows are pinned to the two ends of the row on a
+   phone or tablet (the row is full length there, see the 900px query) and the numbers sit together
+   in the middle - the old layout spread the four items with a 136px hole between the back arrow
+   and the first number, which reads as a broken control rather than as spacing.
+   The read-out is where a page number is allowed: the count line above is only ever a count. */
+.pager{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.pager .pgnums{display:flex;gap:4px;align-items:center;justify-content:center;flex-wrap:wrap}
+/* touch-action:manipulation tells the WebView this control is a tap, not the first half of a
+   double-tap-to-zoom - without it a fast tap on an arrow can be held back or dropped entirely. */
+.pager button{background:#10111c;border:2px solid var(--line);color:var(--tx);border-radius:10px;min-width:44px;min-height:44px;padding:4px 10px;cursor:pointer;font-size:14px;font-weight:700;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.pager button:disabled{opacity:.3;cursor:default}
+.pager .pgstep{font-size:16px}                       /* the arrows: 44px, reachable with a thumb */
+.pager .pgno{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--cyan)}
+.pager .pgap{opacity:.5;padding:0 2px}
+/* screen-reader only: the page change is announced, without a second visible read-out on a row that
+   has to hold two 44px arrows and the numbers on a 390px phone */
+.pgsr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.empty{color:var(--mut);text-align:center;padding:44px 0;font-size:15px}
+a{color:var(--cyan);text-decoration:none}a:hover{text-decoration:underline}
+
+/* player dock - a movable, resizable mini player window that takes the screen while it is up */
+/* While it is open the page stands down (body.player, see below): the player IS the screen. The
+   window is positioned with left/top/width/height in px by the dock code (the last box the user
+   chose is remembered), so it can be dragged by its title bar and resized from its corner. */
+#dock{position:fixed;inset:0;z-index:70;display:none}
+#dock .scrim{position:absolute;inset:0;background:rgba(6,7,12,.92)}
+#dock .dwin{position:absolute;display:flex;flex-direction:column;overflow:hidden;pointer-events:auto;
+  background:rgba(13,14,22,.98);border:2px solid var(--purp);border-radius:14px;
+  box-shadow:0 14px 48px rgba(0,0,0,.66)}
+#dock .dwin .head{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:5px 8px;
+  background:linear-gradient(90deg,var(--purp),var(--pink));cursor:move;touch-action:none;
+  user-select:none;-webkit-user-select:none}
+#dock .dwin .head span{font-weight:900;font-size:11px;letter-spacing:1px;color:#fff;text-transform:uppercase;
+  flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#dock .dwin .head button{border:none;background:rgba(0,0,0,.32);color:#fff;border-radius:6px;
+  padding:3px 8px;cursor:pointer;font-weight:800;font-size:12px;flex:0 0 auto}
+#dock .dwin .head button.on{background:#fff;color:#3a0a2c}
+#dock .dwin.full{border-radius:0;border-color:#0000}
+#dock iframe{border:0;width:100%;flex:1 1 auto;min-height:0;display:block;background:#101117}
+#dock .grip{position:absolute;right:0;bottom:0;width:24px;height:24px;z-index:2;cursor:nwse-resize;touch-action:none;
+  background:linear-gradient(135deg,transparent 44%,rgba(255,255,255,.45) 46%,rgba(255,255,255,.45) 54%,transparent 56%)}
+/* touch: the size buttons have to be reachable with a thumb */
+@media(hover:none){#dock .dwin .head button{min-width:38px;min-height:32px}}
+/* the page stands down: nothing of the site is behind the player while it is up.
+   !important because the bar is shown with an inline style (syncBarAway/setStation). */
+body.player .wrap,body.player #bar,body.player #toTop{display:none !important}
+body.player{overflow:hidden}
+
+/* bottom mini player bar */
+#bar{position:fixed;left:0;right:0;bottom:0;z-index:60;display:none;align-items:center;gap:10px;
+  transition:transform .22s ease,opacity .22s ease;
+  padding:10px calc(14px + env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) calc(14px + env(safe-area-inset-left,0px));
+  background:rgba(13,14,22,.97);border-top:3px solid;border-image:linear-gradient(90deg,var(--pink),var(--orange),var(--yel),var(--lime),var(--cyan),var(--purp)) 1}
+/* While you are searching, the bar gets out of the way: a search is about the results, and on a
+   phone the bar covers the bottom of the list. It comes back - and stays - the moment you press
+   play, and steps aside again on the next keystroke in the search box. */
+#bar.wr-away{transform:translateY(115%);opacity:0;pointer-events:none}
+@media (prefers-reduced-motion: reduce){#bar{transition:none}}
+/* Desktop: a wide window has room the phone does not, so the two labelled controls sit at the
+   far right of the bar instead of crowding the station name, and they are given the same height
+   as the round controls beside them - they used to sit a head shorter than the row they are in. */
+@media(min-width:901px){
+  #btnBarSite{margin-left:auto}
+  #bar .btn{min-height:42px;display:inline-flex;align-items:center}
+}
+#bar .art{width:46px;height:46px;border-radius:10px 4px 10px 4px;object-fit:cover;border:1px solid var(--line);flex:0 0 auto}
+/* The name block. On a desktop it takes what its text needs and the controls follow it; below
+   900px it has a zero flex-basis instead, because with a content-sized basis the row's
+   line-breaking decides the row is full and wraps the last control onto a second line - which
+   is what a wrapped bar looks like: taller, and with the visualiser toggle stranded. */
+#bar .wr-nm{min-width:0;flex:0 1 auto}
+#bar .nm{font-weight:800;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;cursor:pointer}
+#bar .nm:hover{color:var(--cyan)}
+#bar .who{font-size:11px;color:var(--mut)}
+.bctrl{border:2px solid var(--line);background:#10111c;color:var(--tx);border-radius:50%;width:42px;height:42px;font-size:17px;cursor:pointer;flex:0 0 auto;line-height:1}
+.bctrl:hover{border-color:var(--cyan)}
+#bPlay.playing{background:var(--lime);border-color:var(--lime);color:#151605}
+#bPlay.pop{background:var(--purp);border-color:var(--purp);color:#fff}
+#volWrap{display:flex;align-items:center;gap:6px;flex:0 1 140px;min-width:72px}
+/* min-width:0 matters: a range input's own minimum is about 129px, and without this it cannot
+   shrink, so it spills out of its wrapper and paints across the Pop-out button next to it. */
+#vol{flex:1;min-width:0;accent-color:var(--pink)}
+/* A control in this row must never be squeezed: a shrunk button wraps its own label onto three
+   lines, which made the Pop-out button 68px tall in a 62px row with its text cut off. */
+#bar .btn{flex:0 0 auto;white-space:nowrap}
+/* Fixed bar, so the page has to reserve its height or the last station cards sit under it.
+   --barh is measured in syncBarSpace() because the height changes (the visualiser adds a row). */
+body{padding-bottom:var(--barh,0px)}
+#volPct{font-size:11px;color:var(--mut);min-width:30px;text-align:right}
+.badge{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:1px;border-radius:999px;padding:3px 8px;border:1px solid var(--line);color:var(--mut)}
+.badge.on{background:var(--purp);border-color:var(--purp);color:#fff;animation:blink 2s steps(2) infinite}
+/* Phones: the row has to fit in 320-430px. Stop and Website go - which is what this rule was
+   always meant to do: it named #barStop, and there is no such element (the button is #bStop),
+   so Stop stayed on screen and ate the room the row no longer had. */
+@media(max-width:700px){
+  #bar .who,#bar .badge,#btnBarSite,#bStop,#volPct{display:none}
+  #bar{gap:8px;padding:8px calc(12px + env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) calc(12px + env(safe-area-inset-left,0px))}
+  #bar .bctrl{width:40px;height:40px;font-size:16px}
+  #volWrap{flex:0 1 120px;min-width:64px}
+  #bar .btn{min-width:40px}      /* the icon-only pop-out keeps a full-size tap target */
+}
+/* The narrowest phones: the pop-out keeps its icon and its accessible name, and gives up the
+   word - 50px that the station name uses better. */
+@media(max-width:420px){#bar .lbl{display:none}}
+/* Touch, wherever it is: a control you cannot reliably hit is not a control. */
+@media(hover:none){#bar .btn{min-height:40px}}
+#viz{display:none;flex:1 1 240px;min-width:110px;max-width:560px;height:44px;border:2px solid var(--line);border-radius:10px;background:#0b0c12}
+#btnViz.pink{border-color:var(--pink);color:var(--pink)}
+/* The canvas is forced off below 900px, so the visualiser toggle down there was a button
+   that could not do anything visible. Hide it where it cannot work. */
+/* Tablet and phone. The row has no room for everything a desktop has, so it changes shape: the
+   artwork and the idle MINI label carry the pop-out (they do now at every width), the 🎲 Random
+   button steps aside, and the visualiser canvas opens as a strip UNDER the row rather than inside
+   it. */
+@media(max-width:900px){
+  #bar{flex-wrap:wrap}          /* only ever wraps for the visualiser strip's own line */
+  #bar .wr-nm{flex:1 1 0}
+  #bar .art{width:44px;height:44px}
+  #bar #viz{flex:1 1 100%;max-width:none;height:40px;order:9}
+  #btnRandom{display:none}
+  #btnViz{display:inline-block}
+}
+/* The artwork and the idle MINI label both open the pop-out player, at every width: the one button
+   that used to do it is the 🎲 Random button now, so the player is reached through the thing that
+   represents it - the cover picture and the name on the strip. */
+#bArt.art-pop{cursor:pointer}
+#bArt.art-pop:hover,#bArt.art-pop:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+#bName.nm-pop{cursor:pointer}
+#bName.nm-pop:hover{color:var(--cyan)}
+
+/* modal */
+#modal{position:fixed;inset:0;background:rgba(5,6,10,.78);z-index:80;display:none;align-items:center;justify-content:center;padding:18px}
+#modal .box{background:linear-gradient(160deg,#1d1e30,#14151f);border:2px solid var(--purp);border-radius:18px 6px 18px 6px;max-width:560px;width:100%;max-height:88vh;overflow:auto;padding:20px;box-shadow:8px 8px 0 rgba(0,0,0,.5)}
+#modal .mh{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+#modal .nm{font-size:19px;white-space:normal}
+#modal table{width:100%;border-collapse:collapse;font-size:13.5px;margin:6px 0 14px}
+#modal td{padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+#modal td:first-child{color:var(--mut);width:100px;font-weight:700}
+.macts{display:flex;gap:8px;flex-wrap:wrap}
+code{background:#0b0c12;padding:1px 5px;border-radius:5px;font-size:12px;word-break:break-all}
+#toast{position:fixed;bottom:calc(var(--barh,0px) + 24px);left:50%;transform:translateX(-50%);background:#241207;border:2px solid var(--warn);color:#ffe2bd;border-radius:12px;padding:9px 16px;font-size:13px;display:none;max-width:84vw;z-index:95;font-weight:600}
+#toast #toastGo{margin-left:9px;font:inherit;font-weight:800;color:var(--lime);background:none;border:1.5px solid currentColor;border-radius:8px;padding:2px 10px;cursor:pointer;vertical-align:1px}
+/* persistent notice bar: capability/error messages the user should not miss */
+#notice{display:none;position:fixed;top:0;left:0;right:0;z-index:97;align-items:flex-start;gap:10px;
+  background:linear-gradient(90deg,rgba(31,227,255,.18),rgba(160,107,255,.16));border-bottom:2px solid var(--cyan);
+  color:#e8f7ff;padding:9px 12px;font-size:13px;line-height:1.45;box-shadow:0 6px 24px rgba(0,0,0,.45)}
+#notice.show{display:flex}
+#notice.warn{background:linear-gradient(90deg,rgba(255,159,28,.24),rgba(255,62,165,.18));border-bottom-color:var(--orange);color:#fff1de}
+#notice span{flex:1}
+#notice a{color:var(--lime);font-weight:700}
+#notice button{background:none;border:0;color:inherit;font-size:15px;font-weight:800;cursor:pointer;padding:0 4px}
+#notice .nbtn{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.32);border-radius:8px;padding:2px 9px;font-size:12px;cursor:pointer;margin-left:6px}
+.kbadge{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:800;
+  letter-spacing:.04em;background:rgba(255,159,28,.18);border:1px solid var(--orange);color:#ffd9a8;vertical-align:middle}
+.imgfail{display:none}
+#spin{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;flex-direction:column;gap:12px;align-items:center;justify-content:center;color:var(--mut)}
+#spin .ring{width:38px;height:38px;border-radius:50%;border:4px solid var(--line);border-top-color:var(--pink);animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* No accidental text selection: dragging across the chrome used to paint selection highlights
+   over the cards, chips and labels (his ask, 2026-10-15). Real text surfaces opt back in; same
+   pattern as the Anvil and Forge pages. */
+body{-webkit-user-select:none;user-select:none}
+input,textarea,select,[contenteditable="true"]{-webkit-user-select:text;user-select:text}
+::selection{background:var(--pink);color:#fff}
+@media (prefers-reduced-motion: reduce){ .play.on{animation:none} .badge.on{animation:none} #spin .ring{animation:none} }
+*{scrollbar-width:thin;scrollbar-color:var(--purp) #0d0e16}
+
+/* ===== The World View hero button =====
+   The big obvious door onto the full globe page (world.html), a strip of its own between
+   the header and the toolbar: the largest control on the page, gradient-filled and tilted
+   like the site's other badges, but a CTA one. The small 🌍 World pill in the stations bar
+   stays as the in-page quick toggle. Inside the app it opens the bundled page too - both
+   apps carry world.html, so the door leads somewhere in-app as well. */
+.worldhero{display:flex;align-items:center;gap:12px;margin:0 0 12px;padding:11px 16px;
+  text-decoration:none;color:#0c0d14;border-radius:6px 16px 6px 16px;
+  background:linear-gradient(100deg,var(--cyan) 0%,var(--lime) 68%,var(--yel) 100%);
+  box-shadow:5px 5px 0 rgba(0,0,0,.4);transform:rotate(-.6deg);
+  transition:transform .1s,box-shadow .1s,filter .12s}
+.worldhero:hover{filter:brightness(1.06);transform:rotate(-.6deg) translate(-1px,-1px);
+  box-shadow:7px 7px 0 rgba(0,0,0,.4);text-decoration:none}
+.worldhero:active{transform:rotate(-.6deg) translate(1px,1px);box-shadow:3px 3px 0 rgba(0,0,0,.4)}
+.worldhero .wh-ico{font-size:26px;line-height:1;flex:0 0 auto}
+.worldhero .wh-txt{display:flex;flex-direction:column;min-width:0;flex:1 1 auto}
+.worldhero .wh-txt b{font-size:clamp(17px,2.6vw,22px);letter-spacing:.6px;text-transform:uppercase;
+  line-height:1.05;text-shadow:1px 1px 0 rgba(255,255,255,.35)}
+.worldhero .wh-txt i{font-style:normal;font-size:11.5px;font-weight:800;letter-spacing:.4px;color:#0e2230;
+  opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.worldhero .wh-go{font-size:12px;font-weight:900;background:#0c0d14;color:var(--lime);border-radius:4px;
+  padding:7px 11px;white-space:nowrap;letter-spacing:.8px;flex:0 0 auto}
+@media(max-width:430px){ .worldhero .wh-txt i{display:none} .worldhero{padding:10px 12px} .worldhero .wh-ico{font-size:22px} }
+
+/* ===== World View (globe) — the panel, its chrome, and the place drawer =====
+   The panel keeps the card language of the page (same border, radius, dark glass);
+   the canvas fills it and every control rides on top as a small chip, so the sphere
+   stays the picture. See globe.js for the engine and index's World View block. */
+.crowbtn{font-size:10.5px;min-height:24px;padding:0 9px;line-height:1;border-width:1px;
+  border-radius:8px;background:rgba(16,17,28,.72);gap:4px}
+.crowbtn.on{background:rgba(31,227,255,.16);border-color:var(--cyan);color:var(--cyan)}
+@media(max-width:430px){.crowbtn{font-size:10px;padding:0 6px}}
+#globeCount .cu{appearance:none;font:inherit;color:var(--cyan);background:none;border:1px solid var(--line);
+  border-radius:7px;padding:2px 8px;margin-left:3px;cursor:pointer;white-space:nowrap}
+#globeCount .cu b{color:inherit}
+#globeCount .cu:hover{border-color:var(--cyan);background:rgba(31,227,255,.12)}
+#placeList .morebtn{display:block;width:100%;border:1px dashed var(--line);background:none;color:var(--cyan);
+  border-radius:10px;padding:10px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;margin:2px 0 8px}
+#placeList .morebtn:hover{border-color:var(--cyan);background:rgba(31,227,255,.08)}
+#placeList .x-empty{padding:10px 6px;font-size:12.5px;color:var(--mut)}
+#placeFoot .btn[hidden]{display:none}
+body.worldview #list,body.worldview .resbar{display:none}
+#worldPanel{position:relative;height:clamp(380px,66vh,800px);margin-top:6px;overflow:hidden;
+  border:2px solid var(--line);border-radius:18px 6px 18px 6px;
+  background:radial-gradient(120% 90% at 50% 45%,#0c1126 0%,#0a0d1d 55%,#070914 100%);
+  box-shadow:8px 8px 0 rgba(0,0,0,.35)}
+#worldPanel[hidden]{display:none}
+#globe{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
+#globeHud{position:absolute;inset:0;pointer-events:none;z-index:4}
+.gchip{position:absolute;pointer-events:auto;background:rgba(13,14,22,.82);border:1px solid var(--line);
+  border-radius:10px;color:var(--tx)}
+#globeCount{top:10px;left:10px;font-size:11.5px;padding:6px 10px;color:var(--mut);max-width:62%}
+#globeCount b{color:var(--tx)}
+#globeCoords{bottom:10px;left:10px;font:600 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  padding:6px 9px;color:var(--mut)}
+#globeCtl{top:10px;right:10px;display:flex;flex-direction:column;gap:6px;background:none;border:none;border-radius:0}
+#globeCtl .gbtn{pointer-events:auto;width:38px;height:38px;border-radius:10px;border:2px solid var(--line);
+  background:rgba(13,14,22,.85);color:var(--tx);font-size:15px;font-weight:800;cursor:pointer;line-height:1;padding:0}
+#globeCtl .gbtn:hover{border-color:var(--cyan);color:var(--cyan)}
+#globeCtl .gbtn.on{border-color:var(--cyan);background:rgba(31,227,255,.16);color:var(--cyan)}
+#globeActs{bottom:10px;right:10px;display:flex;gap:6px;background:none;border:none;border-radius:0}
+#globeActs .btn{min-height:38px;padding:6px 11px;font-size:12px}
+#globeActs .btn[hidden]{display:none}   /* .btn sets display, which beats the UA [hidden] rule */
+@media(max-width:560px){#globeActs{bottom:44px}}   /* two clean rows on a small phone: acts up, coords stay */
+#globeLegend{bottom:10px;left:50%;transform:translateX(-50%);font-size:10.5px;color:var(--mut);
+  padding:5px 10px;display:flex;gap:12px;align-items:center}
+#globeLegend i{font-style:normal;white-space:nowrap}
+#globeLegend .d{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+#globeTip{position:absolute;z-index:6;max-width:250px;pointer-events:none;display:none;
+  background:rgba(12,13,20,.96);border:1px solid var(--line);border-radius:10px 4px 10px 4px;
+  padding:7px 10px;font-size:12px;line-height:1.45;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+#globeTip b{color:var(--cyan)}
+#globeTip .mut{color:var(--mut)}
+#placePanel{position:absolute;top:10px;right:56px;bottom:10px;width:min(350px,86%);z-index:5;
+  display:flex;flex-direction:column;background:rgba(13,14,22,.97);border:1px solid var(--line);
+  border-radius:14px 6px 14px 6px;box-shadow:0 18px 60px rgba(0,0,0,.6);overflow:hidden}
+#placePanel[hidden]{display:none}
+#placeHead{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--line)}
+#placeHead .pt{min-width:0;flex:1}
+#placeHead b{display:block;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#placeHead span{font-size:11.5px;color:var(--mut)}
+#placeClose{flex:0 0 auto;min-width:34px;min-height:34px;justify-content:center}
+#placeList{flex:1 1 auto;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:8px}
+#placeNote{padding:6px 12px;font-size:11px;color:var(--mut);border-top:1px solid var(--line)}
+#placeFoot{padding:8px 10px;border-top:1px solid var(--line);display:flex;gap:8px}
+#placeFoot .btn{min-height:38px}
+@media(max-width:900px){
+  #worldPanel{height:clamp(340px,58vh,620px)}
+  #placePanel{left:8px;right:8px;top:auto;bottom:8px;width:auto;height:clamp(180px,62%,420px)}
+  #globeLegend{display:none}
+  #globeActs .btn{padding:6px 9px;font-size:11.5px}
+}
+</style>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="MODDYS Radio">
+<meta name="apple-mobile-web-app-capable" content="yes">
+</head>
+<body>
+<noscript>
+<div style="position:fixed;inset:0;background:#101117;color:#f4f1ea;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font:16px/1.65 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;z-index:999">
+  <div style="max-width:540px">
+    <div style="margin:0 0 12px;font-size:26px">🎧 MODDYS World Radio needs JavaScript</div>
+    <p style="margin:0;color:#9aa0b8">This site browses and plays 48,035 radio stations and needs JavaScript to do it. Please enable JavaScript for this site (Settings → Privacy and security → Site settings → JavaScript) and reload the page.</p>
+  </div>
+</div>
+</noscript>
+<div class="spraybar"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+<div id="spin"><div class="ring"></div><div>Spraying on <span id="spinN">…</span> stations…</div></div>
+
+<div class="wrap">
+<header id="hdrHead">
+  <h1><span class="brand">MODDY</span>S <span class="o">WORLD RADIO</span><br>SPRAY <span class="g">IT LOUD</span></h1>
+  <span class="spraytag">48k stations &middot; zero ads</span>
+<div id="wrDownload" class="wr-dl" hidden>
+  <span class="wr-dl-hint" aria-hidden="true">
+    <svg viewBox="0 0 44 56" width="40" height="50" focusable="false" role="presentation">
+      <defs>
+        <linearGradient id="wrDlHand" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#1fe3ff"/>
+          <stop offset="0.55" stop-color="#a06bff"/>
+          <stop offset="1" stop-color="#ff3ea5"/>
+        </linearGradient>
+      </defs>
+      <!-- fist, folded fingers and thumb, outlined so the hand reads at 40px: a silhouette
+           alone turns into a blob at this size -->
+      <g fill="url(#wrDlHand)" stroke="#0c0d14" stroke-width="2.4" stroke-linejoin="round">
+        <rect x="14" y="20" width="12" height="34" rx="6"/>
+        <rect x="21" y="6" width="21" height="26" rx="8.5"/>
+        <rect x="7" y="20" width="14" height="12" rx="6"/>
+      </g>
+      <!-- the folds, so it is a hand and not three tubes -->
+      <g stroke="#0c0d14" stroke-width="1.8" stroke-linecap="round" opacity=".35" fill="none">
+        <path d="M28.5 12v12"/>
+        <path d="M35 13v11"/>
+      </g>
+      <!-- the tap, under the fingertip -->
+      <g fill="none" stroke="#ffe14d" stroke-width="2.6" stroke-linecap="round" opacity=".95">
+        <path d="M13.5 52q8 3.5 16 0"/>
+      </g>
+    </svg>
+  </span>
+
+  <button id="wrDlBtn" class="wr-dl-btn" type="button" aria-expanded="false"
+          aria-controls="wrDlPanel">📱 Get the app</button>
+
+  <div id="wrDlPanel" class="wr-dl-panel" role="dialog" aria-label="Get MODDYS World Radio" hidden>
+    <div id="wrDlVerdict" class="wr-dl-verdict"></div>
+
+    <div class="wr-dl-row">
+      <div class="wr-dl-what">
+        <b>Android</b>
+        <span id="wrDlAndroidReq">Android 8.0+ · tuned for 11+</span>
+      </div>
+      <a id="wrDlApk" class="wr-dl-go" href="#" download>⬇ APK</a>
+    </div>
+    <div class="wr-dl-note" id="wrDlApkNote" hidden></div>
+
+    <div class="wr-dl-row">
+      <div class="wr-dl-what">
+        <b>iPhone &amp; iPad</b>
+        <span id="wrDlIosReq">iOS 15+ · tuned for 18+</span>
+      </div>
+      <a id="wrDlIos" class="wr-dl-go wr-dl-alt" href="downloads.html">Install ➜</a>
+    </div>
+
+    <p class="wr-dl-foot">
+      On an iPhone, <b>Add to Home Screen</b> from Safari needs no computer, no account and no
+      expiry — full screen, and the radio keeps playing in the background.
+      <a href="downloads.html">Every install route, step by step ➜</a>
+    </p>
+  </div>
+</div>
+
+<style>
+  /* Scoped to this block. Colours come from the site's own variables, so it follows the
+     theme (and the app's light mode) automatically. The block is a column so the finger has
+     its own space directly above the button instead of being laid over the header. */
+  .wr-dl{position:relative;margin-left:auto;font:inherit;display:flex;flex-direction:column;
+    align-items:flex-end;gap:3px}
+  .spraytag + .wr-dl{margin-left:0}
+  .wr-dl-hint{pointer-events:none;line-height:0;
+    filter:drop-shadow(0 4px 10px rgba(31,227,255,.35));
+    animation:wrDlNudge 2.6s ease-in-out infinite}
+  @keyframes wrDlNudge{0%,100%{transform:translateY(0)}50%{transform:translateY(6px)}}
+  @media (prefers-reduced-motion:reduce){.wr-dl-hint{animation:none}}
+  .wr-dl-btn{font:800 12px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    letter-spacing:.5px;text-transform:uppercase;color:#0c0d14;cursor:pointer;
+    background:linear-gradient(90deg,var(--cyan),var(--purp));border:0;border-radius:3px;
+    padding:9px 13px;box-shadow:4px 4px 0 rgba(0,0,0,.4);transform:rotate(-1.4deg)}
+  .wr-dl-btn:hover{filter:brightness(1.08)}
+  .wr-dl-btn:active{transform:rotate(-1.4deg) translate(2px,2px);box-shadow:2px 2px 0 rgba(0,0,0,.4)}
+  /* Phone and tablet: the tagline and the app button share a line. Two tilted badges in a row
+     read as a header; stacked, they push the station list a whole line further down. Both give
+     up a little size to fit - and both keep their tilt, which is what makes them badges. */
+  @media(max-width:900px){
+    header .spraytag{font-size:10px;letter-spacing:.4px;padding:5px 9px}
+    .wr-dl{gap:1px}
+    .wr-dl-hint svg{width:26px;height:33px}
+    .wr-dl-btn{font-size:11px;padding:7px 10px}
+  }
+  .wr-dl-panel{position:absolute;z-index:80;top:calc(100% + 10px);right:0;width:min(340px,88vw);
+    background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:12px;
+    box-shadow:0 18px 50px rgba(0,0,0,.55);text-align:left}
+  .wr-dl-verdict{font-size:12.5px;line-height:1.5;padding:9px 10px;border-radius:8px;
+    margin-bottom:10px;border-left:4px solid var(--mut);background:var(--panel2);color:var(--mut)}
+  .wr-dl-verdict.wr-verdict-ok{border-color:var(--ok);color:var(--tx)}
+  .wr-dl-verdict.wr-verdict-warn{border-color:var(--warn);color:var(--tx)}
+  .wr-dl-verdict.wr-verdict-bad{border-color:var(--pink);color:var(--tx)}
+  .wr-dl-verdict b{color:inherit}
+  .wr-dl-row{display:flex;align-items:center;gap:10px;background:var(--bg2);
+    border:1px solid var(--line);border-radius:8px;padding:9px 10px;margin-top:8px}
+  .wr-dl-what{min-width:0;flex:1}
+  .wr-dl-what b{display:block;font-size:13.5px}
+  .wr-dl-what span{font:800 10px/1.3 ui-monospace,monospace;text-transform:uppercase;
+    letter-spacing:.4px;color:var(--mut)}
+  .wr-dl-go{flex:0 0 auto;font-weight:800;font-size:12px;text-decoration:none;color:#0c0d14;
+    background:var(--pink);border-radius:6px;padding:9px 12px;white-space:nowrap}
+  .wr-dl-go:hover{filter:brightness(1.08)}
+  .wr-dl-go.wr-dl-alt{background:var(--cyan)}
+  .wr-dl-foot{font-size:11.5px;line-height:1.5;color:var(--mut);margin:10px 0 0}
+  .wr-dl-note{font-size:11px;line-height:1.45;color:var(--mut);margin-top:7px;
+    border-left:2px solid var(--line);padding-left:8px}
+  .wr-dl-foot b{color:var(--tx)}
+  .wr-dl-foot a{color:var(--cyan);white-space:nowrap}
+  /* Inside the app: no download button (and no finger pointing at it). */
+  html.wr-app #wrDownload{display:none !important}
+</style>
+
+<script src="app-install.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var root = document.getElementById("wrDownload");
+  var button = document.getElementById("wrDlBtn");
+  var panel = document.getElementById("wrDlPanel");
+  if (!root || !button || !panel) return;
+
+  /* Without the shared module there is no verdict and no link, so stay hidden rather than
+     show a button that leads nowhere. */
+  if (!window.WrInstall) return;
+  var w = window.WrInstall;
+
+  root.hidden = false;
+
+  w.mount(document.getElementById("wrDlVerdict"));
+  /* The APK link falls back to the GitHub release - with a note - if the file has not been
+     uploaded here yet. Same behaviour as the downloads page, because it is the same code. */
+  w.wireDownload(document.getElementById("wrDlApk"), document.getElementById("wrDlApkNote"), "android");
+  document.getElementById("wrDlAndroidReq").textContent =
+    w.CONFIG.android.hardLabel + "+ · tuned for " + w.CONFIG.android.softLabel.replace("Android ", "") + "+";
+  document.getElementById("wrDlIosReq").textContent =
+    w.CONFIG.ios.hardLabel + "+ · tuned for " + w.CONFIG.ios.softLabel.replace("iOS ", "") + "+";
+
+  function open(show) {
+    panel.hidden = !show;
+    button.setAttribute("aria-expanded", show ? "true" : "false");
+  }
+
+  button.addEventListener("click", function (event) {
+    event.stopPropagation();
+    open(panel.hidden);
+  });
+
+  document.addEventListener("click", function (event) {
+    if (!panel.hidden && !root.contains(event.target)) open(false);
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (event.key === "Escape" && !panel.hidden) { open(false); button.focus(); }
+  });
+})();
+</script>
+
+  <nav class="nextrow" aria-label="More from MODDYS">
+    <a class="next" href="podcasts.html">🎙️ PODCASTS ➜</a>
+    <a class="next" href="moddys-downloads.html">📦 DOWNLOADS ➜</a>
+    <a class="next" href="synthhub.html">🎛️ SYNTHHUB ➜</a>
+    <a class="next" href="musichub/">🎵 MUSIC HUB ➜</a>
+    <a class="next" href="forge/">🎹 PATTERN FORGE ➜</a>
+    <a class="next" href="resonance/">🎚️ RESONANCE ➜</a>
+  </nav>
+</header>
+
+<!-- The World View hero: one big obvious door onto the full globe page (world.html).
+     The small 🌍 World pill in the stations bar stays as the in-page quick toggle, and
+     inside the app it opens the bundled page (both apps carry world.html). -->
+<a class="worldhero" id="btnWorldView" href="world.html" aria-label="Open the World View — every station on one globe">
+  <span class="wh-ico" aria-hidden="true">🌍</span>
+  <span class="wh-txt"><b>WORLD VIEW</b><i>every station, one spinning globe — search it, fly it, listen</i></span>
+  <span class="wh-go" aria-hidden="true">OPEN ➜</span>
+</a>
+
+<div class="toolbar">
+  <!-- The toolbar reads down the page in the order it gets used, one full-length bar at a time:
+       row 1 the search field, row 2 how many stations are listed plus the Verified switch (the same
+       bar shape as the field above it), row 3 Format / Bitrate / Country as equal thirds, row 4
+       Add / Saved / Reset as equal thirds. There is no genre pull-down any more: the search field finds
+       genres, so a second control for them only cluttered the page and fell apart in landscape.
+       The DOM order IS the order on screen - flex-wrap fills the lines as the controls are written.
+       The field carries its own two controls, inside its right end: the 🔍 go button (the same
+       commit as the keyboard's search key) and the ▾ that folds rows 2-4 away when the reader
+       asks - a committed search folds it for you on a phone (see the foldable-search note in
+       the script). -->
+  <div class="searchwrap">
+    <input id="q" type="search" size="12" placeholder="Search stations by name, genre, country, language…  ( / focuses )" autocomplete="off">
+    <button type="button" class="qbtn" id="btnQGo" aria-label="Search now" title="Search now — the same as your keyboard's search key">🔍</button>
+    <button type="button" class="qbtn" id="btnFold" aria-expanded="true" aria-label="Minimize the search — the field stays, the filters and buttons fold away" title="Minimize the search — the field stays, the filters and buttons fold away">▴</button>
+  </div>
+
+  <div class="countrow">
+    <span id="cntLine">…</span>
+    <button class="btn crowbtn" id="btnView" aria-pressed="false" title="Switch the stations list for a world map of every located station (shortcut: w)">🌍 World</button>
+    <button class="btn inplay" id="btnPlayable" aria-pressed="true" title="Verified: only list stations this browser can really play — the rest stay hidden"><span class="sw" aria-hidden="true"></span>Verified</button>
+    <button class="btn inplay" id="btnHideQuiet" aria-pressed="true" title="Hide quiet: stations that failed the last two liveness sweeps stay out of the list and the globe — never deleted"><span class="sw" aria-hidden="true"></span>Hide quiet</button>
+  </div>
+
+  <div class="tbgrid tb3">
+    <select id="selCodec" title="Format"><option value="">Format</option></select>
+    <select id="selBit" title="Minimum bitrate">
+      <option value="0" selected>Bitrate</option><option value="64">≥ 64 kbps</option>
+      <option value="128">≥ 128 kbps</option><option value="192">≥ 192 kbps</option>
+    </select>
+    <select id="selCountry" title="Country"></select>
+  </div>
+
+  <div class="tbgrid tb3">
+    <button class="btn" id="btnAdd" aria-expanded="false" aria-controls="addPanel" title="Add your own station to the list (shortcut: a)">➕ Add</button>
+    <button class="btn" id="btnSaved" aria-expanded="false" aria-controls="savedMenu" title="Your saved stations (shortcut: s)">⭐ Saved <span id="favCount"></span><span class="cv">▾</span></button>
+    <button class="btn" id="btnReset" title="Clear the search and every filter">Reset</button>
+  </div>
+
+  <!-- The Saved pull-down lives inside the toolbar so it rides with it: open, it floats over the
+       list (nothing moves). While it is open the toolbar is PINNED - the scroll handler leaves it
+       (and the menu hanging from it) alone, so the panel stays usable while the page scrolls. -->
+  <div class="menu" id="savedMenu" hidden>
+    <div class="mttl"><b>⭐ My stations</b><span id="favHead"></span>
+      <button class="ftag" id="btnSavedOnly" aria-pressed="false" title="Show only your saved stations in the list">only these</button>
+    </div>
+    <div class="slist" id="savedList"></div>
+  </div>
+</div>
+
+<div class="resbar"><span class="pager" id="pagerTop" role="group" aria-label="Pages"></span></div>
+<div id="liveStrip" class="livestrip" hidden></div>
+<div class="grid" id="list"></div>
+
+<!-- ===== World View: the same catalogue, on a globe (engine: globe.js) ===== -->
+<div id="worldPanel" hidden>
+  <canvas id="globe" role="img" aria-label="World map of radio stations — drag to rotate, scroll to zoom, click a dot to open a place"></canvas>
+  <div id="globeHud">
+    <div class="gchip" id="globeCount">…</div>
+    <div class="gchip" id="globeCoords">…</div>
+    <div class="gchip" id="globeCtl">
+      <button class="gbtn" id="btnGlobeDay" aria-pressed="false" title="Day / night on the globe — where the sun is right now">🌗</button>
+      <button class="gbtn" id="btnGlobeIn" title="Zoom in">＋</button>
+      <button class="gbtn" id="btnGlobeOut" title="Zoom out">－</button>
+    </div>
+    <div class="gchip" id="globeActs">
+      <button class="btn" id="btnGlobeFly" hidden title="Fly the globe to where your search / filters point">◎ Fly to results</button>
+      <button class="btn pink" id="btnGlobeRandom" title="Fly somewhere and tune it in — a random station from the list you are looking at"><span aria-hidden="true">🎲</span> Random flight</button>
+    </div>
+    <div class="gchip" id="globeLegend"><i><span class="d" style="background:#1fe3ff"></span>station</i><i><span class="d" style="background:#c9ff3d"></span>yours</i><i><span class="d" style="border:2px solid #c9ff3d;box-sizing:border-box"></span>on air</i></div>
+  </div>
+  <div id="globeTip"></div>
+  <div id="placePanel" hidden>
+    <div id="placeHead">
+      <div class="pt"><b id="placeTitle">…</b><span id="placeSub"></span></div>
+      <button class="btn" id="placeClose" title="Close (Esc)">✕</button>
+    </div>
+    <div id="placeList"></div>
+    <div id="placeNote" hidden></div>
+    <div id="placeFoot"><button class="btn" id="placeRand" hidden title="Play a random one of the stations with no coordinates — the globe has nowhere to fly, so it just tunes one in">🎲 Play a random one</button><button class="btn" id="placeAdd" title="Add your own station for this place — it will land on the map too">➕ Add a station here</button></div>
+  </div>
+</div>
+<div class="resbar" style="margin-top:14px"><span></span><span class="pager" id="pagerBottom" role="group" aria-label="Pages"></span></div>
+<!-- The page change is announced here, once, rather than twice (one per pager) or twice over in the
+     visible read-outs. Screen readers get "Page 2 of 174"; nobody sees another number to read. -->
+<div id="pageSR" class="pgsr" role="status" aria-live="polite"></div>
+</div>
+
+<div id="dock"><div class="scrim" id="dockScrim"></div><div class="dwin" id="dockWin">
+  <div class="head" id="dockHead"><span>🎧 mini player</span><button id="dockS" title="Small mini player">S</button><button id="dockM" title="Half the screen">M</button><button id="dockL" title="Full screen">L</button><button id="dockClose" title="Close the mini player and go back to the site">✕</button></div>
+  <iframe id="dockFrame" title="mini player"></iframe>
+  <div class="grip" id="dockGrip" title="Drag to resize the mini player"></div>
+</div></div>
+
+<div id="bar">
+  <img class="art" id="bArt" alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='80'%3E📻%3C/text%3E%3C/svg%3E">
+  <div class="wr-nm">
+    <div class="nm" id="bName" title="Station details">MINI</div>
+    <div class="who" id="bMeta"></div>
+  </div>
+  <span class="badge" id="bState" style="display:none"></span>
+  <button class="bctrl" id="bPlay" title="Play / pause">▶</button>
+  <button class="bctrl" id="bStop" title="Stop">⏹</button>
+  <span id="volWrap"><input type="range" id="vol" min="0" max="1" step="0.01"><span id="volPct">90%</span></span>
+  <button class="btn" id="btnBarSite" style="padding:6px 10px">Website</button>
+  <button class="btn pink" id="btnRandom" style="padding:6px 10px" aria-label="Play a random station from the list you are looking at"><span class="ico" aria-hidden="true">🎲</span> <span class="lbl">Random</span></button>
+  <button class="bctrl" id="btnViz" title="Visualiser: off — click to cycle 5 styles" style="font-size:15px">🎛</button>
+  <canvas id="viz" height="44" title="Decorative visualiser (radio streams are cross-origin, so this is a look, not a live spectrum)"></canvas>
+</div>
+
+<div id="modal"><div class="box">
+  <div class="mh" id="mHead"></div>
+  <div id="mBody"></div>
+  <div class="macts" id="mActs"></div>
+</div></div>
+
+<!-- ===== Add a station =====
+     It sits outside .toolbar on purpose: a phone scroll puts a transform on the toolbar, and a
+     position:fixed child of a transformed element is dragged and clipped by its ancestor - the
+     panel would slide off the screen with the toolbar. Here it belongs to <body> and to nothing
+     else, so it covers whatever the page is doing. -->
+<div id="addPanel" role="dialog" aria-modal="true" aria-labelledby="addTitle" hidden>
+  <div id="addBox">
+    <h3 id="addTitle">➕ Add a station</h3>
+    <p class="sub">Anything that streams audio: a local station the catalogue is missing, a favourite
+      that has gone, or a second, higher-quality stream of a station already listed.</p>
+    <div class="afields">
+      <div class="af wide">
+        <label for="stName">Station name <span class="opt">— what the card will show</span></label>
+        <input type="text" id="stName" autocomplete="off" placeholder="Fresh FM Adelaide">
+      </div>
+      <div class="af wide">
+        <label for="stUrl">Stream URL <span class="opt">— the audio itself, not the website</span></label>
+        <input type="url" id="stUrl" inputmode="url" autocomplete="off" spellcheck="false" placeholder="http://live.fresh927.com.au/freshmp3">
+      </div>
+      <div class="af">
+        <label for="stFormat">Format <span class="opt">— detected from the URL</span></label>
+        <select id="stFormat">
+          <option value="auto">Auto (detect from URL)</option>
+          <option value="MP3">MP3</option>
+          <option value="AAC">AAC / AAC+</option>
+          <option value="OGG">OGG Vorbis</option>
+          <option value="FLAC">FLAC</option>
+          <option value="UNKNOWN">Other / unknown</option>
+        </select>
+      </div>
+      <div class="af">
+        <label for="stBit">Bitrate <span class="opt">— kbps, optional</span></label>
+        <input type="number" id="stBit" min="0" max="1024" step="8" inputmode="numeric" placeholder="128">
+      </div>
+      <div class="af">
+        <label for="stCountry">Country <span class="opt">— optional</span></label>
+        <input type="text" id="stCountry" list="stCountryList" autocomplete="off" placeholder="Australia">
+        <datalist id="stCountryList"></datalist>
+      </div>
+      <div class="af">
+        <label for="stCity">City / state <span class="opt">— optional</span></label>
+        <input type="text" id="stCity" autocomplete="off" placeholder="Adelaide">
+      </div>
+      <div class="af">
+        <label for="stLang">Language <span class="opt">— optional</span></label>
+        <input type="text" id="stLang" autocomplete="off" placeholder="english">
+      </div>
+      <div class="af">
+        <label for="stTags">Genres <span class="opt">— commas, optional</span></label>
+        <input type="text" id="stTags" autocomplete="off" placeholder="community, talk, music">
+      </div>
+      <div class="af wide">
+        <label for="stHp">Website <span class="opt">— optional, shown as a link on the card</span></label>
+        <input type="url" id="stHp" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://fresh927.com.au">
+      </div>
+    </div>
+    <div id="stStatus" role="status" aria-live="polite"></div>
+    <div class="howto">
+      <b>How to:</b> paste the <b>stream address</b> itself — the one that ends in
+      <code>.mp3</code>, <code>.aac</code>, <code>.ogg</code> or <code>.m3u8</code>, or a bare
+      address such as <code>http://live.fresh927.com.au/freshmp3</code>. A station page or a
+      <code>.pls</code>/<code>.m3u</code>/<code>.xspf</code> playlist download will not play in a
+      browser: open that playlist in a desktop player (VLC) and copy the address it points to.
+      <b>Test stream</b> checks it here before you save; a station this browser cannot play is
+      refused, and one that will not play everywhere is flagged. Your stations stay in this
+      browser — nothing is uploaded.
+    </div>
+    <div class="aacts">
+      <button class="btn" id="stTest" type="button">Test stream</button>
+      <span class="grow"></span>
+      <button class="btn" id="stCancel" type="button">Cancel</button>
+      <button class="btn pink" id="stSave" type="button">Add station</button>
+    </div>
+  </div>
+</div>
+<button id="toTop" title="Back to top">▲</button>
+<div id="toast"></div>
+<div id="notice" role="status" aria-live="polite"></div>
+
+<!-- the five visualiser looks, shared with the mini player so the two cannot drift apart -->
+<script src="viz.js"></script>
+<script src="countries.js"></script>
+<script src="stations.js"></script>
+<script src="worldgeo.js"></script>
+<script src="geo.js"></script>
+<script src="globe.js?v=20261030h"></script>
+<!-- The shared core (wr-core.js): data helpers, filters, favourites, the user's own stations
+     and the single-owner player. This page's inline script used to carry its own copies; it
+     now wires the core's host hooks to its chrome. world.html loads the same file. -->
+<script src="wr-core.js?v=20261030d"></script>
+<script>
+"use strict";
+/* ============================= helpers ============================= */
+if (!window.RB_META || !window.RB_STATIONS) {
+  const s = document.getElementById("spin");
+  if (s) s.innerHTML = '<div style="text-align:center;max-width:470px;padding:0 20px;line-height:1.65">'
+    + '<h1 style="font-size:22px;margin:0 0 10px">⚠ The station list could not be loaded</h1>'
+    + '<p style="margin:0 0 14px;color:#9aa0b8">This is usually a temporary glitch or a half-finished upload. '
+    + 'Please reload the page — if it keeps happening, the station data files (<b>stations.js</b> and <b>countries.js</b>) '
+    + 'are missing or incomplete on the server and need re-uploading.</p>'
+    + '<button id="reloadBtn" style="font:inherit;font-weight:800;cursor:pointer;background:linear-gradient(90deg,#c9ff3d,#ff3ea5);color:#0b0d12;border:0;border-radius:10px;padding:10px 18px">Reload the page</button></div>';
+  const rb = document.getElementById("reloadBtn"); if (rb) rb.onclick = () => location.reload();
+  document.body.dataset.ready = "1";
+  throw new Error("catalogue missing");
+}
+const META = window.RB_META, ALL = window.RB_STATIONS;
+const $ = s => document.querySelector(s);
+/* allStations is the catalogue PLUS the user's own stations (WR keeps the real array; this
+   Proxy forwards every read - length / forEach / [i] / indexOf - to it, so the call sites
+   below keep working with zero edits, exactly as they read the local array before). */
+const allStations = new Proxy([], {
+  get(t, k) { const a = WR.data.all(); const v = a[k]; return typeof v === "function" ? v.bind(a) : v; },
+  has(t, k) { return k in WR.data.all(); }
+});
+const fmt = WR.fmt, esc = WR.esc, flag = WR.flag, tokens = WR.tokens;
+const ccName = WR.ccName, countryOf = WR.countryOf, normLang = WR.normLang;
+let tt; const toast = (m,ms=4200)=>{const t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(tt);tt=setTimeout(()=>t.style.display="none",ms)};
+const toastAction = (m,label,fn,ms=9000)=>{const t=$("#toast");        /* a toast with one button — the carry-over's one-tap resume */
+  t.innerHTML=`<span>${esc(m)}</span><button type="button" id="toastGo">${esc(label)}</button>`;
+  t.style.display="block";clearTimeout(tt);
+  const b=document.getElementById("toastGo"); if(b) b.onclick=()=>{t.style.display="none";clearTimeout(tt);fn()};
+  tt=setTimeout(()=>t.style.display="none",ms)};
+function copyText(txt,label){const done=()=>toast((label||"Stream URL")+" copied.");const legacy=()=>{const ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");done()}catch(e){toast("Copy failed.")}ta.remove()};
+ if(navigator.clipboard&&window.isSecureContext)navigator.clipboard.writeText(txt).then(done).catch(legacy);else legacy()}
+const ls = WR.ls;
+/* ================== environment detection & hardening ==================
+   Everything here is about surviving real-world user setups: old browsers, private
+   mode (storage throws), blocked pop-ups, missing APIs, and browsers that simply
+   cannot play a given stream format. Failures become visible messages, never silence. */
+const CAP = WR.CAP;   /* probed once in wr-core.js: https, file, storage, bc, audio, hls, legacy */
+window.__rbgFatal = false;
+function fallbackPanel(title, body){
+  const s = document.getElementById("spin");
+  if (s) s.innerHTML = '<div style="text-align:center;max-width:480px;padding:26px 20px;line-height:1.65">' +
+    '<h1 style="margin:0 0 12px;font-size:24px">' + title + '</h1><p style="margin:0;color:#9aa0b8">' + body + '</p></div>';
+  document.body.dataset.ready = "1";
+}
+if (CAP.legacy) { window.__rbgFatal = true; fallbackPanel("This browser is too old 🕸",
+  "MODDYS World Radio needs a current browser — Chrome, Edge, Firefox, Safari, Opera or Brave from the last few years. Please update your browser (or open this page in another one) and everything will work normally.");
+  throw new Error("unsupported browser"); }
+if (!CAP.audio) { window.__rbgFatal = true; fallbackPanel("Audio isn't available 🎧",
+  "This browser can't play audio streams, so the radio can't start. Please try a current browser such as Chrome, Edge, Firefox, Safari, Opera or Brave.");
+  throw new Error("no audio support"); }
+/* one visible, dismissable notice bar for anything degraded — never a silent failure */
+let _errN = 0;
+function notice(html, kind, onceOrOpts){
+  const bar = document.getElementById("notice"); if (!bar) return;
+  const once = onceOrOpts === true || (onceOrOpts && onceOrOpts.once === true);
+  if (once && bar.dataset.kind === (kind||"")) return;
+  const extra = bar.dataset.kind || "", keepKind = kind || "";
+  bar.dataset.kind = keepKind || extra;
+  bar.innerHTML = "<span>" + html + "</span><button type=\"button\" id=\"noticeX\" aria-label=\"Dismiss message\">✕</button>";
+  bar.className = "show " + (kind || "");
+  const x = document.getElementById("noticeX"); if (x) x.onclick = () => { bar.className = ""; bar.dataset.kind = ""; };
+  if (onceOrOpts && onceOrOpts.tryAgain) {   /* the core's "try anyway" rides this */
+    const b = document.getElementById("noticeTry");
+    if (b) b.onclick = () => { bar.className = ""; bar.dataset.kind = ""; onceOrOpts.tryAgain(); };
+  }
+}
+window.addEventListener("error", () => { if (window.__rbgFatal || ++_errN > 3) return;
+  notice("⚠ Something went wrong on this page. If anything misbehaves, <b>reload</b> (Ctrl/Cmd+R) — your saved stations are safe.", "warn", true); });
+window.addEventListener("unhandledrejection", () => { if (window.__rbgFatal || ++_errN > 3) return;
+  notice("⚠ A background action failed. Reloading the page usually clears it.", "warn", true); });
+if (!CAP.storage) notice("🔒 Your browser is blocking site storage (private/incognito mode, or cookies blocked). The radio still works, but <b>saved stations, volume and layout choices won't be remembered</b>.", "info", true);
+if (!CAP.bc && CAP.storage) notice("ℹ This browser has no direct window-to-window messaging, so the mini player and the page sync through shared storage instead — everything still works.", "info", true);
+if (!CAP.bc && !CAP.storage) notice("ℹ Windows can't sync in this browser setup, so the mini player works as its own player rather than mirroring the page.", "info", true);
+if (CAP.file) notice("ℹ You're viewing the files directly from disk (file://). Everything plays, but the mini player can only sync when the site is opened over http/https — as it will be on the web.", "info", true);
+/* --- the shared play vocabulary lives in wr-core.js --- */
+const KIND_TEXT = WR.play.KIND_TEXT, playKind = WR.play.playKind, playable = WR.filters.playable;
+const unplayableNotice = WR.play.unplayableNotice, unplayableCount = WR.data.unplayableCount;
+/* Station logos: the catalogue gives us the broadcaster's own logo URL. A couple of percent of them
+   sit behind Google's image proxy (gstatic / googleusercontent), which would mean requests to Google
+   from a page that promises no third parties. Those logos are dropped (the card falls back to the flag
+   and station name); every other logo host — the station's own site, Wikimedia, Firebase storage, etc.
+   — is left alone. Set STRIP_PROXY_LOGOS to false to show them too. */
+const STRIP_PROXY_LOGOS = true;
+const PROXY_LOGO_HOST = /(^|\.)(gstatic\.com|googleusercontent\.com|ggpht\.com)$/;
+function logoURL(s){
+  /* 614 entries in the catalogue have the STRING "null" in their logo field, and a card that
+     takes it literally asks the site for /null - a failed request and a console error per card,
+     a few hundred per page. Anything that is not a real address is treated as no logo. */
+  const u = (s && s.f) || ""; if(!u || u === "null" || u === "undefined") return "";
+  if(!STRIP_PROXY_LOGOS) return u;
+  try { return PROXY_LOGO_HOST.test(new URL(u, location.href).hostname.toLowerCase()) ? "" : u; } catch(e){ return u; }
+}
+/* images that fail to load (stations with dead logos) simply disappear — no broken-image icons */
+document.addEventListener("error", e => { const t = e.target; if(t && t.tagName === "IMG"){ t.removeAttribute("src"); t.classList.add("imgfail"); } }, true);
+/* ======================= cross-window channel + player =======================
+   The channel, the single-owner player, the favourites and the user's own stations live in
+   wr-core.js (shared with world.html). This block wires the core's hooks to this page's
+   chrome; v1 behaviour is unchanged - the existing suites are the proof. */
+const channel = WR.chan;
+/* the docked mini player hides on request from another tab - the one message this page
+   handles itself (the core cases are shared; see wr-core.js). */
+WR.chan.on(function (m) { if (m && m.from !== WR.play.cid() && m.type === "pop-hide" && dockOpen) dockHide(); });
+
+const CID = WR.play.cid();      /* this window's id */
+/* read-only shims: the player's state lives in the core; these forward the reads this page's
+   chrome still makes (play buttons, the visualiser, the World View's now-playing mark). */
+const P = {
+  get cur() { return WR.play.cur(); }, get playing() { return WR.play.playing(); },
+  get mine() { return WR.play.mine(); }, get vol() { return WR.play.vol(); }
+};
+const favSet = { has: function (i) { return WR.fav.has(i); }, get size() { return WR.fav.size(); } };
+const favList = WR.fav.list, metaMap = WR.recents.meta;
+const toggleFav = WR.fav.toggle, rmFav = WR.fav.rm;     /* saveFav rides toggleFav */
+const customStations = WR.data.custom, isCustom = WR.data.isCustom;
+function refreshCustom() { _byId = null; return WR.data.refreshCustom(); }
+const M = WR.play.M, requestPlay = WR.play.requestPlay, requestToggle = WR.play.requestToggle,
+      requestStop = WR.play.requestStop;
+
+/* the core's hooks: everything the player reports lands on this page's chrome. */
+WR.hooks.toast = toast;
+WR.hooks.toastAction = toastAction;
+WR.hooks.notice = notice;
+WR.hooks.pickPrompt = "Pick a station first — hit ▶ on any card.";
+WR.hooks.willPlay = function () { barPinned = true; syncBarAway(); };   /* play pins the bar back */
+WR.hooks.onStation = function (m) {                      /* the bar's name/art block */
+  if (!m) { $("#bName").textContent = "MINI"; $("#bMeta").textContent = ""; syncPopAffordance(); return; }
+  $("#bName").textContent = m.n;
+  $("#bMeta").textContent = flag(m.cc) + " " + countryOf(m) + " · " + (m.l || "") + " · " + (m.x || "") + (m.b ? " " + m.b + "kbps" : "");
+  const art = logoURL(m);
+  if (art) { const im = new Image(); im.onload = () => { $("#bArt").src = art; }; im.src = art; }
+  syncPopAffordance();                 /* the MINI label stops being the pop-out offer here */
+};
+WR.hooks.onPlaying = function (on, info) {               /* the bar's state + its buttons */
+  const b = $("#bPlay");
+  b.classList.toggle("playing", !!on && info.mine); b.classList.toggle("pop", !!on && !info.mine);
+  b.textContent = on ? (info.mine ? "⏸" : "●") : "▶";
+  const st = $("#bState");
+  st.style.display = on ? "" : "none";
+  if (on) {
+    st.textContent = info.mine ? "playing here" : "playing in " + ((info.remoteKind === "pop") ? "pop-out" : "another tab");
+    st.className = "badge " + (info.mine ? "on" : "remote");
+  }
+  syncPlayBtns();
+};
+WR.hooks.onVol = function () { setVolUI(); };
+WR.hooks.onFavs = function () { refreshFavUI(); if (state.favOnly) apply(); };
+
+/* ---------- the bar steps aside while you search - on the screens where it is in the way ----
+   (unchanged: on a phone or tablet the bar leaves while the search box has something in it;
+   pressing play pins it back - that pin now rides WR.hooks.willPlay.) */
+let barPinned = false;
+function barAway() { const q = $("#q");
+  return narrowBar() && !barPinned && !!q && q.value.trim() !== ""; }
+function syncBarAway() {
+  const away = barAway(), bar = $("#bar");
+  if (!bar) return;
+  bar.classList.toggle("wr-away", away);
+  /* re-measure either way, so the page takes back the room the bar was holding */
+  if (away) document.documentElement.style.setProperty("--barh", "0px"); else syncBarSpace();
+}
+/* ============================== UI ============================== */
+function setVolUI(){ $("#vol").value=WR.play.vol(); $("#volPct").textContent=Math.round(WR.play.vol()*100)+"%"; }
+$("#vol").addEventListener("input",e=>{ WR.play.setVol(+e.target.value); });
+$("#bPlay").addEventListener("click",requestToggle);
+$("#bStop").addEventListener("click",requestStop);
+$("#bName").addEventListener("click",()=>{ if(P.cur) showInfo(P.cur); else togglePopOut(); });
+$("#btnBarSite").addEventListener("click",()=>{ if(P.cur&&P.cur.hp) window.open(P.cur.hp,"_blank","noopener"); });
+function syncPlayBtns(){ document.querySelectorAll("button.play").forEach(b=>b.classList.toggle("on",P.playing&&P.mine&&P.cur&&b.dataset.uuid===P.cur.i)); }
+/* pop-out window / dock — opened from the cover picture and from the idle MINI label on the strip
+   (the one button that used to do it is the 🎲 Random button now); it hides again when it is already
+   open, in this tab or another. */
+let winPop = null, dockOpen = false;
+const popAliveFresh = () => (Date.now() - (ls.get("pop-alive",0)||0)) < 5000;   // a pop-out exists somewhere
+const popOutOpen = () => !!((winPop && !winPop.closed) || dockOpen || popAliveFresh());
+/* The two things on the strip that stand for the player: the cover picture, always, and the name
+   label while it is idle and says MINI. Both open the pop-out; the name goes back to being the
+   station's details link the moment a station is loaded. */
+function syncPopAffordance(){
+  const art=$("#bArt"), nm=$("#bName");
+  const open=popOutOpen();
+  const say = open ? "Hide the pop-out player — playback continues here"
+                   : "Open the pop-out mini player (it can keep playing after you close this page)";
+  if(art){
+    art.classList.add("art-pop");
+    art.setAttribute("role","button"); art.setAttribute("tabindex","0");
+    art.setAttribute("aria-label", open ? "Hide the pop-out player" : "Open the pop-out mini player");
+    art.title = say;
+  }
+  if(nm){
+    const idle = !P.cur;                 // idle = the label still reads MINI
+    nm.classList.toggle("nm-pop", idle);
+    if(idle){
+      nm.setAttribute("role","button"); nm.setAttribute("tabindex","0");
+      nm.setAttribute("aria-label", open ? "Hide the pop-out player" : "Open the pop-out mini player");
+      nm.title = say;
+    } else {
+      nm.removeAttribute("role"); nm.removeAttribute("tabindex");
+      nm.setAttribute("aria-label","Station details"); nm.title = "Station details";
+    }
+  }
+}
+
+/* The bar is fixed and its height is not a constant (the visualiser adds a row, a phone makes
+   the controls a size smaller), so measure it and publish it as --barh: the page pads itself by
+   that much, and the back-to-top button and the toasts sit above it instead of behind it. */
+/* The cover picture is the pop-out control at every width (see syncPopAffordance): it is the thing
+   that represents the player, so it is the thing that sends it somewhere else. It keeps its role,
+   label and focus ring for the same reason - an image that acts like a button has to read like one. */
+function narrowBar(){ return !!(window.matchMedia && window.matchMedia("(max-width:900px)").matches); }
+/* Where the player goes when the cover picture (or the idle MINI label) is pressed.
+   A real pop-up WINDOW exists on a desktop, and that is what the site asks for. A mobile browser
+   has none: Chrome on Android and Safari on iOS ignore the size a pop-up asks for and open it as a
+   whole TAB, and the player is written to open minimised in a window - so a tablet ended up looking
+   at a full page with a transport row and a "click anywhere to expand" note on it. Those browsers
+   fall back to the docked player whenever a pop-up is refused anyway, and the dock is the shape a
+   phone already knows, so on a mobile browser the player is docked in the page instead.
+   Desktop browsers keep their window, touch screen or not. */
+function mobileBrowser(){
+  const ua = navigator.userAgent || "";
+  if(/Android|iPhone|iPad|iPod|Mobile/i.test(ua)) return true;
+  if(/Macintosh/.test(ua) && (navigator.maxTouchPoints||0) > 1) return true;   // iPadOS reports itself as a Mac
+  /* A screen that only has a finger (no mouse at all) has no pop-up window either - and a tablet
+     switched to "desktop site" reports a desktop UA, which is how a tablet can still end up with
+     the player as a full-screen tab. */
+  try{ if(window.matchMedia && window.matchMedia("(hover:none) and (pointer:coarse)").matches) return true; }catch(e){}
+  return false;
+}
+$("#bArt").addEventListener("click",()=>togglePopOut());
+$("#bArt").addEventListener("keydown",e=>{
+  if(e.key==="Enter" || e.key===" "){ e.preventDefault(); togglePopOut(); }
+});
+$("#bName").addEventListener("keydown",e=>{
+  if(!P.cur && (e.key==="Enter" || e.key===" ")){ e.preventDefault(); togglePopOut(); }
+});
+window.addEventListener("resize",syncPopAffordance);
+window.addEventListener("resize",syncBarAway);   /* widening past 900px returns the bar */
+
+function syncBarSpace(){
+  const b=$("#bar");
+  const h=(!b || getComputedStyle(b).display==="none") ? 0 : Math.round(b.getBoundingClientRect().height);
+  const now=h+"px";
+  if(document.documentElement.style.getPropertyValue("--barh")!==now)
+    document.documentElement.style.setProperty("--barh",now);
+}
+/* ---- the docked mini player: a window you can move, resize and size by hand --------------------
+   S is a small player, M is half the screen, L is the whole screen; the title bar drags it and the
+   corner grip resizes it, so every size in between is available as well. The box is remembered
+   between opens (px, plus which button produced it), and while the player is up the page stands
+   down (body.player) - the mini player IS the screen then, which is what a phone asked for. */
+const DOCK_MIN = { w: 240, h: 180 };
+let dockKind = ls.get("dock-kind", "small");            // small | med | large | free
+let dockState = null;                                   // the live box in px, or null = use the preset
+function clampDock(b){ const vw = window.innerWidth, vh = window.innerHeight;
+  const w = Math.max(DOCK_MIN.w, Math.min(Math.round(b.w), vw));
+  const h = Math.max(DOCK_MIN.h, Math.min(Math.round(b.h), vh));
+  /* a handhold always stays on screen: 96px of width and the whole title bar */
+  return { x: Math.max(-w + 96, Math.min(Math.round(b.x), vw - 96)),
+           y: Math.max(0, Math.min(Math.round(b.y), vh - 44)), w: w, h: h }; }
+function dockPreset(kind){ const vw = window.innerWidth, vh = window.innerHeight;
+  if(kind === "large") return { x:0, y:0, w:vw, h:vh };                       // full screen
+  if(kind === "med")   return { x:Math.round(vw*0.1), y:Math.round(vh*0.25),
+                                w:Math.round(vw*0.8), h:Math.round(vh*0.5) }; // half the screen
+  const w = Math.min(320, Math.round(vw*0.78)), h = Math.min(250, Math.round(vh*0.32));
+  return { x: Math.round((vw-w)/2), y: Math.max(8, vh-h-14), w:w, h:h }; }    // small
+function placeDock(){ const d=$("#dock"), w=$("#dockWin"); if(!d || !w || d.style.display === "none") return;
+  if(!dockState) dockState = dockPreset(dockKind);
+  dockState = clampDock(dockState);
+  w.style.left = dockState.x+"px"; w.style.top = dockState.y+"px";
+  w.style.width = dockState.w+"px"; w.style.height = dockState.h+"px";
+  w.classList.toggle("full", dockState.w >= window.innerWidth && dockState.h >= window.innerHeight);
+  [["small","#dockS"],["med","#dockM"],["large","#dockL"]].forEach(([k,sel]) => $(sel).classList.toggle("on", dockKind === k)); }
+function setDockSize(kind){ dockKind = kind; ls.set("dock-kind", kind); dockState = null;
+  placeDock(); ls.set("dock-box", dockState); syncBarSpace(); }
+function dockShow(){ $("#dockFrame").src = "popout.html"; $("#dock").style.display = "block";
+  dockState = (dockKind === "free" && ls.get("dock-box", null)) || null;
+  document.body.classList.add("player"); dockOpen = true; placeDock(); syncPopAffordance(); }
+function dockHide(){ $("#dock").style.display = "none"; try{ $("#dockFrame").src = "about:blank"; }catch(e){}
+  document.body.classList.remove("player"); dockOpen = false; syncBarSpace(); syncPopAffordance(); }
+window.addEventListener("resize", () => { if(dockOpen) placeDock(); });
+/* drag the title bar, resize from the corner - either one turns the size into "free" */
+function dockGesture(el, box){ el.addEventListener("pointerdown", e => {
+  if(e.target && e.target.closest && e.target.closest("button")) return;   // S/M/L/✕ keep their clicks
+  const b = dockState || dockPreset(dockKind);
+  const from = { px:e.clientX, py:e.clientY, x:b.x, y:b.y, w:b.w, h:b.h };
+  const move = ev => { dockState = clampDock(box(from, ev)); dockKind = "free"; placeDock(); };
+  const up = () => { el.removeEventListener("pointermove", move); el.removeEventListener("pointerup", up);
+    el.removeEventListener("pointercancel", up); ls.set("dock-kind", dockKind); ls.set("dock-box", dockState);
+    placeDock(); };
+  el.addEventListener("pointermove", move); el.addEventListener("pointerup", up);
+  el.addEventListener("pointercancel", up);
+  try{ el.setPointerCapture(e.pointerId); }catch(err){}
+  e.preventDefault(); }, { passive:false }); }
+dockGesture($("#dockHead"), (f, ev) => ({ x:f.x + (ev.clientX-f.px), y:f.y + (ev.clientY-f.py), w:f.w, h:f.h }));
+dockGesture($("#dockGrip"), (f, ev) => ({ x:f.x, y:f.y, w:f.w + (ev.clientX-f.px), h:f.h + (ev.clientY-f.py) }));
+/* two more ways out of it, both of them what a phone already expects: a tap on the backdrop, and
+   Escape. A pull-down's own Escape still wins - it is the thing the user opened last. */
+$("#dockScrim").addEventListener("click",dockHide);
+document.addEventListener("keydown", e => {
+  if(e.key !== "Escape" || !dockOpen) return;
+  try{ if(menuName) return; }catch(err){}
+  dockHide(); });
+function togglePopOut(){
+  if(winPop && !winPop.closed){ try{ winPop.close(); }catch(e){} winPop=null; syncPopAffordance();
+    toast("Pop-out hidden — playback continues on this page."); return; }
+  if(dockOpen){ dockHide(); return; }
+  if(popAliveFresh()){ channel.post({type:"pop-hide"});           // it lives in another tab: ask it to close itself
+    syncPopAffordance(); toast("Pop-out hidden — playback continues on this page."); return; }
+  if(mobileBrowser()){ dockShow(); return; }                     // a tab is not a mini player: dock it
+  let w = null;
+  try { w = window.open("popout.html","rbgPop","popup=1,width=330,height=250,left="+Math.max(0,(screen.availWidth-340))+",top="+Math.max(0,(screen.availHeight-300))+",resizable=yes,scrollbars=no"); }
+  catch(e){ w = null; }
+  if(w){ winPop=w;
+    /* it opens small and out of the way: the page keeps the focus, the player expands on click
+       (browsers expose no "minimise" API, so this is the closest a web page can get) */
+    const keepFocus=()=>{ try{ window.focus(); }catch(e){} };
+    setTimeout(keepFocus,120); setTimeout(keepFocus,800);
+    /* some blockers let the window open and then close it again — treat that as blocked too */
+    setTimeout(()=>{ if(winPop && winPop.closed && !dockOpen){ winPop=null; dockShow(); popupBlockedNotice(); } }, 1100);
+    toast("Mini player opened minimised — click it to expand.");
+    syncPopAffordance(); }
+  else { dockShow(); popupBlockedNotice(); }
+}
+function popupBlockedNotice(){
+  notice("🚫 <b>Your browser blocked the pop-up</b>, so the mini player is docked inside this page instead (bottom-right, resize it with S / M / L). To get it as a separate window you can drag anywhere, click your browser's <b>“pop-ups blocked”</b> icon in the address bar and choose <b>always allow pop-ups for this site</b>, then click the cover picture (or the MINI label) again.", "warn"); }
+/* 🎲 Random: play a station out of the list you are looking at. The search, the filters and the
+   Verified switch all still apply - it is a random pick out of what the count is counting - and it
+   prefers one this browser can actually play, because a random station that cannot start is not a
+   station at all. */
+$("#btnRandom").addEventListener("click", () => {
+  const rows = ALL.filter(s => matchAll(s, {}));
+  if(!rows.length){ toast("Nothing to pick from — loosen the filters first.", 5000); return; }
+  const can = rows.filter(playable);
+  const pool = can.length ? can : rows;
+  const s = pool[Math.floor(Math.random()*pool.length)];
+  toast("🎲 "+s.n, 4200);
+  doPlay(s);
+});
+setInterval(syncPopAffordance, 1000);
+setInterval(worldSyncNow, 1000);
+window.addEventListener("message",e=>{ if(e.data==="rbg-pop-closed"){
+  /* the mini player has left - a window closed, or a docked one asked to fold away. Either way the
+     cover picture goes back to offering the pop-out, and the dock goes with it. */
+  winPop=null; if(dockOpen) dockHide(); syncPopAffordance(); } });
+/* dock controls: S / M / L set the size, ✕ closes it and hands the page back */
+$("#dockClose").addEventListener("click",dockHide);
+$("#dockS").addEventListener("click",()=>setDockSize("small"));
+$("#dockM").addEventListener("click",()=>setDockSize("med"));
+$("#dockL").addEventListener("click",()=>setDockSize("large"));
+/* ===== collapsible interface: sections, panel, header, back-to-top, shortcuts ===== */
+/* ===== the Saved pull-down (the only one left: the genre panel is folded into the search field) =====
+   It floats over the list (see .menu), so opening it never pushes a card down. It closes on Escape
+   and on a click outside - but NOT on a scroll: while it is open the toolbar is pinned, so a phone
+   can scroll the results underneath and still use the panel (see the scroll handler). */
+const MENUS = { saved:["#btnSaved","#savedMenu"] };
+let menuName = "";
+const menuOpen = name => !!(name && !$(MENUS[name][1]).hidden);
+function openMenu(name){
+  name = name || "";
+  Object.keys(MENUS).forEach(k => { const b=$(MENUS[k][0]), panel=$(MENUS[k][1]);
+    const on = (k === name); panel.hidden = !on;
+    b.classList.toggle("on", on); b.setAttribute("aria-expanded", String(on)); });
+  menuName = name;
+  if(name === "saved") renderSavedList();
+  /* One history entry per open menu, so the platform's back gesture is "close this panel" rather
+     than "leave the site" - and it is given straight back when the panel closes any other way. */
+  if(name) pushMenuHistory(); else dropMenuHistory();
+}
+Object.keys(MENUS).forEach(k => $(MENUS[k][0]).addEventListener("click", e => {
+  e.stopPropagation(); openMenu(menuOpen(k) ? "" : k); }));
+
+/* ======================= add a station (your own streams) =======================
+   A user's own stations live in THIS browser and nowhere else (localStorage "rbg-custom") - the site
+   still sends nothing to anybody. They are merged into the list exactly like catalogue entries, so
+   every existing part of the page - the search, the three filters, sorting, the play button, the
+   star list, the mini player - works on them unchanged. They are listed BEFORE the catalogue, so a
+   station that was just added is the first card on the screen rather than 40,000 rows down.
+   The player's own rules are applied at the door: a stream this browser cannot play is refused, with
+   a notification that says why and what to do instead - never added and then silently dead. */
+const CUSTOM_KEY = "custom";
+/* customStations() / refreshCustom() / isCustom() live in wr-core.js; this page's
+   add-a-station form below still reads and writes them through CUSTOM_KEY. */
+const CC_BY_NAME = (() => { const m = {};
+  (META.countries || []).forEach(c => { if(c && c.c) m[String(c.c).toLowerCase()] = c.cc; });
+  return m; })();
+const ccFor = name => CC_BY_NAME[String(name || "").trim().toLowerCase()] || "";
+/* The URL is all a page can see without downloading the stream, so detection is a hint for the card
+   and for the pre-flight check - never a promise. */
+function detectFormat(u){
+  const p = String(u || "").split("?")[0].split("#")[0].toLowerCase();
+  if(/\.mp3$/.test(p)) return "MP3";
+  if(/\.(aac|m4a|mp4)$/.test(p)) return "AAC";
+  if(/\.(ogg|oga|opus)$/.test(p)) return "OGG";
+  if(/\.flac$/.test(p)) return "FLAC";
+  if(/\.m3u8$/.test(p)) return "HLS";
+  return "UNKNOWN";
+}
+/* The catalogue's spelling of the same formats, so a stream typed in by hand is treated by the card
+   and by the Format filter exactly like one that came from the catalogue. HLS is a delivery format,
+   not a codec - those streams are AAC underneath, and the card marks the entry with its own HLS badge. */
+const CAT_FORMAT = { MP3:"MP3", AAC:"AAC+", OGG:"OGG", FLAC:"FLAC", HLS:"AAC", UNKNOWN:"UNKNOWN" };
+/* Can this browser play it? "No" is a notification, never a silent add. */
+const NOT_A_STREAM = /\.(pls|m3u|xspf|asx|wax|wpl|ram|smil)$/i;
+function checkStream(rawURL, format){
+  const u = String(rawURL || "").trim();
+  if(!u) return { level:"bad", msg:"Paste the stream address - the audio itself." };
+  let url; try { url = new URL(u); } catch(e){
+    return { level:"bad", msg:"That is not a complete web address: it has to start with http:// or https://." }; }
+  if(url.protocol !== "http:" && url.protocol !== "https:")
+    return { level:"bad", msg:"Only http:// and https:// addresses can be played." };
+  const path = url.pathname.toLowerCase();
+  if(NOT_A_STREAM.test(path))
+    return { level:"bad", msg:"That is a playlist file, not a stream - a web page cannot open a .pls/.m3u/.xspf. Open the playlist in a desktop player (VLC) and use the address it points to." };
+  if(/\.mpd$/i.test(path))
+    return { level:"bad", msg:"A DASH manifest (.mpd) cannot be played in a browser. Look for an .m3u8 (HLS) address, or a direct MP3/AAC stream." };
+  if(/\.m3u8$/i.test(path) && !CAP.hls)
+    return { level:"warn", short:"HLS is Safari/Android only", msg:"HLS (.m3u8) plays in Safari and Android Chrome only - here the station is added, but it stays listed as unplayable." };
+  if(CAP.https && url.protocol === "http:")
+    return { level:"warn", short:"plain http is blocked on https", msg:"This page is on https and browsers block plain http streams on it (mixed content). The station is added, but it only plays from an http page or in a desktop player." };
+  if(format === "UNKNOWN")
+    return { level:"warn", short:"no format in the address", msg:"No format is recognisable in that address. It may still work - many broadcasters hide it - so it is worth pressing Test stream." };
+  return { level:"ok", msg:"Looks like a playable " + format + " stream." };
+}
+
+/* ---- the panel ---- */
+const addPanel = $("#addPanel");
+const stEl = id => document.getElementById(id);
+const stStatus = stEl("stStatus");
+function setStatus(level, msg){ if(!stStatus) return;
+  stStatus.className = level ? ("show " + level) : ""; stStatus.textContent = msg || ""; }
+const resolvedFormat = () => { const f = stEl("stFormat").value;
+  return f === "auto" ? detectFormat(stEl("stUrl").value) : f; };
+function fillCountryList(){ const dl = stEl("stCountryList"); if(!dl || dl.childElementCount) return;
+  const seen = {};
+  (META.countries || []).forEach(c => { const n = c && c.c; if(n && !seen[n]){ seen[n] = 1;
+    dl.insertAdjacentHTML("beforeend", '<option value="' + esc(n) + '"></option>'); } }); }
+function openAddPanel(){
+  if(!addPanel) return;
+  openMenu("");                        // one surface at a time: the Saved pull-down closes
+  fillCountryList();
+  addPanel.hidden = false; addPanel.classList.add("show");
+  $("#btnAdd").setAttribute("aria-expanded", "true");
+  liveCheck();
+  stEl("stName").focus();
+}
+function closeAddPanel(){
+  if(!addPanel) return;
+  addPanel.classList.remove("show"); addPanel.hidden = true;
+  $("#btnAdd").setAttribute("aria-expanded", "false");
+  setStatus("", "");
+  $("#btnAdd").focus();
+}
+const addPanelOpen = () => !!(addPanel && !addPanel.hidden);
+/* A form that has just been used is emptied, a form that was cancelled is left alone: clearing on
+   Cancel throws away typing the user may want back, while leaving the values after a successful add
+   means the next visit starts with a URL that is already in the list. */
+function resetForm(){
+  ["stName","stUrl","stHp","stBit","stCountry","stCity","stLang","stTags"]
+    .forEach(id => { const el = stEl(id); if(el) el.value = ""; });
+  const f = stEl("stFormat"); if(f) f.value = "auto";
+  setStatus("", "");
+}
+/* The status line follows the URL as it is typed: a refusal is stated straight away, a warning when
+   there is something to warn about, and nothing at all for an empty field. */
+function liveCheck(){
+  const u = stEl("stUrl").value.trim();
+  if(!u){ setStatus("", ""); return null; }
+  const v = checkStream(u, resolvedFormat());
+  setStatus(v.level, (v.level === "ok" ? "\u2713 " : v.level === "warn" ? "\u26a0 " : "\u2717 ") + v.msg);
+  return v;
+}
+/* ---- testing a stream for real ----
+   "Test stream" answers one question: is there a playable audio stream at this address? It uses the
+   player and the network together (see below), it is muted so it can never make noise, and every
+   answer it gives names its evidence - a content type from the station's own server, the browser
+   decoding the audio, or an honest "could not confirm". It never says "playable" on a guess. */
+let testEl = null, testTimer = 0, testAbort = null, testResp = null;
+const MEDIA_BAD = "This browser could not open that address as audio. It is a web page, a playlist, or the stream is offline or blocked - open it in a desktop player to be sure.";
+const NET_BAD = "Nothing answered at that address - the host is unreachable or refused the connection. Check the spelling, or the station may be offline.";
+const NET_HTML = "That address answered with a web page, not audio. A stream address usually ends in .mp3, .aac, .ogg or .m3u8 - or is a bare address such as /freshmp3.";
+function finishTest(level, msg){
+  clearTimeout(testTimer);
+  if(testAbort){ try{ testAbort.abort(); }catch(e){} testAbort = null; }
+  if(testResp){ try{ testResp.body.cancel(); }catch(e){} testResp = null; }
+  const btn = stEl("stTest"); if(btn){ btn.disabled = false; btn.textContent = "Test stream"; }
+  if(testEl){ try{ testEl.pause(); testEl.removeAttribute("src"); testEl.load(); }catch(e){} testEl = null; }
+  setStatus(level, (level === "ok" ? "\u2713 " : level === "warn" ? "\u26a0 " : "\u2717 ") + msg);
+  if(level !== "ok") toast("\u26a0 " + msg, 8000);
+}
+/* Two independent probes, because neither alone tells the truth.
+   * The PLAYER probe is the browser's own answer: a media element is not subject to CORS, so it can
+     open streams fetch() never could - but in a browser that refuses unattended media it stays silent
+     for every address, good or bad, so silence must never be read as failure.
+   * The NETWORK probe asks the server whether anything is there at all, and reads the content type
+     when the station allows it. It is what separates "the host does not exist" from "the browser will
+     not load media right now", and it is the only one of the two that still works head-less.
+   The strongest answer either one gives wins; neither of them ever reports success on a guess. */
+function testStream(){
+  const u = stEl("stUrl").value.trim(); const btn = stEl("stTest");
+  const v = checkStream(u, resolvedFormat());
+  if(v.level === "bad"){ setStatus("bad", "\u2717 " + v.msg); toast("\u26a0 " + v.msg, 9000); return; }
+  finishTest("", ""); clearTimeout(testTimer);   // stop any run already going
+  setStatus("warn", "\u26a0 Checking the address\u2026");
+  btn.disabled = true; btn.textContent = "Testing\u2026";
+  const probes = { media:null, net:null, blocked:false, type:"" };
+  let settled = false;
+  const done = (level, msg) => { if(settled) return; settled = true; finishTest(level, msg); };
+  /* The strongest available answer, taken as soon as it exists. */
+  const report = () => {
+    if(settled) return;
+    const m = probes.media, n = probes.net;
+    if(m === "ok") return done("ok", "The stream is playing here - this station works in this browser.");
+    if(m === "bad") return done("bad", MEDIA_BAD);
+    if(n === "bad") return done("bad", NET_BAD);
+    if(n === "html") return done("bad", NET_HTML);
+    if(n === "ok") return done("ok", "The station's server answered with " + (probes.type || "an audio stream") + " - this address is a real stream.");
+    if(n === "other") return done("warn", "The address answered with " + (probes.type || "an unexpected type") + ", which is not an audio type. It may still work; only the play button can say for sure.");
+    /* Neither has an answer yet: what is left is the media probe's own verdict, or the server having
+       answered without letting us read the type (a cross-origin stream with no CORS headers). */
+    if(m === "warn" && n === "warn") return done("warn", "The station's server answered, but it blocks cross-origin checks, so the stream cannot be confirmed from here - use the play button on the card.");
+    if(probes.timedOut) return done("warn", probes.blocked
+      ? "This browser would not start the test on its own (autoplay policy) and nothing came back in 10 seconds - the play button on the card is the real test."
+      : "No answer within 10 seconds. The station may be slow or offline; it is not necessarily broken.");
+  };
+  /* ---- probe 1: the player ---- */
+  const el = new Audio(); testEl = el;
+  el.preload = "auto"; el.muted = true; el.volume = 0;      // muted: a test must never make noise
+  el.addEventListener("playing", () => { probes.media = "ok"; report(); });
+  el.addEventListener("loadedmetadata", () => { probes.media = "ok"; report(); });
+  el.addEventListener("error", () => { probes.media = "bad"; report(); });
+  el.src = u;
+  const p = el.play();
+  const poll = () => { if(settled) return;
+    if(el.readyState > 0){ probes.media = "ok"; return report(); }
+    if(el.networkState === 3){ probes.media = "bad"; return report(); }
+    probes.media = probes.media || "warn"; report(); };
+  if(p && p.catch) p.catch(err => { if(err && err.name === "NotAllowedError") probes.blocked = true; });
+  setTimeout(poll, 2500); setTimeout(poll, 6000);
+  /* ---- probe 2: the server ---- */
+  const A = new AbortController(); testAbort = A;
+  const timer = setTimeout(() => { try{ A.abort(); }catch(e){} }, 9000);
+  /* GET, not HEAD: stream servers routinely answer HEAD with an error (a live Icecast stream answered
+     HEAD with 400 and an HTML error page - a good station reported as a broken one). The headers are
+     read as soon as they arrive and the body is dropped immediately, so no audio is downloaded. */
+  (async () => {
+    const isAudio = t => /\baudio\/|application\/ogg|application\/vnd\.apple\.mpegurl|application\/x-mpegurl|application\/octet-stream/i.test(t || "");
+    try {
+      const r = await fetch(u, { mode:"cors", signal:A.signal });
+      const t = (r.headers.get("content-type") || "").split(";")[0].trim();
+      probes.type = r.ok ? t : ("HTTP " + r.status + (t ? " " + t : ""));
+      try{ testResp = r; }catch(e){}
+      probes.net = !r.ok ? (/text\/html/i.test(t) ? "html" : "bad")
+                         : (isAudio(t) ? "ok" : (/text\/html/i.test(t) ? "html" : "other"));
+      clearTimeout(timer); report(); return;
+    } catch(e) {
+      if(e && e.name === "AbortError"){ probes.timedOut = true; report(); return; }
+    }
+    /* No CORS headers (or no route): ask again opaque - an opaque answer still proves the host
+       answered, which is exactly the difference between a wrong address and a strict server. */
+    try {
+      await fetch(u, { mode:"no-cors", signal:A.signal });
+      probes.net = "warn"; probes.type = "an unreadable type (cross-origin)";
+    } catch(e2){ probes.net = "bad"; }
+    clearTimeout(timer); report();
+  })();
+  testTimer = setTimeout(() => { probes.timedOut = true; report(); }, 10000);
+}
+/* ---- saving ---- */
+function saveCustomStation(){
+  const name = stEl("stName").value.trim();
+  const u = stEl("stUrl").value.trim();
+  if(!name){ setStatus("bad", "\u2717 Give the station a name - that is what the card and the search will show.");
+    stEl("stName").focus(); toast("\u26a0 A station needs a name.", 6000); return; }
+  const fmt = resolvedFormat();
+  const v = checkStream(u, fmt);
+  if(v.level === "bad"){ setStatus("bad", "\u2717 " + v.msg); toast("\u26a0 Not added - " + v.msg, 9000);
+    stEl("stUrl").focus(); return; }
+  const hp = stEl("stHp").value.trim();
+  if(hp && !/^https?:\/\//i.test(hp)){ setStatus("bad", "\u2717 The website has to start with http:// or https://.");
+    stEl("stHp").focus(); return; }
+  const list = customStations();
+  /* The same stream twice is a list that plays the same thing twice - and the second one is invisible
+     as a mistake, because both cards look right. Refused, and it says which entry already has it. */
+  const dupe = list.filter(s => s.u === u)[0];
+  if(dupe){ setStatus("bad", "\u2717 That stream is already in your stations" +
+      (dupe.n !== name ? " as \u201c" + dupe.n + "\u201d" : "") + " - nothing was added.");
+    toast("\u26a0 Already in your stations: " + dupe.n, 7000); stEl("stUrl").focus(); return; }
+  const country = stEl("stCountry").value.trim();
+  const station = {
+    i: "custom-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    n: name, u: u, hp: hp,
+    c: country, cc: ccFor(country) || "",
+    s: stEl("stCity").value.trim(),
+    l: stEl("stLang").value.trim().toLowerCase(),
+    t: stEl("stTags").value.trim() || "mine",
+    x: CAT_FORMAT[fmt] || "UNKNOWN",
+    b: Math.max(0, Math.min(1024, +stEl("stBit").value || 0)),
+    hl: /\.m3u8(\?|#|$)/i.test(u) ? 1 : 0,
+    v: 0, k: 0, f: ""
+  };
+  if(pendingAddGeo){ station.g = [pendingAddGeo.la, pendingAddGeo.lo]; pendingAddGeo = null; }   // pinned to a place from the World View
+  list.unshift(station); ls.set(CUSTOM_KEY, list);
+  refreshCustom();
+  resetForm();
+  closeAddPanel();
+  /* Show it. A station nobody can see has not been added, as far as anyone can tell: the search goes
+     back to empty (a filter typed a moment ago would hide the new card), the Saved-only filter goes
+     off, and the list starts at its first page - where the user's own stations now sit. */
+  state.q = ""; $("#q").value = ""; state.favOnly = false; state.page = 1;
+  apply(); writeHash(); scrollToResults();
+  const k = playKind(station);
+  /* A warning is kept SHORT in the toast: the full sentence is in the status line and stays there
+     while the panel is open, and a toast that has to be read twice is a toast nobody reads. */
+  const note = v.level === "warn" && v.short ? " \u2014 flagged: " + v.short : "";
+  /* Is it actually on the screen? The search and the Saved-only filter were cleared, so anything
+     still hiding it is one of the three selects, the bitrate floor, or Verified. Saying "added" and
+     leaving the user staring at a list without it is the one outcome this feature must never have. */
+  const kWhy = (KIND_TEXT[k] || KIND_TEXT[3]).why;
+  const hidden = !matchAll(station, {});
+  if(!hidden){
+    toast("\u2713 " + name + " added - it is the first card in the list" + note +
+      (k !== 1 ? " (\u26a0 this browser can't play that stream: " + kWhy + ")" : ""),
+      (v.level === "warn" || k !== 1) ? 8000 : 5200);
+  } else if(k === 1){
+    toast("\u2713 " + name + " added.", 5000);
+    notice("\u26a0 <b>" + esc(name) + "</b> was added, but a filter is hiding it from the list." +
+      '<button type="button" class="nbtn" id="noticeClearF">clear the filters</button>', "warn");
+    const b = document.getElementById("noticeClearF");
+    if(b) b.onclick = () => { Object.assign(state, { q:"", cc:"", lang:"", codec:"", bit:0, tags:[], favOnly:false, page:1 });
+      $("#q").value = ""; $("#selCountry").value = ""; $("#selCodec").value = ""; $("#selBit").value = "0";
+      apply(); writeHash(); };
+  } else {
+    /* Added, but this browser cannot play it, so Verified is hiding it. Say so, and offer the one
+       click that shows it - rather than a station that vanished into a filter. */
+    toast("\u2713 " + name + " added.", 5000);
+    notice("\u26a0 <b>" + esc(name) + "</b> was added, but this browser can't play it - " + kWhy +
+      ", so it stays hidden while <b>Verified</b> is on." +
+      '<button type="button" class="nbtn" id="noticeShowAll">show every station</button>', "warn");
+    const b = document.getElementById("noticeShowAll");
+    if(b) b.onclick = () => { state.playOnly = false; ls.set("playonly", false); state.page = 1;
+      refreshPlayableUI(); apply(); writeHash(); };
+  }
+}
+function deleteCustomStation(id){
+  const gone = customStations().filter(s => s.i === id)[0];
+  ls.set(CUSTOM_KEY, customStations().filter(s => s.i !== id));
+  refreshCustom(); apply();
+  toast(gone ? "\u2715 " + gone.n + " removed from your stations" : "Station removed", 4200);
+}
+/* ---- wiring ---- */
+if(addPanel){
+  $("#btnAdd").addEventListener("click", e => { e.stopPropagation();
+    addPanelOpen() ? closeAddPanel() : openAddPanel(); });
+  stEl("stCancel").addEventListener("click", closeAddPanel);
+  stEl("stSave").addEventListener("click", saveCustomStation);
+  stEl("stTest").addEventListener("click", testStream);
+  addPanel.addEventListener("click", e => { if(e.target === addPanel) closeAddPanel(); });
+  ["stUrl", "stFormat", "stCountry", "stBit", "stName"].forEach(id => stEl(id).addEventListener("input", liveCheck));
+  /* Enter anywhere in the form saves it: this is a one-station form, so what the user wants next is
+     the card, not another field. */
+  addPanel.addEventListener("keydown", e => { if(e.key === "Enter" && e.target && e.target.tagName !== "TEXTAREA"){
+    e.preventDefault(); saveCustomStation(); } });
+}
+/* Merge custom stations into the list
+/* Reading the click's PATH rather than its target: a press can re-render the panel under the finger
+   (a saved row's play / drop does), which detaches the element the click came from - and a detached
+   target matches nothing. The path is captured at dispatch, so it still names the panel. */
+document.addEventListener("click", e => {
+  const path = (e.composedPath && e.composedPath()) || [];
+  const inside = path.some(n => n.classList && n.classList.contains("menu"));
+  if(menuName && !inside) openMenu("");
+});
+document.addEventListener("keydown", e => {
+  if(e.key === "Escape" && menuName){ const b=$(MENUS[menuName][0]); openMenu(""); b.focus(); } });
+/* Closing a panel by gesture, which is how a phone expects to get out of one - and the outcome is
+   the same as tapping the toggle again: the panel goes, the page stays exactly where it was.
+     * the platform's back gesture / the browser's back button: one history entry is pushed while a
+       panel is open, so the first back closes the panel instead of leaving the site. Nothing else
+       on this page listens for popstate, and the state hash is written with replaceState, so the
+       entry is invisible. file:// origins refuse pushState outright, which is why it is wrapped -
+       there the sideways swipe below still works.
+     * a sideways swipe across the panel: the two routes must never both fire, so the swipe waits a
+       moment and gives up if the panel has already gone (the platform gesture is quicker). */
+let menuHist = false, menuBacks = 0;
+function pushMenuHistory(){ if(menuHist) return; try{ history.pushState({ menu:1 }, ""); menuHist = true; }catch(e){ menuHist = false; } }
+function dropMenuHistory(){ if(!menuHist) return; menuHist = false;
+  /* Our own tidy-up pop is counted, so it can never be mistaken for the user's back gesture - a
+     double-tap on the toggle (close, open again) would otherwise shut the panel it just reopened. */
+  menuBacks++; try{ history.back(); }catch(e){ menuBacks--; } }
+window.addEventListener("popstate", () => {
+  if(menuBacks > 0){ menuBacks--; return; }
+  if(menuName){ menuHist = false; openMenu(""); } });
+let swipeFrom = null;
+document.addEventListener("touchstart", e => { const t = e.touches && e.touches[0];
+  swipeFrom = (menuName && t) ? { x:t.clientX, y:t.clientY } : null; }, { passive:true });
+document.addEventListener("touchend", e => { const s = swipeFrom, t = e.changedTouches && e.changedTouches[0];
+  swipeFrom = null;
+  if(!s || !t || !menuName) return;
+  const dx = t.clientX - s.x, dy = t.clientY - s.y;
+  if(dx < 60 || Math.abs(dx) <= Math.abs(dy) * 1.5) return;     // a rightward flick, not a scroll
+  const was = menuName;
+  setTimeout(() => { if(menuName === was) openMenu(""); }, 120); }, { passive:true });
+/* The header no longer collapses. It is always shown at its full size, and the compact state
+   is unreachable from anywhere - no button, no shortcut - so any value an older version left
+   in storage is cleared here rather than trusted. */
+ls.set("hdr-compact", false);
+$("#hdrHead").classList.remove("compact");
+$("#toTop").addEventListener("click", () => window.scrollTo({ top:0, behavior:"smooth" }));
+window.addEventListener("scroll", () => $("#toTop").classList.toggle("show", window.scrollY > 600), { passive:true });
+/* Scrolling is reading time. The bar slides off to the LEFT, and 1.5s after the page stops it
+   comes back from the left carrying the SEARCH FIELD ONLY (body.quick); the selects, the two
+   pull-downs and Reset belong to the top of the page, where the whole toolbar sits in its own
+   place. Where "the top" ends is the toolbar's place in the document, measured rather than
+   guessed - the header above it is a different height on every screen.
+   ONE EXCEPTION: while a pull-down is open the toolbar is pinned. The picker is a working surface
+   (a type-ahead plus a list to scroll), and a menu that leaves the screen the moment you look at
+   the results below it is a menu you cannot use - he asked for it to stay put on a phone. */
+const CHROME_STILL_MS = 1500;     // stillness after the finger leaves the glass before it returns
+let hideTimer=null, lastScrollY=0, toolbarTop=0;
+function measureChrome(){ const tb=$(".toolbar"); if(!tb) return;
+  let top=0, el=tb; while(el){ top+=el.offsetTop; el=el.offsetParent; }
+  toolbarTop = top - 6;       // -6 is the toolbar's sticky offset: it pins at this scroll
+  /* --tbh is the space the quick bar has to keep, which is the FULL toolbar's height. Measure it
+     with the quick state off and put the state back in the same frame, so nothing flickers. */
+  const quick = document.body.classList.contains("quick");
+  if(quick) document.body.classList.remove("quick");
+  document.documentElement.style.setProperty("--tbh", tb.offsetHeight + "px");
+  if(quick) document.body.classList.add("quick"); }
+measureChrome();
+window.addEventListener("resize", measureChrome);
+window.addEventListener("load", measureChrome);
+window.addEventListener("scroll", () => {
+  const y = window.scrollY;
+  const moved = Math.abs(y - lastScrollY) > 4;                 // up counts too, not only down
+  lastScrollY = y;
+  const reveal = () => { clearTimeout(hideTimer); document.body.classList.remove("scrolling"); };
+  if(window.innerWidth > 900) return reveal();                 // a desktop keeps its toolbar
+  if(!moved) return;                                           // a scroll event that went nowhere
+  if(menuName) return reveal();                                // a pull-down is open: the toolbar stays
+                                                               // pinned and the menu stays usable
+  if(y <= toolbarTop){ document.body.classList.remove("quick"); return reveal(); }   // the top: all of it
+  if(document.activeElement === $("#q")) return reveal();      // typing moves the page by itself
+  document.body.classList.add("quick");                        // what comes back is the search field
+  if(!document.body.classList.contains("scrolling")) document.body.classList.add("scrolling");
+  clearTimeout(hideTimer);
+  hideTimer = setTimeout(() => document.body.classList.remove("scrolling"), CHROME_STILL_MS);
+}, { passive:true });
+
+/* ---- the foldable search module (his ask, 2026-10-15) ----
+   The ▾ in the search field folds the toolbar's lower three rows away - the stations bar, the
+   Format/Bitrate/Country selects and Add/Saved/Reset - so the results get the screen; the
+   field itself stays, it is the thing you reach for again. The ▴ brings everything back. Live
+   at every width: on a phone a committed search folds it for you (foldPhone, ≤720px - the
+   width world.html's retractable bar uses too), and on the wider site it is strictly the
+   reader's toggle. The choice sticks per device (rbg "foldbar"). Folding re-measures the
+   chrome, so the quick bar's --tbh budget follows the shorter toolbar. */
+function foldNarrow(){ try{ return matchMedia("(max-width: 720px)").matches; }catch(e){ return window.innerWidth <= 720; } }
+function foldStored(){ const v = ls.get("foldbar", null); return v === null ? null : !!v; }
+function foldActive(){ return document.body.classList.contains("toolfold"); }
+function applyFold(){
+  const f = foldStored() === true;
+  document.body.classList.toggle("toolfold", f);
+  const b = $("#btnFold"); if(!b) return;
+  b.textContent = f ? "▾" : "▴";
+  b.title = f ? "Show the filters and buttons again" : "Minimize the search — the field stays, the filters and buttons fold away";
+  b.setAttribute("aria-label", f ? "Show the filters and buttons" : "Minimize the search, filters and buttons");
+  b.setAttribute("aria-expanded", f ? "false" : "true");
+}
+function setFold(f){
+  if(f && menuName) openMenu("");     // a pull-down cannot hang from a row that is folding away
+  ls.set("foldbar", !!f);
+  applyFold();
+  measureChrome();
+}
+function foldPhone(){ if(foldNarrow()) setFold(true); }
+applyFold();
+measureChrome();
+window.addEventListener("resize", () => { applyFold(); measureChrome(); });
+$("#btnFold").addEventListener("click", () => setFold(!foldActive()));
+$("#btnQGo").addEventListener("click", () => endSearchTyping($("#q")));
+/* There is no filter read-out on this page and no "clear filters": a search is a search, and it
+   must never leave a little "dub ✕" chip behind under the toolbar. What a control is set to is
+   visible on the control itself - the select shows its value, Reset puts everything back. */
+/* ⭐ My stations, listed: the Saved pull-down shows what you kept, not just a filter over the list.
+   Rows carry the same three things a card does - play, details, keep/drop - so nothing is lost by
+   not being in the grid. */
+let _byId = null;
+const byId = () => (_byId || (_byId = new Map(allStations.map(s => [s.i, s]))));
+function savedRows(){ const mm=metaMap(); return favList().map(id => byId().get(id) || mm[id]).filter(Boolean); }
+function renderSavedList(){
+  const box=$("#savedList"); if(!box) return;
+  const rows=savedRows();
+  box.innerHTML = rows.length ? rows.map(s => {
+    const nm=s.n||"Unknown station", loc=[countryOf(s), s.l].filter(Boolean).join(" · ");
+    return `<div class="srow" data-id="${esc(s.i)}">`
+      + (logoURL(s)?`<img src="${esc(logoURL(s))}" alt="" loading="lazy">`:"")
+      + `<div class="sn"><b data-sact="info" title="Station details">${esc(nm)}</b>`
+      + `<span>${flag(s.cc)} ${esc(loc)}${s.x?" · "+esc(s.x):""}</span></div>`
+      + `<button class="sb" data-sact="play" title="Play ${esc(nm)}">▶</button>`
+      + `<button class="sb" data-sact="drop" title="Remove from My stations">★</button></div>`;
+  }).join("") : '<div class="sempty">Nothing saved yet. Tap ☆ on any station to keep it here — '
+    + 'your list stays on this device, no account, no sign-in.</div>';
+}
+$("#savedList").addEventListener("click", e => {
+  const b=e.target.closest("[data-sact]"); if(!b) return;
+  const row=b.closest(".srow"), s=byId().get(row.dataset.id) || metaMap()[row.dataset.id]; if(!s) return;
+  if(b.dataset.sact==="play"){ openMenu(""); doPlay(s); }
+  else if(b.dataset.sact==="drop"){ rmFav(row.dataset.id); toast("Removed from My stations"); }
+  else { openMenu(""); showInfo(s); } });
+function refreshFavUI(){
+  const n=favSet.size, b=$("#btnSaved");
+  b.classList.toggle("on", !!state.favOnly);
+  $("#favCount").textContent = n ? "("+n+") " : "";
+  b.title = state.favOnly ? "Showing only your saved stations — click for your list" : "Your saved stations (shortcut: s)";
+  const o=$("#btnSavedOnly");
+  o.classList.toggle("on", !!state.favOnly); o.setAttribute("aria-pressed", String(!!state.favOnly));
+  o.textContent = state.favOnly ? "only these ✓" : "only these";
+  $("#favHead").textContent = n ? n+" saved" : "none yet";
+  if(menuOpen("saved")) renderSavedList(); }
+$("#btnSavedOnly").addEventListener("click", () => { state.favOnly=!state.favOnly; state.page=1; apply(); writeHash(); refreshFavUI(); });
+/* ✅ Verified: the same filter as before, now a small switch inside the search field rather than a
+   panel chip. It is ON by default - a list of stations this browser cannot play is a list of dead ends. */
+function refreshPlayableUI(){ const b=$("#btnPlayable");
+  b.classList.toggle("on", !!state.playOnly); b.setAttribute("aria-pressed", String(!!state.playOnly));
+  b.title = state.playOnly
+    ? `Verified: only stations this browser can play are listed (${fmt(unplayableCount())} hidden — click to show every station)`
+    : "Showing every station, including ones this browser can't play — click to list only the verified ones"; }
+$("#btnPlayable").addEventListener("click", () => { state.playOnly=!state.playOnly; ls.set("playonly", state.playOnly); state.page=1; apply(); writeHash();
+  toast(state.playOnly ? "Verified: showing only stations this browser can play." : "Showing every station — some can't play in this browser.", 5200); });
+
+/* ✅ Hide quiet: the liveness layer's switch (live.json by check-liveness.py). A station that
+   failed the last TWO sweeps is dimmed out of the list and the globe — never deleted (only the
+   curated layer ever deletes). No live.json -> the switch does nothing and says so by count 0. */
+function refreshHideQuietUI(){ const b=$("#btnHideQuiet");
+  b.classList.toggle("on", !!state.hideQuiet); b.setAttribute("aria-pressed", String(!!state.hideQuiet));
+  const n=WR.live.raw().quiet.size;
+  b.title = state.hideQuiet
+    ? `Hide quiet: ${n} station${n===1?"":"s"} failed the last two checks and are hidden — click to show everything`
+    : "Showing quiet stations too — click to hide the ones that failed the last two checks"; }
+$("#btnHideQuiet").addEventListener("click", () => { state.hideQuiet=!state.hideQuiet; ls.set("hidequiet", state.hideQuiet); state.page=1; apply(); writeHash();
+  toast(state.hideQuiet ? "Hiding stations that failed the last checks." : "Quiet stations are shown again — they are dimmed, never removed.", 5200); });
+/* the sweep's own little line: who was checked, when, and when the next pass runs */
+function refreshLiveStrip(){ const el=$("#liveStrip"); const m=WR.live.raw().meta;
+  if(!m){ el.hidden=true; return; }
+  el.hidden=false;
+  let t="Station check · last sweep "+String(m.generated_local||"").replace(" (ACDT)","")
+    +" · "+(m.reachable||0).toLocaleString()+" reachable / "+(m.quiet||0).toLocaleString()+" quiet";
+  if(m.next_local) t+=" · next "+String(m.next_local).replace(" (ACDT)","");
+  el.textContent="🛰 "+t; }
+WR.hooks.onLive = function(){ refreshLiveStrip(); refreshHideQuietUI(); apply(); };
+
+/* ===== decorative visualiser: 5 styles, cycled by the 🎛 button ===== */
+/* The five looks live in viz.js, which the mini player loads too. If it did not load at all,
+   the toggle still works and the canvas simply stays empty - the fallback names keep the rest
+   of the page (titles, the cycle) working. */
+const VIZSTYLES = (window.Viz ? Viz.STYLES : ["bars","waves","mirror","dots","blocks"]);
+const vizCanvas=$("#viz"), vctx=vizCanvas.getContext("2d");
+let vizOn=false, vizStyle=0, vizLevels=new Array(56).fill(0), vizLast=0;
+const VIZREDUCED = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+function vizSize(){ const r=vizCanvas.getBoundingClientRect(); const dpr=Math.min(2,window.devicePixelRatio||1);
+  vizCanvas.width=Math.max(120,Math.round((r.width||300)*dpr)); vizCanvas.height=Math.max(24,Math.round((r.height||44)*dpr)); }
+function vizSet(on,st){ vizOn=on; vizStyle=st||0; ls.set("viz",vizOn?vizStyle+1:0);
+  vizCanvas.style.display=vizOn?"block":"none"; $("#btnViz").classList.toggle("pink",vizOn);
+  $("#btnViz").title="Visualiser: "+(vizOn?VIZSTYLES[vizStyle]:"off")+" — click to cycle 5 styles";
+  if(vizOn) vizSize(); }
+$("#btnViz").addEventListener("click",()=>{ if(!vizOn) vizSet(true,0); else if(vizStyle<VIZSTYLES.length-1) vizSet(true,vizStyle+1); else vizSet(false,0); });
+window.addEventListener("resize",()=>{ if(vizOn) vizSize(); });
+function vizDraw(){ if(!window.Viz){ vctx.clearRect(0,0,vizCanvas.width,vizCanvas.height); return; }
+  Viz.draw(vctx,vizCanvas.width,vizCanvas.height,vizLevels,vizStyle); }
+
+function vizLoop(t){ requestAnimationFrame(vizLoop);
+  if(!vizOn||document.hidden) { vizLast=t; return; }
+  const dt=Math.min(0.05,((t-vizLast)/1000)||0.016); vizLast=t;
+  const active = (P.playing ? (P.mine ? 1 : 0.55) : 0.18) * (VIZREDUCED ? 0.45 : 1);
+  if(window.Viz) Viz.step(vizLevels,dt,active,VIZREDUCED,t/1000);
+  vizDraw(); }
+
+vizSize(); requestAnimationFrame(vizLoop);
+const vizRestore=ls.get("viz",0); if(vizRestore>0) vizSet(true,Math.min(vizRestore-1,VIZSTYLES.length-1));
+
+/* ============================== explorer ============================== */
+const state = WR.filters.state;   /* the shared state object (wr-core.js) - same fields, same defaults */
+refreshHideQuietUI(); refreshLiveStrip();   /* the liveness switch + the strip (both need state) */
+const PSZ=240;
+const matchAll = WR.filters.matchAll;   /* the shared matcher (wr-core.js) */
+function buildStatic(){
+  refreshCustom();                                   // the user's own stations count on the loading screen too
+  $("#spinN").textContent=fmt(allStations.length);
+  $("#selCountry").insertAdjacentHTML("beforeend",'<option value="">Country</option>');
+  META.countries.forEach(c=>$("#selCountry").insertAdjacentHTML("beforeend",`<option value="${esc(c.cc)}">${flag(c.cc)} ${esc(c.c)} (${fmt(c.n)})</option>`));
+  META.codecs.slice(0,12).forEach(x=>$("#selCodec").insertAdjacentHTML("beforeend",`<option value="${esc(x.x)}">${esc(x.x)} (${fmt(x.n)})</option>`));
+  const L=ls.get("last",null); if(L&&L.m){ WR.play.setStation(L.m); WR.play.setPlaying(false); }
+  const carry=WR.play.resumePending(); if(carry) WR.play.resumePlay(carry);   /* S3c: music was playing when the last page left — pick it back up */
+  $("#bar").style.display="flex"; setVolUI();
+  syncBarSpace();
+  if(window.ResizeObserver) new ResizeObserver(syncBarSpace).observe($("#bar"));
+  window.addEventListener("resize",syncBarSpace);
+  syncPopAffordance();
+}
+const TAGCLS=["t0","t1","t2","t3","t4"];
+function cardHTML(s,oi){
+  const pk=playKind(s);
+  const tags=tokens(s.t).slice(0,5); const extra=tokens(s.t).length-tags.length;
+  const bit=s.x?(s.x+(s.b?" "+s.b+"kbps":"")):"";
+  const loc=[countryOf(s),s.s].filter(Boolean).join(" · ");
+  const isCustom = s.i && s.i.startsWith("custom-");
+  return `<div class="card">
+   <div class="row1">${logoURL(s)?`<img class="fav" src="${esc(logoURL(s))}" alt="" loading="lazy">`:""}
+     <div class="h1"><span class="nm" data-act="info" data-i="${oi}">${esc(s.n)}</span>
+     <div class="loc">${flag(s.cc)} ${esc(loc)}${s.l?" · "+esc(s.l):""}</div></div>
+     <span class="icongrp"><button class="iconbtn star${favSet.has(s.i)?" on":""}" data-act="fav" data-i="${oi}" title="Save to ⭐ My stations">${favSet.has(s.i)?"★":"☆"}</button><button class="iconbtn" data-act="info" data-i="${oi}" title="Details">ⓘ</button>${isCustom?`<button class="iconbtn" data-act="delete" data-i="${oi}" title="Remove custom station">✕</button>`:""}</span></div>
+   <div class="tags">${tags.map((t,i)=>`<span class="tag ${TAGCLS[i%5]}">${esc(t)}</span>`).join("")}${extra>0?`<span class="tag">+${extra}</span>`:""}</div>
+   <div class="meta">${bit?`<span><b>${esc(bit)}</b>${s.hl?" · HLS":""}</span>`:""}<span>🔥 <b>${fmt(s.k)}</b></span><span>👍 <b>${fmt(s.v)}</b></span>${pk!==1?`<span class="kbadge" title="${esc(KIND_TEXT[pk].why)}">${KIND_TEXT[pk].tag}</span>`:""}</div>
+   <div class="acts">
+     <button class="btn play" data-act="play" data-i="${oi}" data-uuid="${esc(s.i)}">▶</button>
+     <a class="btn" href="${esc(s.u)}" target="_blank" rel="noopener">Stream</a>
+     ${s.hp?`<a class="btn" href="${esc(s.hp)}" target="_blank" rel="noopener">Website</a>`:""}
+     <button class="btn" data-act="copy" data-i="${oi}">Copy</button></div></div>` }
+function showInfo(m){ const s=m, pk=playKind(s); const allTags=tokens(s.t);
+  const rows=[["Country",`${flag(s.cc)} ${countryOf(s)}`],["State",s.s],["Language",s.l],
+    ["Format",(s.x||"?")+(s.b?" · "+s.b+" kbps":"")+(s.hl?" · HLS":"")],["Votes",fmt(s.v)],["Clicks",fmt(s.k)],
+    ["Playback", pk===1 ? "✅ plays in this browser" : "⚠ "+KIND_TEXT[pk].tag+" — "+KIND_TEXT[pk].why],
+    ["Check", (function(){ const st=WR.live.status(s.i); return st==="none" ? "" :
+      `<span id="mCheckRow"><span class="ldot ${st}"></span>${esc(WR.live.TEXT[st])}</span>`; })()],
+    ["Stream",`<code>${esc(s.u)}</code>`]].filter(r=>r[1]);
+  $("#mHead").innerHTML=`${logoURL(s)?`<img class="fav" style="width:52px;height:52px" src="${esc(logoURL(s))}" alt="">`:""}
+   <div class="h1"><span class="nm">${esc(s.n)}</span><div class="loc">${flag(s.cc)} ${esc(countryOf(s))}</div></div>`;
+  $("#mBody").innerHTML=(allTags.length?`<div class="tags" style="margin-bottom:10px">${allTags.map((t,i)=>`<span class="tag ${TAGCLS[i%5]}">${esc(t)}</span>`).join("")}</div>`:"")+
+    `<table>${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join("")}</table>`;
+  $("#mActs").innerHTML=`<button class="btn pink" id="mPlay">▶ Play</button>
+    <button class="btn" id="mFav">${favSet.has(s.i)?"★ Saved":"☆ Save"}</button>
+    <a class="btn" href="${esc(s.u)}" target="_blank" rel="noopener">Open stream</a>
+    ${s.hp?`<a class="btn" href="${esc(s.hp)}" target="_blank" rel="noopener">🌐 Station website</a>`:`<button class="btn" disabled>No website listed</button>`}
+    <button class="btn" id="mCopy">Copy stream URL</button>
+    <button class="btn" id="mCheck" title="Ask the station's server right now, without playing it">🛰 Check now</button>
+    ${isCustom(s)?`<button class="btn" id="mDel" title="Remove this station from your list">🗑 Remove</button>`:""}
+    <button class="btn" id="mClose">Close</button>`;
+  $("#modal").style.display="flex";
+  $("#mPlay").onclick=()=>{$("#modal").style.display="none";doPlay(s)};
+  $("#mFav").onclick=()=>{ toggleFav(s); $("#mFav").textContent = favSet.has(s.i) ? "★ Saved" : "☆ Save"; };
+  $("#mCopy").onclick=()=>copyText(s.u,"Stream URL");
+  $("#mCheck").onclick=()=>{ const c=$("#mCheck"); c.disabled=true; c.textContent="🛰 Checking…";
+    WR.probe.stream(s.u, function(stt,d,ms){ c.disabled=false; c.textContent="🛰 Check now";
+      const txt = stt==="responds" ? "✅ Server responds"+(d.code?" — HTTP "+d.code:"")+(d.ctype?" · "+d.ctype:"")+" · "+ms+" ms"
+        : stt==="answered" ? "🟡 The host answered, but the response can't be read from here (strict server) · "+ms+" ms"
+        : stt==="timeout" ? "⚠ No answer within 8 s — the station looks quiet right now"
+        : "⚠ No answer — the stream looks quiet right now";
+      const dot = stt==="responds"?"ok":stt==="answered"?"warn":"quiet";
+      let r=$("#mCheckRow");
+      if(!r){ const tb=$("#mBody").querySelector("table"); if(tb){ const tr=document.createElement("tr");
+        tr.innerHTML=`<td>Check</td><td><span id="mCheckRow"></span></td>`; tb.insertBefore(tr, tb.rows[tb.rows.length-1]); r=$("#mCheckRow"); } }
+      if(r) r.innerHTML=`<span class="ldot ${dot}"></span>`+esc(txt);
+      toast(txt, 6000); }); };
+  const md=$("#mDel"); if(md) md.onclick=()=>{ $("#modal").style.display="none"; deleteCustomStation(s.i); };
+  $("#mClose").onclick=()=>$("#modal").style.display="none"; }
+function doPlay(s){ const k = playKind(s);
+  if(k !== 1){ unplayableNotice(s, k); return; }        // never start a stream this browser must fail on
+  requestPlay(M(s)); }
+$("#modal").addEventListener("click",e=>{if(e.target===$("#modal"))$("#modal").style.display="none"});
+document.addEventListener("keydown",e=>{ const t=e.target, typing = t && (t.tagName==="INPUT"||t.tagName==="SELECT"||t.tagName==="TEXTAREA");
+  if(e.key==="Escape"){ if(addPanelOpen()){ closeAddPanel(); return; } if(placePanelOpen()){ closePlace(); return; } $("#modal").style.display="none"; return; }
+  if(typing || e.metaKey || e.ctrlKey || e.altKey) return;
+  if(worldOn){
+    if(e.key==="ArrowLeft"){ e.preventDefault(); GlobeView.nudge(-7,0); return; }
+    if(e.key==="ArrowRight"){ e.preventDefault(); GlobeView.nudge(7,0); return; }
+    if(e.key==="ArrowUp"){ e.preventDefault(); GlobeView.nudge(0,5); return; }
+    if(e.key==="ArrowDown"){ e.preventDefault(); GlobeView.nudge(0,-5); return; }
+    if(e.key==="+"||e.key==="="){ e.preventDefault(); GlobeView.zoomBy(1.3); return; }
+    if(e.key==="-"||e.key==="_"){ e.preventDefault(); GlobeView.zoomBy(0.77); return; }
+    if(e.key==="u"||e.key==="U"){ if(placePanelOpen() && unmappedOn) closePlace();
+      else if(worldUnmapped.length) openUnmapped();
+      else toast("Every station in this search has coordinates — nothing to list here.", 4200); return; }
+  }
+  if(e.key==="/"){ e.preventDefault(); $("#q").focus(); }
+  else if(e.key==="v"||e.key==="V"){ $("#btnViz").click(); }
+  else if(e.key==="a"||e.key==="A"){ openAddPanel(); }
+  else if(e.key==="s"||e.key==="S"){ openMenu(menuOpen("saved") ? "" : "saved"); }
+  else if(e.key==="w"||e.key==="W"){ setWorld(!worldOn); } });
+/* ============================== the pager ==============================
+   Two copies of one control row (above and below the list) and ONE handler each, bound once for the
+   life of the page. bindPager() used to re-bind on every apply() - that is every keystroke in the
+   search field - and added another touchend listener each time without ever removing one (12 on a
+   pager after six letters, and climbing for the rest of the session). The containers are never
+   replaced by a render, only their innerHTML is, so binding once is enough and nothing piles up.
+
+   A tap is acted on ONCE. The browser's own click is the primary route - it is what a mouse sends,
+   and what a WebView sends for a touch - and the touchend timer is the fallback for a WebView that
+   sends no click at all. They are kept apart by one flag per touch: the click claims the touch it
+   belongs to (so the fallback then stands down), and the fallback claims it when no click came.
+   A click therefore needs no guard and can never be swallowed: the old rule - "no turn in the last
+   340ms" - measured the wrong thing, and a real tap 280ms behind its own fallback was dropped while
+   one 300.1ms behind was served twice. The buttons carry touch-action:manipulation, so the browser
+   sends their click immediately rather than after the old 300ms double-tap-zoom delay. */
+let lastTotal = 0;                // the filtered total the pager was built from, for clamping
+let touchTap = null;              // the touch in flight on a pager, if any
+function turnPage(p, el){
+  const pages = Math.max(1, Math.ceil(lastTotal / PSZ));
+  const want = Math.min(Math.max(1, +p || 1), pages);
+  if(want === state.page) return;                // pressing the page you are on
+  state.page = want;
+  apply(); writeHash();
+  /* Land on the RESULTS. This used to be window.scrollTo({top:0}), which threw the reader to the
+     very top of the page - on a phone that is the header and the search field, with the freshly
+     rendered page sitting below the fold. It looked exactly like an arrow that does nothing.
+     scrollToResults() is the helper the search box already uses: it measures the sticky toolbar and
+     only moves when there is something to gain, so tapping the bottom pager comes back up to the
+     first card of the new page and tapping the top one leaves a reader who is already there. */
+  scrollToResults();
+  const sr = document.getElementById("pageSR");
+  if(sr) sr.textContent = "Page " + want + " of " + pages;         // announced, not shown twice
+}
+function initPagers(){
+  document.querySelectorAll(".pager").forEach(el => {
+    if(el.__pagerBound) return;
+    el.__pagerBound = true;
+    const hit = e => { const b = e.target.closest && e.target.closest("button[data-p]");
+      return (b && !b.disabled && b.dataset.p != null) ? b : null; };
+    el.addEventListener("touchstart", () => { touchTap = { served:false }; }, { passive:true });
+    el.addEventListener("touchend", e => {
+      const b = hit(e); if(!b) return;
+      const t = touchTap = { served:false };     // a touchend with no touchstart is still a touch
+      setTimeout(() => { if(!t.served){ t.served = true; touchTap = null; turnPage(b.dataset.p, el); } }, 320);
+    }, { passive:true });
+    el.addEventListener("click", e => { const b = hit(e); if(!b) return;
+      if(touchTap && !touchTap.served) touchTap.served = true;   // this click IS that touch's click
+      touchTap = null;
+      turnPage(b.dataset.p, el); });
+  });
+}
+function pagerHTML(total){
+  const pages=Math.max(1,Math.ceil(total/PSZ)); if(state.page>pages)state.page=pages;
+  const cur=state.page; const nums=[...new Set([1,pages,cur-1,cur,cur+1])].filter(p=>p>=1&&p<=pages).sort((a,b)=>a-b);
+  /* The arrows are the control, so they get a real touch target (44px is the floor for a finger on
+     glass, and at the old 31x28 a tap that misses by a few px does nothing at all - which reads as
+     "the arrows don't work"). The page you are on is shown as plain text between them, so the
+     number box that used to sit beside the pair is gone. */
+  let out=`<button class="pgstep" data-p="${cur-1}" ${cur<=1?"disabled":""} title="Previous page" aria-label="Previous page">◀</button>` +
+          `<span class="pgnums">`; let last=0;
+  nums.forEach(p=>{if(p-last>1)out+="<span class='pgap'>…</span>";
+    out+=p===cur?`<span class="pgno" aria-current="page" title="Page ${p} of ${pages}">${p}</span>`
+                :`<button data-p="${p}" title="Page ${p} of ${pages}" aria-label="Page ${p}">${p}</button>`;last=p});
+  out+=`</span><button class="pgstep" data-p="${cur+1}" ${cur>=pages?"disabled":""} title="Next page" aria-label="Next page">▶</button>`;
+  return out }
+
+/* ============================== World View ==============================
+   The globe is the same catalogue seen spatially: every station with a known location is a
+   dot, clustered by zoom, coloured by what it is (yours / playable here / not), and the
+   search, the filters, Saved-only and Verified all prune it exactly as they prune the list.
+   Clicking a place opens the drawer; playing from it is the page's one and only player path
+   (doPlay), so the mini player, the pop-out and the dock hand-over work unchanged.
+   geo.js carries the coordinates (index into the catalogue); globe.js draws them. */
+const RBG = (window.RB_GEO && Array.isArray(window.RB_GEO.pts)) ? window.RB_GEO.pts : [];
+let worldOn = ls.get("view","list") === "world";
+let worldReady = false, worldPts = [], worldCentroid = null, placeGeo = null, pendingAddGeo = null;
+let worldUnmapped = [];
+let unmappedOn = false, unRows = null, unShown = 0;
+const UNPAGE = 150;
+const geoBy = new Map();
+for (const p of RBG) if (Array.isArray(p) && p.length === 3) geoBy.set(p[0]|0, p);
+const worldAvail = !!(window.GlobeView && window.WORLDGEO && geoBy.size);
+let worldIdxBy = null, worldIdxSig = "";
+function worldIndex(){            /* station uuid -> allStations index (the now-playing marker) */
+  const sig = WR.data.custom().map(function (s) { return s.i; }).join("|");
+  if (worldIdxBy && worldIdxSig === sig) return worldIdxBy;
+  worldIdxSig = sig;
+  worldIdxBy = new Map();
+  for (let oi = 0; oi < allStations.length; oi++){ const s = allStations[oi]; if (s && s.i) worldIdxBy.set(s.i, oi); }
+  return worldIdxBy; }
+function worldGeoOf(s, oi){       /* the coordinates this station has, if any */
+  if (isCustom(s)) return (Array.isArray(s.g) && s.g.length === 2 && isFinite(+s.g[0]) && isFinite(+s.g[1])) ? s.g : null;
+  const cc = allStations.length - ALL.length;      /* user stations sit in front of the catalogue */
+  const p = geoBy.get(oi - cc);
+  return p ? [p[1], p[2]] : null; }
+function worldRefresh(){
+  if (!worldOn || !worldReady) return;
+  const pts = [];
+  worldUnmapped = [];
+  allStations.forEach(function (s, oi) {
+    if (!matchAll(s, {})) return;
+    const g = worldGeoOf(s, oi);
+    if (!g) { worldUnmapped.push(oi); return; }
+    pts.push({ i: oi, la: g[0], lo: g[1], cu: isCustom(s), pk: playable(s), st: s.s || "", cc: s.cc || "" }); });
+  worldPts = pts;
+  /* country tier labels + the centroid Fly-to-results aims at (unit-vector means: no date line bugs) */
+  const byCc = new Map(); let sx = 0, sy = 0, sz = 0;
+  for (const p of pts){
+    const la = p.la * Math.PI / 180, lo = p.lo * Math.PI / 180, mu = Math.cos(la);
+    const vx = mu * Math.cos(lo), vy = mu * Math.sin(lo), vz = Math.sin(la);
+    sx += vx; sy += vy; sz += vz;
+    const m = byCc.get(p.cc) || { n: 0, x: 0, y: 0, z: 0 };
+    m.n++; m.x += vx; m.y += vy; m.z += vz; byCc.set(p.cc, m); }
+  const slen = Math.sqrt(sx*sx + sy*sy + sz*sz);
+  worldCentroid = slen ? { la: Math.asin(sz / slen) * 180 / Math.PI, lo: Math.atan2(sy, sx) * 180 / Math.PI } : null;
+  /* EVERY country gets a label, biggest first. This used to be `.slice(0, 24)`, which silently
+     dropped 202 countries while still drawing their bubbles - the globe read as "unnamed
+     country" over a real cluster. The canvas has no collision engine, so globe.js itself keeps
+     the biggest 34 that fit; feeding it the whole list lets it choose, and the continents ride
+     the same tier so a zoomed-out globe names land masses instead of a scatter of codes. */
+  const labels = [], byCont = {};
+  [...byCc.entries()].sort(function (a, b) { return b[1].n - a[1].n; }).forEach(function (e) {
+    const m = e[1], len = Math.sqrt(m.x*m.x + m.y*m.y + m.z*m.z) || 1;
+    const name = WR.geo.label(e[0]);
+    if (!name) return;
+    labels.push({ name: name, n: m.n, cc: e[0],
+                  la: Math.asin(m.z / len) * 180 / Math.PI, lo: Math.atan2(m.y, m.x) * 180 / Math.PI });
+    const cont = WR.geo.CONT_OF[e[0]] || "";
+    if (cont) { const c = byCont[cont] || (byCont[cont] = { n: 0 }); c.n += m.n; } });
+  WR.geo.CONTINENTS.forEach(function (c) {
+    const agg = byCont[c.k];
+    if (agg && agg.n) labels.push({ name: c.name, n: agg.n, cc: "", la: c.la, lo: c.lo, cont: 1 }); });
+  labels.sort(function (x, y) { return y.n - x.n; });       // continents first, then by size
+  if (window.GlobeView){ GlobeView.setPoints(pts); GlobeView.setLabels(labels); }
+  const located = pts.length, shown = lastTotal || 0, un = worldUnmapped.length;
+  $("#globeCount").innerHTML = "<b>" + fmt(located) + "</b> on the globe · <b>" + fmt(shown) + "</b> shown" +
+    (un ? ' · <button type="button" id="btnGlobeUnmapped" class="cu" title="Browse the ' + fmt(un) + ' stations with no coordinates — search, play and save them right here (shortcut: u)"><span aria-hidden="true">📍</span> <b>' + fmt(un) + "</b> unmapped ›</button>" : "");
+  $("#globeCount").title = "Every located station in the current search and filters" +
+    (un ? " — " + fmt(un) + " of the shown stations have no coordinates yet; the 📍 unmapped button browses them right here" : "");
+  $("#btnGlobeFly").hidden = !((state.q || state.cc || state.codec || state.bit || state.favOnly) && located);
+  if (unmappedOn) renderUnmapped();
+  worldSyncNow(); }
+function worldSyncNow(){
+  if (!worldOn || !worldReady || !window.GlobeView) return;
+  let i = null, g = null;
+  if (P.cur){ const m = worldIndex().get(P.cur.i); if (m != null){ i = m; g = worldGeoOf(allStations[m], m); } }
+  GlobeView.setNow(i, g ? g[0] : null, g ? g[1] : null); }
+function worldHudView(v){
+  const la = v.lat >= 0 ? v.lat.toFixed(1) + "°N" : (-v.lat).toFixed(1) + "°S";
+  const lo = v.lon >= 0 ? v.lon.toFixed(1) + "°E" : (-v.lon).toFixed(1) + "°W";
+  $("#globeCoords").textContent = la + " · " + lo + " · zoom " + v.zoom.toFixed(1); }
+function closePlace(){ $("#placePanel").hidden = true; unmappedOn = false; unRows = null; $("#placeRand").hidden = true; }
+function placePanelOpen(){ return !$("#placePanel").hidden; }
+function worldSelect(p){
+  if (!p || !p.idxs || !p.idxs.length) return;
+  unmappedOn = false; $("#placeRand").hidden = true; $("#placeAdd").hidden = false;
+  const rows = p.idxs.map(function (i) { return allStations[i]; }).filter(Boolean)
+    .sort(function (a, b) { return (playable(b) ? 1 : 0) - (playable(a) ? 1 : 0) || (b.k - a.k); });
+  if (!rows.length) return;
+  const many = rows.length > 1;
+  /* A big cluster carries its top listings only, so the drawer quotes the TRUE count and says
+     how many of them it is showing — a bubble that says 195 must not open a drawer that says 48. */
+  const total = Math.max(p.n | 0, rows.length);
+  $("#placeTitle").textContent = many ? (p.label || "This place") : rows[0].n;
+  $("#placeSub").textContent = fmt(total) + (many ? " stations" : " station") +
+    (many && total > rows.length ? " · top " + fmt(rows.length) + " by popularity" : "") +
+    (many && p.label && p.label !== rows[0].n ? " · " + p.label : "");
+  const cap = 80;
+  $("#placeList").innerHTML = rows.slice(0, cap).map(function (s) {
+    const nm = s.n || "Unknown station";
+    const loc = [countryOf(s), s.s].filter(Boolean).join(" · ");
+    return '<div class="srow" data-idx="' + allStations.indexOf(s) + '">'
+      + '<div class="sn"><b data-pact="info" title="Station details">' + esc(nm) + '</b>'
+      + '<span>' + flag(s.cc) + ' ' + esc(loc) + (s.x ? ' · ' + esc(s.x) : '') + (s.b ? ' ' + s.b + 'kbps' : '') + '</span></div>'
+      + '<button class="sb" data-pact="play" title="Play ' + esc(nm) + '">▶</button>'
+      + '<button class="sb" data-pact="fav" title="' + (favSet.has(s.i) ? "Remove from" : "Save to") + ' My stations">' + (favSet.has(s.i) ? "★" : "☆") + '</button></div>'; }).join("");
+  const note = $("#placeNote");
+  if (total > Math.min(rows.length, cap)){ note.hidden = false;
+    note.textContent = fmt(total - Math.min(rows.length, cap)) + " more here — narrow the search, or zoom in and pick a smaller cluster."; }
+  else note.hidden = true;
+  placeGeo = { la: p.la, lo: p.lo, label: p.label || "", cc: rows[0].cc || "" };
+  $("#placePanel").hidden = false; }
+$("#placeClose").addEventListener("click", closePlace);
+$("#placeList").addEventListener("click", function (e) {
+  if (e.target.closest("#placeMore")){ appendUnmapped(); return; }
+  const b = e.target.closest("[data-pact]"); if (!b) return;
+  const row = b.closest(".srow"); if (!row) return;
+  const s = allStations[+row.dataset.idx]; if (!s) return;
+  if (b.dataset.pact === "play"){ if (unmappedOn){ doPlay(s); return; } closePlace(); worldFlyToStation(s); doPlay(s); }
+  else if (b.dataset.pact === "fav"){ toggleFav(s); b.textContent = favSet.has(s.i) ? "★" : "☆"; }
+  else { closePlace(); showInfo(s); } });
+$("#placeAdd").addEventListener("click", function () {
+  if (!placeGeo) return;
+  pendingAddGeo = { la: placeGeo.la, lo: placeGeo.lo };
+  openAddPanel();
+  if (placeGeo.label) stEl("stCity").value = placeGeo.label;
+  if (placeGeo.cc && ccName[placeGeo.cc]) stEl("stCountry").value = ccName[placeGeo.cc];
+  setStatus("warn", "📍 New stations added now are pinned to " + (placeGeo.label || "this place") + " on the World View."); });
+function worldFlyToStation(s){
+  if (!worldReady || !window.GlobeView) return;
+  const g = worldGeoOf(s, allStations.indexOf(s)); if (!g) return;
+  const z = Math.max(2.8, Math.min(GlobeView.state().zoom * 1.15, 6));
+  GlobeView.flyTo(g[1], g[0], z, 900); }
+/* ---- the unmapped drawer (2026-10-13): every station the catalogue cannot place stays
+   reachable from the globe — the 📍 segment on the count chip opens this list; the search
+   and filters prune it exactly like the globe; a row plays through the usual path and the
+   list stays up (there is no dot to fly to for these, and picking through thousands is a
+   browsing job). "Play a random one" tunes one in. */
+function unRowHTML(i, s){
+  const nm = s.n || "Unknown station";
+  const loc = [countryOf(s), s.s].filter(Boolean).join(" · ");
+  return '<div class="srow" data-idx="' + i + '">'
+    + '<div class="sn"><b data-pact="info" title="Station details">' + esc(nm) + '</b>'
+    + '<span>' + flag(s.cc) + ' ' + esc(loc) + (s.x ? ' · ' + esc(s.x) : '') + (s.b ? ' ' + s.b + 'kbps' : '') + '</span></div>'
+    + '<button class="sb" data-pact="play" title="Play ' + esc(nm) + '">▶</button>'
+    + '<button class="sb" data-pact="fav" title="' + (favSet.has(s.i) ? "Remove from" : "Save to") + ' My stations">' + (favSet.has(s.i) ? "★" : "☆") + '</button></div>'; }
+function openUnmapped(){
+  placeGeo = null; unmappedOn = true;
+  $("#placeAdd").hidden = true;
+  $("#placeRand").hidden = false;
+  renderUnmapped();
+  $("#placePanel").hidden = false; }
+function renderUnmapped(){
+  const rows = worldUnmapped.slice();
+  rows.sort(function (a, b) { const sa = allStations[a] || {}, sb = allStations[b] || {};
+    return ((sb.k | 0) - (sa.k | 0)) || ((sb.v | 0) - (sa.v | 0)) || String(sa.n || "").localeCompare(String(sb.n || "")); });
+  unRows = rows; unShown = 0;
+  $("#placeTitle").textContent = "📍 Unmapped stations";
+  $("#placeSub").textContent = fmt(rows.length) + " in this search — the catalogue lists no coordinates for them, so they have no dot to sit on";
+  const list = $("#placeList");
+  if (!rows.length){
+    list.innerHTML = '<div class="x-empty">Nothing here — every station in this search has coordinates.</div>';
+    $("#placeNote").hidden = true; $("#placeRand").hidden = true; }
+  else { list.innerHTML = ""; appendUnmapped(); } }
+function appendUnmapped(){
+  if (!unRows) return;
+  const end = Math.min(unRows.length, unShown + UNPAGE);
+  let html = "";
+  for (let k = unShown; k < end; k++){ const s = allStations[unRows[k]]; if (s) html += unRowHTML(unRows[k], s); }
+  const list = $("#placeList"), more = document.getElementById("placeMore");
+  if (more) more.insertAdjacentHTML("beforebegin", html); else list.insertAdjacentHTML("beforeend", html);
+  unShown = end;
+  const left = unRows.length - unShown;
+  if (left > 0){
+    const lbl = "Show " + Math.min(UNPAGE, left) + " more ›";
+    if (more) more.textContent = lbl;
+    else list.insertAdjacentHTML("beforeend", '<button type="button" class="morebtn" id="placeMore">' + lbl + '</button>'); }
+  else if (more) more.remove();
+  updateUnmappedNote(); }
+function updateUnmappedNote(){
+  const pn = $("#placeNote");
+  if (!unRows || !unRows.length){ pn.hidden = true; return; }
+  pn.textContent = unShown < unRows.length
+    ? "showing the first " + fmt(unShown) + " of " + fmt(unRows.length) + ", most popular first"
+    : "all " + fmt(unRows.length) + " here, most popular first";
+  pn.hidden = false; }
+function playRandomUnmapped(){
+  if (!unRows || !unRows.length) return;
+  let pool = [];
+  for (const i of unRows){ const s = allStations[i]; if (s && playable(s)) pool.push(s); }
+  if (!pool.length) for (const i of unRows){ const s = allStations[i]; if (s) pool.push(s); }
+  const s = pool[Math.floor(Math.random() * pool.length)];
+  if (!s) return;
+  toast("🎲 " + s.n, 4200);
+  doPlay(s); }
+$("#placeRand").addEventListener("click", playRandomUnmapped);
+$("#globeCount").addEventListener("click", function (e) {
+  if (!e.target.closest("#btnGlobeUnmapped")) return;
+  if (placePanelOpen() && unmappedOn) closePlace(); else openUnmapped(); });
+function worldHoverHandler(p){
+  const tip = $("#globeTip");
+  if (!p){ tip.style.display = "none"; return; }
+  const names = p.idxs.slice(0, 3).map(function (i) { return allStations[i] && allStations[i].n; }).filter(Boolean);
+  tip.innerHTML = "<b>" + esc(p.label || "This place") + "</b>"
+    + (p.n > 1 ? ' <span class="mut">· ' + fmt(p.n) + " stations</span>" : "")
+    + (names.length ? '<br><span class="mut">' + esc(names.join(" · ")) + (p.n > 3 ? " …" : "") + "</span>" : "");
+  tip.style.left = Math.min(Math.max(6, p.x + 14), Math.max(6, $("#worldPanel").clientWidth - 260)) + "px";
+  tip.style.top = Math.min(Math.max(6, p.y + 14), Math.max(6, $("#worldPanel").clientHeight - 90)) + "px";
+  tip.style.display = "block"; }
+$("#btnGlobeFly").addEventListener("click", function () {
+  if (!worldCentroid || !worldReady) return;
+  GlobeView.flyTo(worldCentroid.lo, worldCentroid.la, Math.max(2.2, GlobeView.state().zoom), 1000); });
+$("#btnGlobeRandom").addEventListener("click", function () {
+  if (!worldReady) return;
+  const pool = worldPts.filter(function (p) { return p.pk; });
+  const arr = pool.length ? pool : worldPts;
+  if (!arr.length){ toast("Nothing to fly to — loosen the filters first.", 5000); return; }
+  const p = arr[Math.floor(Math.random() * arr.length)];
+  const s = allStations[p.i]; if (!s) return;
+  GlobeView.flyTo(p.lo, p.la, 3.4, 950, function () { toast("🎲 " + s.n, 4200); doPlay(s); }); });
+$("#btnGlobeDay").addEventListener("click", function () {
+  const on = !GlobeView.getTerminator();
+  GlobeView.setTerminator(on); ls.set("globe-day", on);
+  $("#btnGlobeDay").classList.toggle("on", on); $("#btnGlobeDay").setAttribute("aria-pressed", String(on)); });
+$("#btnGlobeIn").addEventListener("click", function () { GlobeView.zoomBy(1.35); });
+$("#btnGlobeOut").addEventListener("click", function () { GlobeView.zoomBy(0.74); });
+let worldCoordsT = 0;
+$("#globe").addEventListener("pointermove", function (e) {
+  if (!worldReady) return;
+  const now = performance.now(); if (now - worldCoordsT < 70) return; worldCoordsT = now;
+  const r = e.currentTarget.getBoundingClientRect();
+  const p = GlobeView.pointAt(e.clientX - r.left, e.clientY - r.top);
+  if (!p) return;
+  const la = p[1] >= 0 ? p[1].toFixed(1) + "°N" : (-p[1]).toFixed(1) + "°S";
+  const lo = p[0] >= 0 ? p[0].toFixed(1) + "°E" : (-p[0]).toFixed(1) + "°W";
+  $("#globeCoords").textContent = la + " · " + lo + " · zoom " + GlobeView.state().zoom.toFixed(1); });
+$("#globe").addEventListener("pointerleave", function () { if (worldReady) worldHudView(GlobeView.center()); });
+function worldFit(){
+  if (!worldOn) return;
+  const p = $("#worldPanel"), bar = $("#bar");
+  const barh = (bar && getComputedStyle(bar).display !== "none") ? Math.round(bar.getBoundingClientRect().height) : 0;
+  const top = Math.max(0, Math.round(p.getBoundingClientRect().top));
+  const avail = Math.max(200, Math.min(880, window.innerHeight - top - barh - 18));
+  p.style.height = avail + "px";
+  if (worldReady) GlobeView.resize();
+  /* A short viewport (a small phone: the header + toolbar can leave under 300px) cannot fit
+     the panel above the player bar in place - nudge the page up just enough that the bottom
+     chips are reachable without hunting, the same courtesy the search gives its results. */
+  const r2 = p.getBoundingClientRect();
+  const need = r2.bottom - (window.innerHeight - barh - 8);
+  if (need > 24) window.scrollBy(0, need); }
+function setWorld(on, silent){
+  if (on && !worldAvail){
+    if (!silent) toast("World view isn't available — the map data did not load on this visit.", 6000);
+    on = false; }
+  worldOn = !!on; ls.set("view", worldOn ? "world" : "list");
+  document.body.classList.toggle("worldview", worldOn);
+  const b = $("#btnView");
+  b.textContent = worldOn ? "📋 List" : "🌍 World";
+  b.classList.toggle("on", worldOn); b.setAttribute("aria-pressed", String(worldOn));
+  $("#worldPanel").hidden = !worldOn;
+  if (worldOn){
+    if (!worldReady){
+      worldReady = !!GlobeView.mount($("#globe"), { onSelect: worldSelect, onHover: worldHoverHandler, onView: worldHudView });
+      if (!worldReady){
+        worldOn = false; ls.set("view", "list"); $("#worldPanel").hidden = true;
+        document.body.classList.remove("worldview");
+        b.textContent = "🌍 World"; b.setAttribute("aria-pressed", "false");
+        toast("World view couldn't start in this browser.", 6000); return; }
+      const day = ls.get("globe-day", false);   // default OFF: the globe opens on plain day (his ask)
+      GlobeView.setTerminator(day);
+      $("#btnGlobeDay").classList.toggle("on", day); $("#btnGlobeDay").setAttribute("aria-pressed", String(day)); }
+    GlobeView.setActive(true);
+    worldRefresh(); worldHudView(GlobeView.center());
+    requestAnimationFrame(worldFit);
+  } else {
+    if (worldReady) GlobeView.setActive(false);
+    closePlace(); } }
+$("#btnView").addEventListener("click", function (e) { e.stopPropagation(); setWorld(!worldOn); });
+window.addEventListener("resize", worldFit);
+function worldBoot(){
+  if (!worldAvail){
+    const b = $("#btnView");
+    b.disabled = true; b.style.opacity = ".55";
+    b.title = "World view needs the map data (geo.js) — it did not load on this visit.";
+    if (worldOn){ worldOn = false; ls.set("view", "list"); }
+    return; }
+  if (worldOn) setWorld(true, true); }
+
+function apply(){ const t0=performance.now();
+  const cmpx={k:(a,b)=>b.k-a.k,v:(a,b)=>b.v-a.v,n:(a,b)=>a.n.localeCompare(b.n),b:(a,b)=>(b.b||0)-(a.b||0)||b.k-a.k}[state.sort]||((a,b)=>b.k-a.k);
+  const custom=refreshCustom();                      // catalogue + the user's own stations
+  const rows=[]; allStations.forEach((s,oi)=>{if(matchAll(s,{}))rows.push([s,oi])});
+  rows.sort((a,b)=>cmpx(a[0],b[0]));
+  /* Your own stations come first. A station that was just added carries no clicks and no votes, so
+     under every popularity sort it would land 40,000 rows down, on a page nobody ever reaches - and
+     an added station that cannot be found is not an added station. The sort is stable, so the order
+     WITHIN each group is still exactly what the sort control says. */
+  if(custom.length) rows.sort((a,b)=>(isCustom(b[0])?1:0)-(isCustom(a[0])?1:0));
+  const total=rows.length; lastTotal=total;
+  const pages=Math.max(1,Math.ceil(total/PSZ)); if(state.page>pages)state.page=pages;
+  const slice=rows.slice((state.page-1)*PSZ,state.page*PSZ);
+  /* The count line is the number of stations the list is showing and nothing else - no page number,
+     no "1-240", no "N hidden". The Verified switch beside it says which catalogue that number is
+     counted from, so the read-out never has to explain itself. */
+  $("#cntLine").innerHTML=`<span style="margin:0"><b>${fmt(total)}</b> stations</span>`;
+  refreshPlayableUI();
+  const ph=pagerHTML(total); $("#pagerTop").innerHTML=ph; $("#pagerBottom").innerHTML=ph;
+  initPagers();          // only ever binds a pager once (see the pager section above)
+  const sr=document.getElementById("pageSR"); if(sr) sr.textContent="Page "+state.page+" of "+pages;
+  $("#list").innerHTML=slice.map(([s,oi])=>cardHTML(s,oi)).join("");
+  refreshFavUI(); try{ worldRefresh(); }catch(e){} window.__perf=performance.now()-t0; document.body.dataset.ready="1"; }
+function readHash(){ const h=new URLSearchParams(location.hash.slice(1));
+  state.q=h.get("q")||"";state.cc=h.get("c")||"";state.lang=h.get("l")||"";state.codec=h.get("x")||"";state.bit=+h.get("b")||0;state.sort=h.get("s")||"k";
+  state.tags=(h.get("t")||"").split(",").filter(Boolean);state.page=+h.get("p")||1;state.favOnly=h.get("f")==="1";
+  if(h.has("pl")) state.playOnly = h.get("pl")!=="0";     // deep links can force the full list
+  $("#q").value=state.q;$("#selCountry").value=state.cc;$("#selCodec").value=state.codec;$("#selBit").value=String(state.bit) }
+let ht; function writeHash(){ clearTimeout(ht); ht=setTimeout(()=>{ try{ const h=new URLSearchParams();
+  if(state.q)h.set("q",state.q);if(state.cc)h.set("c",state.cc);if(state.lang)h.set("l",state.lang);if(state.codec)h.set("x",state.codec);
+  if(state.bit)h.set("b",state.bit);if(state.sort!=="k")h.set("s",state.sort);if(state.tags.length)h.set("t",state.tags.join(","));if(state.page>1)h.set("p",state.page);if(state.favOnly)h.set("f","1");
+  if(!state.playOnly)h.set("pl","0");
+  /* history.replaceState throws outright on the app's file:// origin, and a URL that lost a
+     character of its hash must never stop the list from rendering. */
+  history.replaceState(null,"","#"+h.toString()) }catch(e){} },300) }
+/* Everything that produces a new list - the search box, the filter selects, Reset - comes
+   through here, and a new list should start at its beginning. Without this, searching again from
+   halfway down the previous results leaves you halfway down the new ones, reading whatever
+   happens to be under your thumb. The pager does not come through here: it has its own scroll. */
+const queueApply=()=>{state.page=1;apply();writeHash();scrollToResults()};
+function scrollToResults(){
+  const list=$("#list"); if(!list) return;
+  const tb=document.querySelector(".toolbar");
+  const off=(tb?tb.getBoundingClientRect().height:0)+10;      // the sticky toolbar sits over the top
+  const y=list.getBoundingClientRect().top+window.scrollY-off;
+  if(window.scrollY>y+4) window.scrollTo({top:Math.max(0,y)});  // only when there is something to gain
+}
+let deb;
+$("#q").addEventListener("input",()=>{state.q=$("#q").value.trim().toLowerCase();clearTimeout(deb);deb=setTimeout(queueApply,180);
+  barPinned=false; syncBarAway();});
+/* Committing a search means the typing is over, so the on-screen keyboard should go with it:
+   without this it stays up over the results you just searched for, covering the top of the list.
+   Both routes are handled - the Enter/Go key on the keyboard, and the search event that fires
+   when it is committed (the magnifying glass, the keyboard's Go, or the field's own ✕).
+   Blurring is what dismisses it on both Android and iOS. */
+/* Every caller names its own field - a listener that passes the EVENT here would blur an Event
+   object, which is how the "committing via the search event" checks broke for a minute. */
+function endSearchTyping(field){ const q=field || $("#q"); if(!q || !q.blur) return;
+  q.blur();
+  /* Android and desktop close the keyboard on blur. iOS sometimes does not, and the documented
+     way to make it is to take the field out of play for a moment: a readonly field cannot be
+     typed into, so the keyboard has no reason to stay. It is restored immediately after, and
+     nothing is visible. */
+  if(document.activeElement === q){
+    q.setAttribute("readonly","readonly"); q.blur();
+    setTimeout(()=>q.removeAttribute("readonly"),120);
+  }
+  /* Inside the app the keyboard is the WebView's, and a blur alone does not always take it
+     away there, so say out loud that a search was committed and let the shell finish the job.
+     Nothing listens in a plain browser. */
+  try{ document.dispatchEvent(new CustomEvent("wr-search-commit")); }catch(e){}
+  /* A committed search is also the moment a phone claims its screen back: the filters and
+     the action row fold away under the ▾ in the field (the field itself stays put). Above
+     720px - and on every desktop - foldPhone() does nothing. */
+  foldPhone();
+}
+$("#q").addEventListener("keydown",e=>{ if(e.key==="Enter"||e.keyCode===13){ e.preventDefault(); endSearchTyping($("#q")); } });
+$("#q").addEventListener("search",()=>endSearchTyping($("#q")));
+$("#selCountry").onchange=e=>{state.cc=e.target.value;state.page=1;apply();writeHash()};
+$("#selCodec").onchange=e=>{state.codec=e.target.value;queueApply()};
+$("#selBit").onchange=e=>{state.bit=+e.target.value;queueApply()};
+$("#btnReset").onclick=()=>{Object.assign(state,{q:"",cc:"",lang:"",codec:"",bit:0,sort:"k",tags:[],page:1});
+  $("#q").value="";$("#selCountry").value="";$("#selCodec").value="";$("#selBit").value="0";apply();writeHash()};
+$("#list").addEventListener("click",e=>{const b=e.target.closest("[data-act][data-i]");if(!b)return;const idx=+b.dataset.i;const s=allStations[idx];const act=b.dataset.act;
+  if(act==="play")doPlay(s);
+  else if(act==="fav"){ toggleFav(s); b.classList.toggle("on",favSet.has(s.i)); b.textContent=favSet.has(s.i)?"★":"☆"; }
+  else if(act==="copy")copyText(s.u,"Stream URL");
+  else if(act==="info")showInfo(s);
+  else if(act==="delete"){ if(isCustom(s)) deleteCustomStation(s.i); }
+});
+buildStatic(); $("#spin").style.display="none"; readHash(); apply();
+channel.post({type:"hello"});
+worldBoot();
+/* debug hooks for automated tests */
+window.__dbg={ ALL:()=>ALL.length, state:()=>({...state}), player:()=>({cur:P.cur?P.cur.n:null,playing:P.playing,vol:P.vol,mine:P.mine}),
+  caps:()=>({...CAP}), playKind:(i)=>playKind(allStations[i]), unplayable:()=>unplayableCount(), playableCount:()=>allStations.length-unplayableCount(),
+  /* the add-a-station surface, for automated tests */
+  custom:()=>({ count:customStations().length, names:customStations().map(s=>s.n),
+    urls:customStations().map(s=>s.u),
+    panel:addPanelOpen(), status:(stStatus?stStatus.className+"|"+stStatus.textContent:"") , cards:document.querySelectorAll("#list .card .iconbtn[data-act='delete']").length,
+    first:(document.querySelector("#list .card .nm")||{}).textContent||null }),
+  addStation:(o)=>{ openAddPanel(); stEl("stName").value=o.n||""; stEl("stUrl").value=o.u||"";
+    stEl("stFormat").value=o.x||"auto"; stEl("stCountry").value=o.c||""; stEl("stCity").value=o.s||"";
+    stEl("stLang").value=o.l||""; stEl("stTags").value=o.t||""; stEl("stBit").value=o.b||"";
+    stEl("stHp").value=o.hp||""; liveCheck(); return stStatus?stStatus.textContent:""; },
+  saveStation:()=>saveCustomStation(), closeAdd:()=>closeAddPanel(), testStation:()=>testStream(),
+  notice:()=>({shown:document.querySelector("#notice").classList.contains("show"), text:document.querySelector("#notice").textContent.slice(0,140)}),
+  audioState:()=>{ const a=WR.play.audioEl(); return {paused:a.paused,src:!!a.src,err:WR.play.lastErr(),handover:WR.play.handover(),
+    ready:a.readyState, primed:WR.play.primed(), t:+a.currentTime.toFixed(2)}; },
+  playFirst:()=>doPlay(ALL[0]), stop:()=>requestStop(), openPop:togglePopOut, popOpen:()=>popOutOpen(),
+  dock:()=>({ open:dockOpen, kind:dockKind, box:dockState,
+              pageHidden:document.body.classList.contains("player"),
+              shown:getComputedStyle(document.getElementById("dock")).display !== "none" }),
+  randBtn:()=>$("#btnRandom").textContent.trim(),
+  pickRandom:()=>$("#btnRandom").click(),
+  curKind:()=>P.cur?playKind(P.cur):null,
+  stream:()=>({mine:WR.play.mine(), playing:WR.play.playing(), hasSrc:!!WR.play.audioEl().src, cur:P.cur&&P.cur.n,
+    owner:(WR.play.owner()||{}).kind||null, vol:WR.play.vol()}),
+  viz:()=>({on:vizOn,style:VIZSTYLES[vizStyle],idx:vizStyle}),
+  fav:()=>({count:favSet.size,only:state.favOnly,btn:$("#btnSaved").textContent.trim(),
+    rows:document.querySelectorAll("#savedList .srow").length}), toggleFavFirst:()=>toggleFav(ALL[0]),
+  menus:()=>({open:menuName,saved:menuOpen("saved")}),
+  playable:()=>({on:!!state.playOnly,label:$("#btnPlayable").textContent.trim()}),
+  ui:()=>({playOnly:!!state.playOnly,favOnly:!!state.favOnly,headerCompact:false,
+    filters:document.querySelectorAll(".fchip,#fActive,#chipRow,#btnClearF,#selSort").length,
+    toTop:document.querySelector("#toTop").classList.contains("show")}),
+  view:()=>({ mode: worldOn ? "world" : "list" }),
+  globe:()=>worldReady ? GlobeView.state() : { ready:false, points:0, clusters:0, labels:0, zoom:1, lon:0, lat:0, spin:false, terminator:false, marker:false, hover:null, frames:0 },
+  globeHit:(x,y)=>worldReady ? GlobeView.hitAt(+x, +y) : null,
+  place:()=>({ open: placePanelOpen(), title: $("#placeTitle").textContent, rows: document.querySelectorAll("#placeList .srow").length }),
+  unmapped:()=>({ open: placePanelOpen() && unmappedOn, count: worldUnmapped.length, shown: lastTotal || 0, located: worldPts.length, rendered: unShown,
+    rows: document.querySelectorAll("#placeList .srow").length, title: $("#placeTitle").textContent, sub: $("#placeSub").textContent,
+    note: $("#placeNote").hidden ? "" : $("#placeNote").textContent, more: !!document.getElementById("placeMore"), rand: !$("#placeRand").hidden }) };
+</script>
+</body>
+</html>

@@ -1,12 +1,30 @@
 <!DOCTYPE html>
+<!-- MODDYS World Radio - the radio page, at /radio.html since 2026-10-26
+     (before that it was the site root; the bytes are unchanged apart from this note and
+     the canonical/SoftwareApplication URLs below). -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<meta name="description" content="MODDYS World Radio — browse and play thousands of internet radio stations by country, genre and language. No account, no tracking.">
+<meta name="description" content="MODDYS World Radio &amp; Podcasts — browse and play thousands of internet radio stations by country, genre and language, and search 58,000 podcasts. No account, no tracking.">
 <meta name="robots" content="index, follow">
-<title>MODDYS World Radio — SPRAY IT LOUD</title>
+<title>MODDYS World Radio &amp; Podcasts</title>
+<link rel="canonical" href="https://moddys.net/radio.html">
+<script>
+/* The two-mode deep link. The app shells and any older link may still say
+   radio.html?mode=podcasts; forward it to the podcasts page (carrying ?show=) instead of
+   showing a radio page that quietly ignores the mode. Runs before anything renders. */
+try {
+  var __p = new URLSearchParams(location.search);
+  if (__p.get("mode") === "podcasts") {
+    var __s = __p.get("show");
+    location.replace("podcasts.html" + (__s ? "?show=" + encodeURIComponent(__s) : ""));
+  }
+} catch (e) {}
+</script>
+<script type="application/ld+json">[{"@context":"https://schema.org","@type":"Organization","name":"MODDYS","url":"https://moddys.net/","logo":"https://moddys.net/apple-touch-icon.png"},{"@context":"https://schema.org","@type":"WebSite","name":"MODDYS","url":"https://moddys.net/"},{"@context":"https://schema.org","@type":"SoftwareApplication","name":"MODDYS World Radio & Podcasts","url":"https://moddys.net/radio.html","applicationCategory":"MultimediaApplication","operatingSystem":"Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"alternateName":"MODDYS Podcasts"}]</script>
+
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📻</text></svg>">
 <style>
 :root{
@@ -50,10 +68,12 @@ header .next:hover{border-color:var(--cyan);color:var(--cyan);transform:translat
   box-shadow:3px 3px 0 rgba(31,227,255,.35)}
 /* The five-door wrapper (DOWNLOADS / SYNTHHUB / MUSIC HUB / PATTERN FORGE / RESONANCE):
    display:contents on wide screens, so the links lay out exactly as they always did; on a
-   phone it becomes one wrapped cluster (see the ≤900px block) - and INSIDE THE APP they are
-   hidden outright: they lead to pages the app does not carry (dead links in a pure radio). */
+   phone it becomes one wrapped cluster (see the ≤900px block). INSIDE THE APP exactly one
+   door survives - the podcast directory, because that is the one the app carries (2.0.0
+   bundles podcasts.html + its index + its corpus). The other four lead to pages the app does
+   not ship, and a door that opens nothing is worse than no door at all. */
 .nextrow{display:contents}
-html.wr-app .nextrow{display:none !important}
+html.wr-app .nextrow .next:not([href="podcasts.html"]){display:none !important}
 /* Phone and tablet: the tagline and the app button are placed, not left to the wrap. As two
    flex items they stacked whenever the title happened to fill the line, which drops the whole
    page down a row; a two-column grid row keeps them side by side at every width, with the
@@ -612,14 +632,14 @@ body.worldview #list,body.worldview .resbar{display:none}
 }
 </style>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="apple-mobile-web-app-title" content="World Radio">
+<meta name="apple-mobile-web-app-title" content="MODDYS Radio">
 <meta name="apple-mobile-web-app-capable" content="yes">
 </head>
 <body>
 <noscript>
 <div style="position:fixed;inset:0;background:#101117;color:#f4f1ea;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font:16px/1.65 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;z-index:999">
   <div style="max-width:540px">
-    <h1 style="margin:0 0 12px;font-size:26px">🎧 MODDYS World Radio needs JavaScript</h1>
+    <div style="margin:0 0 12px;font-size:26px">🎧 MODDYS World Radio needs JavaScript</div>
     <p style="margin:0;color:#9aa0b8">This site browses and plays 48,035 radio stations and needs JavaScript to do it. Please enable JavaScript for this site (Settings → Privacy and security → Site settings → JavaScript) and reload the page.</p>
   </div>
 </div>
@@ -793,6 +813,7 @@ body.worldview #list,body.worldview .resbar{display:none}
 </script>
 
   <nav class="nextrow" aria-label="More from MODDYS">
+    <a class="next" href="podcasts.html">🎙️ PODCASTS ➜</a>
     <a class="next" href="moddys-downloads.html">📦 DOWNLOADS ➜</a>
     <a class="next" href="synthhub.html">🎛️ SYNTHHUB ➜</a>
     <a class="next" href="musichub/">🎵 MUSIC HUB ➜</a>
@@ -1011,11 +1032,11 @@ body.worldview #list,body.worldview .resbar{display:none}
 <script src="stations.js"></script>
 <script src="worldgeo.js"></script>
 <script src="geo.js"></script>
-<script src="globe.js"></script>
+<script src="globe.js?v=20261030h"></script>
 <!-- The shared core (wr-core.js): data helpers, filters, favourites, the user's own stations
      and the single-owner player. This page's inline script used to carry its own copies; it
      now wires the core's host hooks to its chrome. world.html loads the same file. -->
-<script src="wr-core.js?v=20261015a"></script>
+<script src="wr-core.js?v=20261030d"></script>
 <script>
 "use strict";
 /* ============================= helpers ============================= */
@@ -2111,11 +2132,24 @@ function worldRefresh(){
     m.n++; m.x += vx; m.y += vy; m.z += vz; byCc.set(p.cc, m); }
   const slen = Math.sqrt(sx*sx + sy*sy + sz*sz);
   worldCentroid = slen ? { la: Math.asin(sz / slen) * 180 / Math.PI, lo: Math.atan2(sy, sx) * 180 / Math.PI } : null;
-  const labels = [];
-  [...byCc.entries()].sort(function (a, b) { return b[1].n - a[1].n; }).slice(0, 24).forEach(function (e) {
+  /* EVERY country gets a label, biggest first. This used to be `.slice(0, 24)`, which silently
+     dropped 202 countries while still drawing their bubbles - the globe read as "unnamed
+     country" over a real cluster. The canvas has no collision engine, so globe.js itself keeps
+     the biggest 34 that fit; feeding it the whole list lets it choose, and the continents ride
+     the same tier so a zoomed-out globe names land masses instead of a scatter of codes. */
+  const labels = [], byCont = {};
+  [...byCc.entries()].sort(function (a, b) { return b[1].n - a[1].n; }).forEach(function (e) {
     const m = e[1], len = Math.sqrt(m.x*m.x + m.y*m.y + m.z*m.z) || 1;
-    labels.push({ name: ccName[e[0]] || e[0] || "—", n: m.n,
-                  la: Math.asin(m.z / len) * 180 / Math.PI, lo: Math.atan2(m.y, m.x) * 180 / Math.PI }); });
+    const name = WR.geo.label(e[0]);
+    if (!name) return;
+    labels.push({ name: name, n: m.n, cc: e[0],
+                  la: Math.asin(m.z / len) * 180 / Math.PI, lo: Math.atan2(m.y, m.x) * 180 / Math.PI });
+    const cont = WR.geo.CONT_OF[e[0]] || "";
+    if (cont) { const c = byCont[cont] || (byCont[cont] = { n: 0 }); c.n += m.n; } });
+  WR.geo.CONTINENTS.forEach(function (c) {
+    const agg = byCont[c.k];
+    if (agg && agg.n) labels.push({ name: c.name, n: agg.n, cc: "", la: c.la, lo: c.lo, cont: 1 }); });
+  labels.sort(function (x, y) { return y.n - x.n; });       // continents first, then by size
   if (window.GlobeView){ GlobeView.setPoints(pts); GlobeView.setLabels(labels); }
   const located = pts.length, shown = lastTotal || 0, un = worldUnmapped.length;
   $("#globeCount").innerHTML = "<b>" + fmt(located) + "</b> on the globe · <b>" + fmt(shown) + "</b> shown" +

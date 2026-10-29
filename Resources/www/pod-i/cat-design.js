@@ -1,0 +1,1 @@
+window.POD_SHELF=window.POD_SHELF||{};window.POD_SHELF["cat:design"]=[["Archispeak Podcast","https://feeds.feedburner.com/Archispeak","https://artwork.captivate.fm/51874255-1540-4050-87cd-56c1b26a0c1a/IBkuLER64e1L0HH0ZhKF8inI.jpg","design","en",396]];

@@ -1,0 +1,1 @@
+window.POD_SHELF=window.POD_SHELF||{};window.POD_SHELF["cat:relationships"]=[["Open Deeply Podcast","https://feeds.resonaterecordings.com/open-deeply","https://prod-podcast-media-public.nyc3.cdn.digitaloceanspaces.com/migrations/com-resonaterecordings-public/cover-art/kj6rGd2HhX8eXGsAQL2IcZOrN6jqfsWKFmYEvCKV.jpg","relationships","en",67]];

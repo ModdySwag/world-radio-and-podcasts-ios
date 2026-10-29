@@ -1,0 +1,1 @@
+window.POD_SHELF=window.POD_SHELF||{};window.POD_SHELF["cat:visual"]=[["Batman Knightcast","https://feeds.feedburner.com/knightcast","https://fireandwaterpodcast.com/wp-content/uploads/2016/07/BK2025.jpg","visual","en",59]];

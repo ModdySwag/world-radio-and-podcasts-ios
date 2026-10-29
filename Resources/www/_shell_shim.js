@@ -182,9 +182,10 @@
      hides itself, so this is a safety net rather than the normal path.) */
   function externalLinks() {
     /* Pages that ship INSIDE this app may be followed in place (the full World View rides in
-       the bundle as world.html; index.html is the way back). Everything else relative stays
-       handed to the shell - the one-page safety net is unchanged. */
-    var IN_APP_PAGES = ["world.html", "index.html"];
+       the bundle as world.html, the podcast directory as podcasts.html, and index.html /
+       radio.html are the way back to the radio). Everything else relative stays handed to the
+       shell - the one-page safety net is unchanged. */
+    var IN_APP_PAGES = ["world.html", "index.html", "radio.html", "podcasts.html"];
     doc.addEventListener("click", function (ev) {
       var a = ev.target && ev.target.closest ? ev.target.closest('a[href]') : null;
       if (!a) return;

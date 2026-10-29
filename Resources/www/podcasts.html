@@ -1,0 +1,2150 @@
+<!DOCTYPE html>
+<!-- MODDYS World Radio — the PODCASTS page, at /podcasts.html
+     The second mode of one app: radio.html is live radio (71,577 stations), this page is
+     shows and episodes. They share the brand, the player language, the volume and the
+     single-audio rule; they do not share a catalogue, because episodes only exist in each
+     show's own RSS feed and those feeds send no CORS headers.
+
+     Who does what (settled 2026-10-30, see PLAN-podcasts.md):
+       browser -> Apple   discovery: top charts + search   (itunes.apple.com sends ACAO: *)
+       browser -> Worker  episode lists: /feed?url=<rss>   (the one server-side piece)
+       browser -> host    the audio itself, never proxied
+     The Worker cannot reach Apple (403/429 from Cloudflare egress) — never route Apple
+     calls through it.
+
+     Follows and "continue listening" live in THIS browser (localStorage, rbg-pod-*). No
+     account, nothing sent anywhere — the same promise the radio side keeps. Every read and
+     write goes through the small Store object below, so syncing later is a swap there and
+     not a rewrite here. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#101117">
+<meta name="description" content="MODDYS Podcasts — 58,000 shows to search and browse, top charts by country, follow shows and pick episodes up exactly where you stopped. No account, no tracking.">
+<meta name="robots" content="index, follow">
+<title>MODDYS Podcasts</title>
+<link rel="canonical" href="https://moddys.net/podcasts.html">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎙️</text></svg>">
+<style>
+:root{
+  --bg:#101117; --bg2:#171824; --panel:#1a1b28; --panel2:#22233a; --line:#2e3050;
+  --tx:#f4f1ea; --mut:#9aa0b8;
+  --pink:#ff3ea5; --cyan:#1fe3ff; --lime:#c9ff3d; --orange:#ff9f1c; --purp:#a06bff; --yel:#ffe14d;
+  --ok:#7dffa8; --warn:#ffb454;
+  --rough:7px 18px 8px 20px/22px 6px 24px 8px;
+  --barh:0px;                 /* the player bar's height, measured, so the page can clear it */
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",sans-serif;
+  min-height:100vh;overflow-x:hidden;-webkit-user-select:none;user-select:none}
+input,textarea,select{ -webkit-user-select:text;user-select:text }
+::selection{background:var(--pink);color:#fff}
+[hidden]{display:none !important}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.09'/%3E%3C/svg%3E")}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.16;
+  background:
+   radial-gradient(260px 120px at 8% 12%, rgba(255,62,165,.55), transparent 70%),
+   radial-gradient(300px 160px at 92% 8%, rgba(31,227,255,.4), transparent 70%),
+   radial-gradient(340px 190px at 85% 88%, rgba(201,255,61,.28), transparent 70%),
+   radial-gradient(240px 130px at 12% 85%, rgba(255,159,28,.3), transparent 70%)}
+.spraybar{position:fixed;top:0;left:0;right:0;height:7px;z-index:90;display:flex}
+.spraybar i{flex:1;display:block}
+.spraybar i:nth-child(1){background:var(--pink)}.spraybar i:nth-child(2){background:var(--orange)}
+.spraybar i:nth-child(3){background:var(--yel)}.spraybar i:nth-child(4){background:var(--lime)}
+.spraybar i:nth-child(5){background:var(--cyan)}.spraybar i:nth-child(6){background:var(--purp)}
+.wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:26px 16px 60px}
+header{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin:4px 0 14px}
+h1{margin:0;font-size:clamp(26px,4.6vw,44px);line-height:.95;font-weight:900;letter-spacing:-1px;text-transform:uppercase;
+  color:#fff;transform:rotate(-1.2deg);text-shadow:3px 3px 0 var(--pink),6px 6px 0 rgba(0,0,0,.45)}
+h1 .brand{font-size:1.08em;letter-spacing:.2px;color:#fff;text-shadow:2px 2px 0 var(--lime),5px 5px 0 var(--pink),8px 8px 0 rgba(0,0,0,.45)}
+h1 .o{color:var(--cyan)} h1 .g{color:var(--lime)}
+
+/* ===== the mode switch: the one control both pages carry =====
+   Radio and Podcasts are two pages, so this is two links drawn as one segmented control.
+   Laying it out as a segmented control (and not as two loose badges) is what makes the pair
+   read as ONE app with two modes rather than two sites that link to each other. */
+.modesw{display:inline-flex;align-items:stretch;border:2px solid var(--line);border-radius:12px;
+  overflow:hidden;background:#0d0e16;transform:rotate(.7deg);box-shadow:4px 4px 0 rgba(0,0,0,.35)}
+.modesw a{display:inline-flex;align-items:center;gap:6px;padding:9px 13px;font-size:12.5px;font-weight:900;
+  letter-spacing:.6px;text-transform:uppercase;text-decoration:none;color:var(--mut);white-space:nowrap;
+  transition:background .12s,color .12s}
+.modesw a+a{border-left:2px solid var(--line)}
+.modesw a:hover{color:var(--tx);background:rgba(255,255,255,.05)}
+.modesw a[aria-current="page"]{background:linear-gradient(100deg,var(--pink),var(--purp));color:#12040d;
+  text-shadow:none;cursor:default}
+.modesw a[aria-current="page"]:hover{background:linear-gradient(100deg,var(--pink),var(--purp))}
+header .spraytag{margin-left:auto;transform:rotate(1.6deg);font-weight:800;text-transform:uppercase;font-size:12px;
+  letter-spacing:1px;color:#0c0d14;background:linear-gradient(90deg,var(--cyan),var(--lime));
+  padding:6px 12px;border-radius:3px;box-shadow:4px 4px 0 rgba(0,0,0,.4)}
+
+/* ===== toolbar: search, country, genres ===== */
+.toolbar{position:sticky;top:6px;z-index:50;padding:8px 0 6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  background:linear-gradient(180deg,rgba(16,17,23,.94) 0%,rgba(16,17,23,.94) 82%,transparent)}
+.searchwrap{position:relative;display:flex;align-items:center;flex:1 1 260px;min-width:0}
+#q{flex:1 1 auto;min-width:0;width:100%;background:#0d0e16;border:2px solid var(--line);color:var(--tx);
+  border-radius:12px;padding:10px 52px 10px 14px;font-size:15px;outline:none;font-family:inherit;
+  transition:border-color .12s,box-shadow .12s}
+#q:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,227,255,.18)}
+#q::placeholder{color:#6f7590}
+.qbtn{position:absolute;top:3px;bottom:3px;right:4px;width:42px;display:inline-flex;align-items:center;justify-content:center;
+  border:none;background:none;color:var(--mut);font-size:15px;line-height:1;cursor:pointer;border-radius:10px;padding:0;font-family:inherit}
+.qbtn:hover,.qbtn:focus-visible{color:var(--cyan);background:rgba(31,227,255,.1)}
+.selwrap{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.8px;color:var(--mut);flex:0 0 auto}
+select{background:#0d0e16;border:2px solid var(--line);color:var(--tx);border-radius:10px;padding:8px 9px;
+  font-size:13.5px;outline:none;max-width:220px;font-family:inherit}
+select:focus{border-color:var(--purp)}
+.genres{display:flex;gap:5px;overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch;
+  scrollbar-width:thin;padding:2px 0;flex:1 1 100%}
+.genres::-webkit-scrollbar{height:5px}
+.sfilters{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 12px}
+.sfilters label{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mut)}
+.sfilters select{appearance:none;border:1.5px solid var(--line);background:#10111c;color:var(--tx);
+  border-radius:8px;padding:6px 10px;font:inherit;font-size:12.5px}
+.sfilters select:focus-visible{border-color:var(--cyan);outline:none}
+.sres-count{grid-column:1/-1;color:var(--mut);font-size:12px;margin:2px 0 6px}
+.sres-rec{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 4px}
+.srch-live{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.secnav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 14px}
+.secnav .btn{padding:6px 12px;font-size:12.5px}
+.secnav-note{color:var(--mut);font-size:11.5px;margin-left:auto}
+.sres{grid-column:1/-1;display:flex;justify-content:space-between;gap:14px;align-items:baseline;
+  width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;
+  background:rgba(16,18,28,.72);color:var(--tx);font:inherit;text-align:left;cursor:pointer}
+.sres:hover,.sres:focus-visible{border-color:var(--cyan);background:rgba(31,227,255,.07);outline:none}
+.sres b{font-size:14px;font-weight:700}
+.sres span{color:var(--mut);font-size:12px;white-space:nowrap}
+.sres-sep{grid-column:1/-1;margin:10px 0 -4px;color:var(--mut);font-size:11.5px;
+  text-transform:uppercase;letter-spacing:.09em}
+.dirchips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+.dirchips .gchip{font-size:12.5px}
+.dirfoot{display:flex;justify-content:center;margin:18px 0 6px}
+.gchip{flex:0 0 auto;border:1.5px solid var(--line);background:rgba(15,16,26,.9);color:var(--tx);border-radius:8px;
+  padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;
+  transition:border-color .12s,background .12s,color .12s}
+.gchip:hover{border-color:var(--cyan);color:var(--cyan)}
+.gchip.on{background:var(--cyan);border-color:var(--cyan);color:#04141a;font-weight:900}
+
+/* ===== section chrome ===== */
+.sec{margin:20px 0 6px}
+.sechead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 10px}
+.sechead h2{margin:0;font-size:clamp(17px,2.4vw,21px);font-weight:900;text-transform:uppercase;letter-spacing:.4px}
+.sechead h2 .em{color:var(--pink)}
+.sechead span{font-size:12.5px;color:var(--mut)}
+.sechead .right{margin-left:auto;display:flex;gap:6px;align-items:center}
+.note{font-size:13px;color:var(--mut);padding:10px 2px}
+.note b{color:var(--tx)}
+.errbox{display:flex;flex-direction:column;align-items:flex-start;gap:9px;border:2px solid var(--warn);
+  background:rgba(255,159,28,.1);border-radius:14px 6px 14px 6px;padding:13px 15px;margin:4px 0 10px}
+.errbox b{font-size:14px}
+.errbox span{font-size:12.5px;color:#ffd9a8;line-height:1.5;word-break:break-word}
+.btn{appearance:none;border:2px solid var(--line);background:#10111c;color:var(--tx);border-radius:10px;
+  padding:8px 13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;
+  display:inline-flex;align-items:center;gap:6px;transition:transform .08s,box-shadow .08s,background .12s,border-color .12s}
+.btn:hover{border-color:var(--cyan);box-shadow:3px 3px 0 rgba(31,227,255,.35);transform:translate(-1px,-1px)}
+.btn:active{transform:translate(1px,1px);box-shadow:none}
+.btn.pink{border-color:var(--pink);color:#ffd3ea}
+.btn.pink:hover{background:var(--pink);color:#1a0312;box-shadow:3px 3px 0 rgba(255,62,165,.4)}
+.btn.on{border-color:var(--cyan);background:rgba(31,227,255,.16);color:var(--cyan)}
+.btn[disabled]{opacity:.45;cursor:default;transform:none;box-shadow:none;border-color:var(--line);color:var(--mut)}
+
+/* ===== show cards ===== */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:12px}
+.pcard{position:relative;background:linear-gradient(160deg,#191a29 0%,#14151f 100%);border:1px solid rgba(255,255,255,.14);
+  border-radius:var(--rough);padding:9px 9px 11px;display:flex;flex-direction:column;gap:8px;cursor:pointer;
+  transition:border-color .12s,box-shadow .12s,transform .08s;min-width:0}
+.pcard:hover,.pcard:focus-visible{border-color:var(--pink);box-shadow:4px 4px 0 rgba(255,62,165,.22);
+  transform:translate(-1px,-1px);outline:none}
+.pcard .part{position:relative;width:100%;aspect-ratio:1/1;border-radius:10px 4px 10px 4px;overflow:hidden;
+  background:linear-gradient(140deg,#20213a,#12131e);flex:0 0 auto}
+.pcard .part img{width:100%;height:100%;object-fit:cover;display:block}
+.imgfail{visibility:hidden}
+.pcard .pmeta{min-width:0;display:flex;flex-direction:column;gap:2px}
+.pcard .pmeta b{font-size:13.5px;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;word-break:break-word}
+.pcard .pmeta span{font-size:11.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pcard .pmeta i{font-style:normal;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--purp)}
+.pfav{position:absolute;top:5px;right:5px;width:34px;height:34px;border-radius:10px;border:1.5px solid rgba(255,255,255,.28);
+  background:rgba(9,10,16,.72);color:#fff;font-size:15px;line-height:1;cursor:pointer;padding:0;
+  display:inline-flex;align-items:center;justify-content:center;transition:background .12s,color .12s,border-color .12s}
+.pfav:hover{border-color:var(--yel);color:var(--yel)}
+.pfav.on{background:var(--yel);border-color:var(--yel);color:#1a1400}
+.sk{border:1px solid var(--line);border-radius:var(--rough);height:212px;background:linear-gradient(120deg,#171827,#1d1e31,#171827);
+  background-size:220% 100%;animation:shimmer 1.4s linear infinite}
+@keyframes shimmer{to{background-position:-220% 0}}
+
+/* ===== the show page ===== */
+.shead{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:start;margin:6px 0 16px}
+.shead .sart{width:150px;height:150px;border-radius:14px 5px 14px 5px;object-fit:cover;background:#0b0c12;
+  border:1px solid rgba(255,255,255,.16);box-shadow:6px 6px 0 rgba(0,0,0,.45)}
+.shead .sartwrap{position:relative}
+.smain{min-width:0}
+.smain h2{margin:0 0 4px;font-size:clamp(19px,3vw,27px);line-height:1.12;font-weight:900;word-break:break-word}
+.smain .sauth{font-size:14px;color:var(--cyan);font-weight:700;margin:0 0 4px}
+.smain .smeta{font-size:11.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin:0 0 9px}
+.sacts{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
+.shdesc{font-size:12.8px;color:#c9cee4;line-height:1.55;margin:0;max-width:70ch;
+  display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
+.eplist{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--line)}
+.eprow{display:flex;gap:11px;align-items:flex-start;padding:11px 4px;border-bottom:1px solid rgba(255,255,255,.09)}
+.eprow.on{background:linear-gradient(90deg,rgba(255,62,165,.12),transparent 70%)}
+.epbtn{flex:0 0 auto;width:42px;height:42px;border-radius:50%;border:2px solid var(--pink);background:rgba(255,62,165,.14);
+  color:#ff9fd2;font-size:15px;line-height:1;cursor:pointer;font-family:inherit;display:inline-flex;
+  align-items:center;justify-content:center;padding:0;transition:background .12s,color .12s}
+.epbtn:hover{background:var(--pink);color:#1a0312}
+.eprow.on .epbtn{background:var(--pink);color:#fff;border-color:#fff}
+.epmain{min-width:0;flex:1 1 auto}
+.epmain b{display:block;font-size:13.8px;line-height:1.35;font-weight:700;word-break:break-word}
+.epmain span{display:block;font-size:11.5px;color:var(--mut);margin-top:2px}
+.epmain span em{font-style:normal;color:var(--pink);font-weight:700}
+.epbar{display:block;height:4px;border-radius:3px;background:rgba(255,255,255,.13);margin-top:6px;overflow:hidden}
+.epbar u{display:block;height:100%;background:linear-gradient(90deg,var(--pink),var(--purp));text-decoration:none}
+
+/* ===== continue listening ===== */
+.clist{display:flex;flex-direction:column;gap:8px}
+.controw{display:flex;gap:11px;align-items:center;padding:9px 10px;border:1px solid rgba(255,255,255,.13);
+  border-radius:12px 5px 12px 5px;background:rgba(23,24,38,.72);cursor:pointer;transition:border-color .12s,transform .08s}
+.controw:hover{border-color:var(--cyan);transform:translate(-1px,-1px)}
+.controw img{width:46px;height:46px;border-radius:9px 3px 9px 3px;object-fit:cover;background:#0b0c12;flex:0 0 auto}
+.cmain{min-width:0;flex:1 1 auto}
+.cmain b{display:block;font-size:13.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmain span{display:block;font-size:11px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cleft{flex:0 0 auto;font:800 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--cyan);white-space:nowrap}
+.cx{flex:0 0 auto;width:32px;height:32px;border-radius:9px;border:1.5px solid var(--line);background:#10111c;
+  color:var(--mut);cursor:pointer;font-family:inherit;font-size:13px;line-height:1}
+.cx:hover{border-color:var(--pink);color:var(--pink)}
+
+/* ===== the player bar =====
+   One audio element, fixed to the bottom, carrying what a live stream never needs: a seek
+   position that is remembered and a duration. Layout is one row on a desktop and three on a
+   phone (who / controls / seek), because a seek bar squeezed to 80px is not a seek bar. */
+#pbar{position:fixed;left:0;right:0;bottom:0;z-index:80;display:flex;align-items:center;gap:11px;
+  padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));
+  background:linear-gradient(180deg,rgba(24,25,40,.98),rgba(11,12,19,.99));
+  border-top:2px solid var(--pink);box-shadow:0 -10px 34px rgba(0,0,0,.55)}
+#pbar .pb-art{width:46px;height:46px;border-radius:10px 4px 10px 4px;object-fit:cover;background:#0b0c12;flex:0 0 auto}
+.pb-who{min-width:0;flex:1 1 180px;display:flex;flex-direction:column;gap:1px}
+.pb-who b{font-size:13px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pb-who span{font-size:11px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pb-ctrls{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+.pb-btn{min-width:38px;height:38px;border-radius:10px;border:2px solid var(--line);background:#12131f;color:var(--tx);
+  font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;padding:0 8px;display:inline-flex;
+  align-items:center;justify-content:center;line-height:1}
+.pb-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+.pb-btn.pb-play{width:46px;height:46px;border-radius:50%;border-color:var(--pink);color:#ff9fd2;font-size:17px;
+  background:rgba(255,62,165,.16)}
+.pb-btn.pb-play:hover{background:var(--pink);color:#1a0312}
+.pb-seek{display:flex;align-items:center;gap:8px;flex:1 1 260px;max-width:560px;min-width:150px}
+.pb-seek span{font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--mut);min-width:38px;text-align:center}
+#pbRange{flex:1 1 auto;min-width:0;accent-color:var(--pink);height:22px;cursor:pointer}
+/* Volume is deliberately NOT the same pink as the seek bar: two identical sliders side by side
+   read as one long one, and the volume was being dragged by people aiming for the scrubber. */
+#pbVol{flex:0 0 76px;max-width:76px;min-width:60px;accent-color:var(--cyan);opacity:.85;height:20px;cursor:pointer}
+#pbVol:hover{opacity:1}
+#pbRate{padding:5px 6px;font-size:12px;border-radius:9px;max-width:88px}
+#pbClose{border-color:rgba(255,255,255,.2);color:var(--mut);min-width:34px}
+#pbClose:hover{border-color:var(--pink);color:var(--pink)}
+
+/* the "radio is playing in another tab" note: one line, dismissible by acting on it */
+#radioNote{display:flex;align-items:center;gap:9px;margin:8px 0 0;padding:8px 12px;font-size:12.5px;
+  border:1.5px solid var(--cyan);border-radius:10px;background:rgba(31,227,255,.1);color:#dff6ff}
+#radioNote button{margin-left:auto;background:none;border:1.5px solid rgba(31,227,255,.5);color:var(--cyan);
+  border-radius:8px;padding:3px 9px;font:800 11px/1.4 inherit;cursor:pointer}
+
+/* ===== toast ===== */
+#toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--barh,0px) + 22px);z-index:95;
+  background:#241207;border:2px solid var(--warn);color:#ffe2bd;border-radius:12px;padding:9px 16px;font-size:13px;
+  display:none;max-width:84vw;font-weight:600;align-items:center;gap:9px;box-shadow:0 8px 26px rgba(0,0,0,.5)}
+#toast.show{display:flex}
+#toast button{background:none;border:1.5px solid currentColor;border-radius:8px;padding:2px 10px;
+  font:inherit;font-weight:800;color:var(--lime);cursor:pointer;white-space:nowrap}
+
+/* ===== footer ===== */
+.attrib{margin:26px 0 0;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--mut);line-height:1.7}
+.attrib a{color:var(--cyan);text-decoration:none}
+.attrib a:hover{text-decoration:underline}
+
+/* ===== phones ===== */
+@media(max-width:900px){
+  header{gap:10px}
+  header .spraytag{margin-left:0}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:9px}
+  .shead{grid-template-columns:104px 1fr;gap:11px}
+  .shead .sart{width:104px;height:104px}
+  .shdesc{-webkit-line-clamp:4}
+}
+@media(max-width:760px){
+  .wrap{padding:22px 13px 40px}
+  #pbar{flex-wrap:wrap;row-gap:7px;padding:9px 11px calc(9px + env(safe-area-inset-bottom,0px))}
+  .pb-who{flex:1 1 120px}
+  .pb-ctrls{order:2}
+  .pb-seek{order:5;flex:1 1 100%;min-width:0}
+  #pbVol{display:none}
+  .pb-btn{min-width:36px;height:36px;padding:0 6px}
+  .pb-btn.pb-play{width:42px;height:42px}
+}
+@media(max-width:430px){
+  h1{font-size:24px}
+  header .spraytag{font-size:10px;padding:5px 9px}
+  .modesw a{padding:8px 10px;font-size:11px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:8px}
+  .pcard .pmeta b{font-size:12.5px}
+  .shead{grid-template-columns:84px 1fr}
+  .shead .sart{width:84px;height:84px}
+  .eprow{padding:9px 2px}
+}
+@media(prefers-reduced-motion:reduce){
+  .sk{animation:none}
+  .pcard:hover,.controw:hover,.btn:hover{transform:none}
+}
+</style>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="MODDYS Podcasts">
+<meta name="apple-mobile-web-app-capable" content="yes">
+</head>
+<body>
+<noscript>
+<div style="position:fixed;inset:0;background:#101117;color:#f4f1ea;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font:16px/1.65 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;z-index:999">
+  <div style="max-width:540px">
+    <div style="margin:0 0 12px;font-size:26px">🎙️ MODDYS Podcasts needs JavaScript</div>
+    <p style="margin:0;color:#9aa0b8">Episode lists are read from each show's own feed in the browser. Please enable JavaScript for this site and reload the page.</p>
+  </div>
+</div>
+</noscript>
+
+<div class="spraybar"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
+<div class="wrap">
+<header>
+  <h1><span class="brand">MODDY</span>S <span class="o">PODCASTS</span><br>PRESS <span class="g">PLAY</span></h1>
+  <div class="modesw" role="group" aria-label="Mode">
+    <a id="modeRadio" href="radio.html">📻 Radio</a>
+    <a id="modePod" href="podcasts.html" aria-current="page">🎙️ Podcasts</a>
+  </div>
+  <span class="spraytag">zero ads &middot; no account</span>
+</header>
+
+<div class="toolbar" id="toolbar">
+  <div class="searchwrap">
+    <input id="q" type="search" placeholder="Search podcasts — show, host or topic…" autocomplete="off"
+           spellcheck="false" enterkeyhint="search" aria-label="Search podcasts">
+    <button class="qbtn" id="btnQGo" type="button" aria-label="Search">🔍</button>
+  </div>
+  <label class="selwrap" for="selCountry">Top in
+    <select id="selCountry" aria-label="Country for the top charts"></select>
+  </label>
+  <div class="genres" id="genres" role="group" aria-label="Genre"></div>
+</div>
+
+<div id="radioNote" hidden>
+  <span>📻 Radio is playing in another tab — starting an episode stops it.</span>
+  <button type="button" id="noteGo">Open radio</button>
+</div>
+
+<main id="main">
+  <!-- ---------------- browse ---------------- -->
+  <div id="browseView">
+    <div class="secnav" role="tablist" aria-label="Sections">
+      <button class="btn" type="button" role="tab" data-act="goto" data-go="charts">Charts</button>
+      <button class="btn" type="button" role="tab" data-act="goto" data-go="browse">Browse</button>
+      <button class="btn" type="button" role="tab" data-act="goto" data-go="search">Search</button>
+      <span class="secnav-note" id="idxDate"></span>
+    </div>
+    <section class="sec" id="secCont" hidden>
+      <div class="sechead"><h2>Continue <span class="em">listening</span></h2><span id="contCount"></span></div>
+      <div class="clist" id="contList"></div>
+    </section>
+
+    <section class="sec" id="secFollow" hidden>
+      <div class="sechead"><h2>Following</h2><span id="followCount"></span></div>
+      <div class="grid" id="followGrid"></div>
+    </section>
+
+    <section class="sec" id="secTop">
+      <div class="sechead">
+        <h2>Top <span class="em">podcasts</span></h2>
+        <span id="topWhere"></span>
+      </div>
+      <div id="topState"></div>
+      <div class="grid" id="topGrid"></div>
+    </section>
+
+    <section class="sec" id="secDir" hidden>
+      <div class="sechead">
+        <h2>Browse <span class="em">the directory</span></h2>
+        <span id="dirWhere"></span>
+      </div>
+      <div class="dirchips" id="dirShelves"></div>
+      <div id="dirState"></div>
+      <div class="grid" id="dirGrid"></div>
+      <div class="dirfoot"><button class="btn" id="dirMore" type="button" data-act="dirmore" hidden>Show more</button></div>
+    </section>
+  </div>
+
+  <!-- ---------------- one show ---------------- -->
+  <div id="showView" hidden></div>
+
+  <!-- ---------------- search results ---------------- -->
+  <div id="searchView" hidden>
+    <div class="sechead">
+      <h2>Search</h2><span id="searchWhere"></span>
+      <span class="right">
+        <button class="btn" id="btnBackBrowse" type="button" data-act="backbrowse">← Browse</button>
+        <button class="btn" id="btnClearSearch" type="button">Clear</button>
+      </span>
+    </div>
+    <div class="sfilters" id="searchFilters" hidden>
+      <label>Category <select id="fCat"><option value="">All categories</option></select></label>
+      <label>Language <select id="fLang"><option value="">Any language</option></select></label>
+    </div>
+    <div id="searchLive" class="srch-live" aria-live="polite" role="status"></div>
+    <div id="searchState"></div>
+    <div class="grid" id="searchGrid" role="listbox" aria-label="Podcast results"></div>
+  </div>
+</main>
+
+<p class="attrib">
+  Show data and charts: <a href="https://podcasts.apple.com/" target="_blank" rel="noopener noreferrer">Apple Podcasts</a>.
+  Episodes are read live from each show's own RSS feed through our small proxy, and the audio always plays
+  straight from the publisher — nothing is re-hosted, re-encoded or trimmed.
+  Follows and your place in an episode stay in this browser; there is no account and nothing is uploaded.
+</p>
+</div>
+
+<div id="pbar" hidden aria-label="Podcast player">
+  <img class="pb-art" id="pbArt" alt="">
+  <div class="pb-who"><b id="pbTitle">—</b><span id="pbShow">—</span></div>
+  <div class="pb-ctrls">
+    <button class="pb-btn" id="pbPrev" type="button" aria-label="Previous episode" title="Previous episode">⏮</button>
+    <button class="pb-btn" id="pbBack" type="button" aria-label="Back 30 seconds" title="Back 30 seconds (−30s)">−30</button>
+    <button class="pb-btn pb-play" id="pbPlay" type="button" aria-label="Play">▶</button>
+    <button class="pb-btn" id="pbFwd" type="button" aria-label="Forward 30 seconds" title="Forward 30 seconds (+30s)">+30</button>
+    <button class="pb-btn" id="pbNext" type="button" aria-label="Next episode" title="Next episode">⏭</button>
+  </div>
+  <div class="pb-seek">
+    <span id="pbCur">0:00</span>
+    <input id="pbRange" type="range" min="0" max="1000" value="0" step="1" aria-label="Seek within the episode">
+    <span id="pbDur">0:00</span>
+  </div>
+  <input id="pbVol" type="range" min="0" max="100" value="90" step="1" aria-label="Volume">
+  <select id="pbRate" aria-label="Playback speed">
+    <option value="0.8">0.8×</option>
+    <option value="1" selected>1×</option>
+    <option value="1.2">1.2×</option>
+    <option value="1.5">1.5×</option>
+    <option value="1.75">1.75×</option>
+    <option value="2">2×</option>
+  </select>
+  <button class="pb-btn" id="pbClose" type="button" aria-label="Close the player" title="Close the player">✕</button>
+</div>
+
+<div id="toast" role="status" aria-live="polite"><span id="toastMsg"></span></div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ========================================================================
+     Constants
+     ======================================================================== */
+  var WORKER = "https://moddys-podcast-proxy.spotifymoddy.workers.dev";
+  var PAGE = "podcasts.html";
+  var APPLE = "https://itunes.apple.com";
+  var CHAN = "rbg-v1";                  // the radio pages' channel: we join it to keep ONE sound
+  var REDUCED = false;
+  try { REDUCED = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches); } catch (e) {}
+
+  /* Podcast storefronts worth offering. codes are Apple's own (ISO-3166 alpha-2). */
+  var COUNTRIES = [
+    ["au", "Australia"], ["nz", "New Zealand"], ["us", "United States"], ["gb", "United Kingdom"],
+    ["ca", "Canada"], ["ie", "Ireland"], ["za", "South Africa"], ["in", "India"],
+    ["de", "Germany"], ["at", "Austria"], ["ch", "Switzerland"], ["fr", "France"],
+    ["be", "Belgium"], ["nl", "Netherlands"], ["es", "Spain"], ["pt", "Portugal"],
+    ["it", "Italy"], ["gr", "Greece"], ["se", "Sweden"], ["no", "Norway"],
+    ["dk", "Denmark"], ["fi", "Finland"], ["pl", "Poland"], ["tr", "Türkiye"],
+    ["br", "Brazil"], ["mx", "Mexico"], ["ar", "Argentina"], ["cl", "Chile"],
+    ["co", "Colombia"], ["jp", "Japan"], ["kr", "South Korea"], ["sg", "Singapore"],
+    ["hk", "Hong Kong"], ["tw", "Taiwan"], ["id", "Indonesia"], ["ph", "Philippines"],
+    ["ae", "United Arab Emirates"], ["il", "Israel"]
+  ];
+  /* Apple's podcast genre ids, the ones with enough shows in every storefront. */
+  var GENRES = [
+    ["", "All"], ["1303", "Comedy"], ["1311", "News"], ["1488", "True Crime"],
+    ["1314", "Society & Culture"], ["1316", "Technology"], ["1321", "Business"],
+    ["1315", "Sports"], ["1307", "Health & Fitness"], ["1327", "Science"],
+    ["1329", "History"], ["1301", "Arts"], ["1304", "Education"], ["1309", "TV & Film"],
+    ["1310", "Music"], ["1305", "Kids & Family"]
+  ];
+
+  /* ========================================================================
+     Storage — the SAME "rbg-" prefix the radio pages use, so volume is one
+     value across the whole app. Every podcast key goes through Store below;
+     when follows ever become synced (accounts), this is the only object that
+     changes: get() would read the account, set() would write through to it.
+     ======================================================================== */
+  var ls = {
+    get: function (k, d) { try { var v = localStorage.getItem("rbg-" + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem("rbg-" + k, JSON.stringify(v)); } catch (e) {} }
+  };
+  var Store = {
+    follows: function (list) { if (list) ls.set("pod-follow", list); return ls.get("pod-follow", []); },
+    progress: function (map) { if (map) ls.set("pod-prog", map); return ls.get("pod-prog", {}); },
+    cc: function (v) { if (v) ls.set("pod-cc", v); return ls.get("pod-cc", ""); },
+    genre: function (v) { if (v !== undefined) ls.set("pod-genre", v); return ls.get("pod-genre", ""); },
+    rate: function (v) { if (v) ls.set("pod-rate", v); return ls.get("pod-rate", 1); },
+    lookups: function (map) { if (map) ls.set("pod-look", map); return ls.get("pod-look", {}); }
+  };
+
+  /* ========================================================================
+     Small helpers
+     ======================================================================== */
+  function $(id) { return document.getElementById(id); }
+  function esc(x) {
+    return String(x == null ? "" : x).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+  function fmtDur(s) {
+    s = Math.max(0, Math.round(+s || 0));
+    var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), q = s % 60;
+    return h ? h + ":" + (m < 10 ? "0" : "") + m + ":" + (q < 10 ? "0" : "") + q
+             : m + ":" + (q < 10 ? "0" : "") + q;
+  }
+  function fmtDate(str) {
+    if (!str) return "";
+    var d = new Date(str);
+    if (isNaN(d.getTime())) return String(str).slice(0, 16);
+    try { return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }); }
+    catch (e) { return d.toISOString().slice(0, 10); }
+  }
+  /* Apple serves artwork at any size on the same path: 170x170bb.jpg -> 400x400bb.jpg.
+     Charts only hand out 170px, which looks like a JPEG from 2004 on a retina card. */
+  function art(url, size) {
+    if (!url) return "";
+    size = size || 400;
+    return String(url).replace(/\/\d+x\d+bb\.(png|jpg|jpeg)/i, "/" + size + "x" + size + "bb.$1");
+  }
+  function ccFlag(cc) {
+    if (!cc || !/^[A-Za-z]{2}$/.test(cc)) return "🌐";
+    return cc.toUpperCase().replace(/./g, function (c) { return String.fromCodePoint(127397 + c.charCodeAt(0)); });
+  }
+  /* Artwork: Apple serves most images at any size on the same path, but a show uploaded years
+     ago can 404 on the upscaled variant. Every <img> therefore carries the ORIGINAL URL as a
+     fallback and swaps to it once, rather than showing a broken tile. */
+  window.imgFB = function (el) {
+    var fb = el.getAttribute("data-fb");
+    if (fb && el.getAttribute("src") !== fb) { el.removeAttribute("data-fb"); el.src = fb; return; }
+    el.classList.add("imgfail");
+  };
+  function imgTag(url, orig, cls, extra) {
+    return '<img' + (cls ? ' class="' + cls + '"' : "") + ' src="' + esc(url || "") + '" data-fb="' +
+      esc(orig || url || "") + '" alt="" ' + (extra || "") + ' onerror="window.imgFB(this)">';
+  }
+  var CC_NAME = {}; COUNTRIES.forEach(function (p) { CC_NAME[p[0]] = p[1]; });
+  function ccName(cc) { return CC_NAME[cc] || String(cc || "").toUpperCase(); }
+  function clampNum(v, lo, hi) { return Math.min(hi, Math.max(lo, +v || 0)); }
+  function stripTags(s) { return String(s || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(); }
+  function msgOf(e) { return String((e && (e.message || e.name)) || e || "unknown error"); }
+
+  /* ================== enclosure prefixes: getting round a dead tracker ==================
+     Big shows publish an ad/analytics chain instead of the file itself:
+        dts.podtrac.com/redirect.mp3/pdst.fm/e/pfx.vipxl.com/…/tracking.swap.fm/track/<id>/<real.host>/…
+     When one hop is slow or gone, the episode never loads (readyState 0, duration NaN) while the
+     file behind it is perfectly healthy — measured on The Daily: the chain stalls for 8 s+, the
+     same path without it is ready in 0.2 s. The real host is right there in the path, so a stall
+     is retried once against it, and the answer is remembered for the next visit. */
+  var TRACKER_HOST = /(^|\.)(podtrac\.com|pdst\.fm|vipxl\.com|vipxl\.net|pscrb\.fm|swap\.fm|chrt\.fm|mgln\.ai|arttrk\.com|op3\.dev|clrt\.ai|podscribe\.ai|podscribe\.com|pdco\.co|pdcn\.co|mtrcdn\.com)$/i;
+  var HOSTISH = /^[a-z0-9][a-z0-9-]*(\.[a-z0-9-]+)*\.[a-z]{2,}$/i;
+  function directURL(u) {
+    var m = /^(https?:\/\/)([^/?#]+)(\/[^?#]*)?(\?[^#]*)?/i.exec(String(u || ""));
+    if (!m) return "";
+    if (!TRACKER_HOST.test(m[2])) return "";                  // already direct: nothing to unwrap
+    var segs = (m[3] || "").split("/").filter(Boolean);
+    for (var i = 0; i < segs.length; i++) {
+      var s = segs[i];
+      if (TRACKER_HOST.test(s) || s.length > 80 || !HOSTISH.test(s)) continue;
+      var rest = segs.slice(i + 1).join("/");
+      if (!rest) continue;
+      return m[1] + s + "/" + rest + (m[4] || "");
+    }
+    return "";
+  }
+  var UNWRAP = (function () { var v = ls.get("pod-unwrap", {}); return v && typeof v === "object" ? v : {}; })();
+  function bestURL(u) { return (u && UNWRAP[u]) || u || ""; }
+  function rememberUnwrap(orig, alt) {
+    UNWRAP[orig] = alt;
+    var keys = Object.keys(UNWRAP);
+    if (keys.length > 120) keys.slice(0, keys.length - 120).forEach(function (k) { delete UNWRAP[k]; });
+    ls.set("pod-unwrap", UNWRAP);
+  }
+
+  /* A fetch with a deadline: a chart that never answers must not hang the page. */
+  function getJSON(url, ms) {
+    var ctl = null;
+    try { ctl = new AbortController(); } catch (e) {}
+    var timer = setTimeout(function () { if (ctl) { try { ctl.abort(); } catch (e) {} } }, ms || 14000);
+    return fetch(url, ctl ? { signal: ctl.signal } : {}).then(function (r) {
+      clearTimeout(timer);
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    }, function (e) {
+      clearTimeout(timer);
+      throw new Error(e && e.name === "AbortError" ? "timed out" : (e && e.message) || "network error");
+    });
+  }
+
+  var toastTimer = 0;
+  function toast(msg, ms, actionLabel, actionFn) {
+    var box = $("toast"), txt = $("toastMsg");
+    if (!box) return;
+    txt.textContent = msg;
+    var old = box.querySelector("button");
+    if (old) old.remove();
+    if (actionLabel && actionFn) {
+      var b = document.createElement("button");
+      b.type = "button"; b.textContent = actionLabel;
+      b.onclick = function () { box.classList.remove("show"); actionFn(); };
+      box.appendChild(b);
+    }
+    box.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { box.classList.remove("show"); }, ms || 4200);
+  }
+
+  /* ========================================================================
+     State
+     ======================================================================== */
+  var S = {
+    view: "browse",                     // browse | show | search
+    cc: Store.cc() || guessCC(),
+    genre: Store.genre(),
+    top: { loading: false, err: "", shows: [] },
+    show: { id: "", loading: false, err: "", meta: null, data: null },
+    search: { q: "", loading: false, err: "", shows: [] },
+    follows: Store.follows() || [],
+    prog: Store.progress() || {},
+    queue: [], qi: -1,
+    depth: 0                            // how many frames WE pushed, so Back never leaves the site
+  };
+  function guessCC() {
+    var lang = navigator.language || "en-AU";
+    var m = /-([A-Za-z]{2})$/.exec(lang);
+    var cc = m ? m[1].toLowerCase() : "us";
+    return CC_NAME[cc] ? cc : "us";
+  }
+
+  /* ========================================================================
+     Discovery — the top charts
+     ======================================================================== */
+  function topURL(cc, genre) {
+    return APPLE + "/" + cc + "/rss/toppodcasts/limit=48" + (genre ? "/genre=" + genre : "") + "/json";
+  }
+  function label(v) { return (v && (v.label != null ? v.label : v)) || ""; }
+  function parseChartEntry(e) {
+    var id = (e && e.id && e.id.attributes && e.id.attributes["im:id"]) || "";
+    var imgs = (e && e["im:image"]) || [];
+    var img = imgs.length ? label(imgs[imgs.length - 1]) : "";
+    return {
+      id: String(id),
+      title: label(e && e["im:name"]),
+      author: label(e && e["im:artist"]),
+      art: art(img, 400),
+      artOrig: img,
+      genre: label(e && e.category && e.category.attributes && e.category.attributes.label),
+      feed: ""
+    };
+  }
+  function loadTop() {
+    var url = topURL(S.cc, S.genre);
+    /* A new country or genre starts from a blank shelf: leaving the old cards up while the new
+       chart loads shows shows from the wrong country under a label that has already changed. */
+    if (S.top.for !== url) { S.top.for = url; S.top.shows = []; }
+    S.top.loading = true; S.top.err = "";
+    renderTop();
+    return getJSON(url, 15000).then(function (d) {
+      var entries = [].concat((d && d.feed && d.feed.entry) || []);
+      S.top.shows = entries.map(parseChartEntry).filter(function (s) { return s.id && s.title; });
+      S.top.loading = false;
+      renderTop();
+    }).catch(function (e) {
+      S.top.loading = false;
+      S.top.err = msgOf(e);
+      S.top.shows = [];
+      renderTop();
+    });
+  }
+
+  /* ========================================================================
+     One show: Apple for the feed URL, the Worker for the episodes
+     ======================================================================== */
+  function lookupShow(id) {
+    var cache = Store.lookups() || {};
+    var hit = cache[id];
+    if (hit && hit.v && (Date.now() - (hit.ts || 0)) < 7 * 864e5) return Promise.resolve(hit.v);
+    return getJSON(APPLE + "/lookup?id=" + encodeURIComponent(id), 15000).then(function (d) {
+      var r = (d && d.results && d.results[0]) || null;
+      if (!r) throw new Error("Apple has no record of this show");
+      var v = {
+        id: String(r.collectionId || id),
+        title: r.collectionName || "",
+        author: r.artistName || "",
+        art: art(r.artworkUrl600 || r.artworkUrl100 || "", 600),
+        artOrig: r.artworkUrl600 || r.artworkUrl100 || "",
+        genre: r.primaryGenreName || "",
+        feed: r.feedUrl || "",
+        desc: stripTags(r.description || "").slice(0, 900),
+        count: r.trackCount || 0,
+        link: r.collectionViewUrl || ""
+      };
+      cache[id] = { ts: Date.now(), v: v };
+      /* keep the cache honest: 400 shows is plenty and localStorage is a fixed budget */
+      var keys = Object.keys(cache);
+      if (keys.length > 400) {
+        keys.sort(function (a, b) { return (cache[a].ts || 0) - (cache[b].ts || 0); })
+          .slice(0, keys.length - 400).forEach(function (k) { delete cache[k]; });
+      }
+      Store.lookups(cache);
+      return v;
+    });
+  }
+  function loadFeed(feedUrl) {
+    return getJSON(WORKER + "/feed?url=" + encodeURIComponent(feedUrl), 25000).then(function (d) {
+      if (!d || !d.show || !d.episodes) throw new Error("the proxy returned no feed");
+      return d;
+    });
+  }
+
+  function openShow(id, push) {
+    id = String(id || "");
+    if (!id) return;
+    S.view = "show";
+    S.show = { id: id, loading: true, err: "", meta: null, data: null };
+    showView("show");
+    renderShow();
+    if (push !== false) pushURL({ show: id });
+    try { window.scrollTo({ top: 0, behavior: REDUCED ? "auto" : "smooth" }); } catch (e) { window.scrollTo(0, 0); }
+
+    lookupShow(id).then(function (meta) {
+      S.show.meta = meta;
+      if (!meta.feed) throw new Error("Apple lists no RSS feed for this show");
+      return loadFeed(meta.feed);
+    }).then(function (d) {
+      if (S.show.id !== id) return;                       // a later click won the race
+      S.show.data = d;
+      S.show.loading = false;
+      S.queue = d.episodes.slice();
+      S.qi = currentIndex();
+      renderShow();
+      refreshFollowButtons();
+    }).catch(function (e) {
+      if (S.show.id !== id) return;
+      S.show.loading = false;
+      S.show.err = msgOf(e);
+      renderShow();
+    });
+  }
+  function currentIndex() {
+    if (!P.ep || !S.queue.length) return -1;
+    for (var i = 0; i < S.queue.length; i++) if (S.queue[i].id === P.ep.id) return i;
+    return -1;
+  }
+
+  /* ========================================================================
+     Search — Apple's own search endpoint, straight from the browser
+     ======================================================================== */
+  function doSearch(term, push) {
+    term = String(term || "").trim();
+    if (term.length < 2) { toast("Type at least two characters to search."); return; }
+    S.view = "search";
+    S.search = { q: term, loading: true, err: "", shows: [], local: [], apple: null,
+                 cat: (S.search && S.search.cat) || "", lang: (S.search && S.search.lang) || "" };
+    showView("search");
+    renderSearch();
+    searchLocal(term, 60, { cat: S.search.cat, lang: S.search.lang }).then(function (res) {
+      if (S.search.q !== term) return;
+      S.search.local = res.ids; S.search.total = res.total;
+      S.search.loading = false;
+      renderSearch();
+    }).catch(function () {});
+    if (push === true) pushURL({ q: term });
+    else if (push === "replace") pushURL({ q: term }, "replace");
+    getJSON(APPLE + "/search?media=podcast&entity=podcast&limit=30&term=" + encodeURIComponent(term), 15000)
+      .then(function (d) {
+        if (S.search.q !== term) return;
+        S.search.shows = ((d && d.results) || []).map(function (x) {
+          return {
+            id: String(x.collectionId || ""),
+            title: x.collectionName || "",
+            author: x.artistName || "",
+            art: art(x.artworkUrl600 || x.artworkUrl100 || "", 400),
+            artOrig: x.artworkUrl600 || x.artworkUrl100 || "",
+            genre: x.primaryGenreName || "",
+            feed: x.feedUrl || "",
+            count: x.trackCount || 0
+          };
+        }).filter(function (s) { return s.id && s.title; });
+        S.search.loading = false;
+        S.search.apple = S.search.shows;
+        renderSearch();
+        refreshFollowButtons();
+      }).catch(function (e) {
+        if (S.search.q !== term) return;
+        S.search.loading = false;
+        S.search.apple = [];              // Apple is the long tail: its failure is not the search's
+        S.search.err = msgOf(e);
+        renderSearch();
+      });
+  }
+
+  /* ========================================================================
+     Follows (this browser only — see the Store note at the top)
+     ======================================================================== */
+  function isFollowed(id) {
+    for (var i = 0; i < S.follows.length; i++) if (S.follows[i].id === id) return true;
+    return false;
+  }
+  function setFollows(list) {
+    S.follows = list.slice(0, 300);
+    Store.follows(S.follows);
+    renderFollows();
+    refreshFollowButtons();
+  }
+  function showFromCard(id) {
+    var pools = [S.top.shows, S.search.shows, S.follows];
+    for (var p = 0; p < pools.length; p++) {
+      for (var i = 0; i < pools[p].length; i++) if (pools[p][i].id === id) return pools[p][i];
+    }
+    if (S.show.meta && S.show.id === id) return S.show.meta;
+    return null;
+  }
+  function toggleFollow(id) {
+    if (!id) return;
+    var at = -1;
+    for (var i = 0; i < S.follows.length; i++) if (S.follows[i].id === id) { at = i; break; }
+    if (at >= 0) {
+      var gone = S.follows[at];
+      var list = S.follows.slice(); list.splice(at, 1);
+      setFollows(list);
+      toast("Unfollowed " + (gone.title || "the show") + ".");
+      return;
+    }
+    var card = showFromCard(id) || {};
+    var add = function (feed) {
+      var rec = {
+        id: id,
+        title: card.title || (S.show.meta && S.show.meta.title) || "",
+        author: card.author || (S.show.meta && S.show.meta.author) || "",
+        art: card.art || (S.show.meta && S.show.meta.art) || "",
+        genre: card.genre || (S.show.meta && S.show.meta.genre) || "",
+        feed: feed || card.feed || (S.show.meta && S.show.meta.feed) || "",
+        ts: Date.now()
+      };
+      var list = [rec].concat(S.follows.filter(function (f) { return f.id !== id; }));
+      setFollows(list);
+      toast("Following " + (rec.title || "the show") + " — saved in this browser.");
+    };
+    if (card.feed) { add(card.feed); return; }
+    toast("Adding " + (card.title || "the show") + "…", 1800);
+    lookupShow(id).then(function (m) { add(m.feed); })
+      .catch(function (e) { toast("Couldn't follow that show: " + msgOf(e)); });
+  }
+
+  /* ========================================================================
+     Progress — the whole point of a podcast player
+     ======================================================================== */
+  function savePos() {
+    if (!P.ep) return;
+    var p = A.currentTime || 0;
+    var d = A.duration;
+    if (!isFinite(d) || d <= 0) d = P.ep.duration || (S.prog[P.ep.id] && S.prog[P.ep.id].d) || 0;
+    var rec = {
+      id: P.ep.id,
+      t: P.ep.title || "",
+      s: (P.show && P.show.title) || "",
+      a: (P.show && P.show.art) || art(P.ep.artwork, 300) || "",
+      u: P.ep.audio || "",
+      f: (P.show && P.show.feed) || "",
+      p: Math.round(p),
+      d: Math.round(d || 0),
+      ts: Date.now()
+    };
+    var prog = S.prog;
+    var finished = !!(rec.d && p >= rec.d - 15);
+    /* Only a FINISHED episode clears a record. A position under 8 s must not: a resume that
+       was blocked by the browser (or an episode the user closed after two seconds) would
+       otherwise delete the very place it was meant to protect. */
+    if (finished) delete prog[P.ep.id];
+    else if (p >= 8) prog[P.ep.id] = rec;
+    /* newest 60 only: this is a resume list, not a listening archive */
+    var keys = Object.keys(prog);
+    if (keys.length > 60) {
+      keys.sort(function (a, b) { return (prog[a].ts || 0) - (prog[b].ts || 0); })
+        .slice(0, keys.length - 60).forEach(function (k) { delete prog[k]; });
+    }
+    S.prog = prog;
+    Store.progress(prog);
+  }
+  function savedPos(ep) { var r = S.prog[ep.id]; return r && r.p > 8 ? r.p : 0; }
+  function continueList() {
+    var out = [];
+    Object.keys(S.prog).forEach(function (k) { out.push(S.prog[k]); });
+    out = out.filter(function (r) { return r && r.u && r.p > 8 && (!r.d || r.p < r.d - 15); });
+    out.sort(function (a, b) { return (b.ts || 0) - (a.ts || 0); });
+    return out.slice(0, 6);
+  }
+
+  /* ========================================================================
+     The player. One <audio>, one episode, a position that survives a reload.
+     ======================================================================== */
+  var A = new Audio();
+  A.preload = "metadata";
+  A.volume = clampNum(ls.get("vol", 0.9), 0, 1);
+  var P = { ep: null, show: null, lastBucket: -1, pendingSeek: 0 };
+  var rate = function () { var r = +Store.rate(); return r > 0 ? r : 1; };
+
+  /* --- telling the radio pages to go quiet ------------------------------------------------
+     The radio side hands one <audio> around windows; a podcast episode is a SECOND sound and
+     the single-audio promise has to hold across pages too. So: any radio window that owns the
+     stream is sent the same "stop" command its own remote controls send, and we listen for
+     radio coming back the other way (a station started in another tab pauses the episode).
+     `from:"pod"` keeps both sides from answering their own echo. */
+  var chan = null;
+  try { if (window.BroadcastChannel) chan = new BroadcastChannel(CHAN); } catch (e) { chan = null; }
+  function post(msg) { if (!chan) return; msg.from = "pod"; try { chan.postMessage(msg); } catch (e) {} }
+  var radioPlaying = false;
+  if (chan) {
+    chan.onmessage = function (e) {
+      var m = e.data || {};
+      if (!m || m.from === "pod") return;
+      if (m.type === "state") {
+        if (m.playing) { radioPlaying = true; noteRadio(true); if (!A.paused) pauseForRadio(); }
+        else { radioPlaying = false; noteRadio(false); }
+      } else if (m.type === "cmd" && m.cmd === "play") {
+        radioPlaying = true; noteRadio(true); if (!A.paused) pauseForRadio();
+      } else if (m.type === "cmd" && m.cmd === "stop") {
+        radioPlaying = false; noteRadio(false);
+      }
+    };
+  }
+  function noteRadio(on) { var n = $("radioNote"); if (n) n.hidden = !on; }
+  function pauseForRadio() {
+    if (A.paused) return;
+    A.pause();
+    toast("Radio took over — podcast paused. Your place is saved.");
+  }
+  function stopRadio() {
+    if (!radioPlaying) return;
+    radioPlaying = false; noteRadio(false);
+    post({ type: "cmd", cmd: "stop" });
+  }
+
+  function setMedia(ep, show) {
+    if (!("mediaSession" in navigator) || !window.MediaMetadata) return;
+    try {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: ep.title || "",
+        artist: (show && show.author) || (show && show.title) || "",
+        album: (show && show.title) || "",
+        artwork: [{ src: ep.artwork || (show && show.art) || "", sizes: "400x400", type: "image/jpeg" }]
+      });
+    } catch (e) {}
+  }
+  if ("mediaSession" in navigator) {
+    try {
+      navigator.mediaSession.setActionHandler("play", function () { A.play(); });
+      navigator.mediaSession.setActionHandler("pause", function () { A.pause(); });
+      navigator.mediaSession.setActionHandler("seekbackward", function () { seekBy(-30); });
+      navigator.mediaSession.setActionHandler("seekforward", function () { seekBy(30); });
+      navigator.mediaSession.setActionHandler("seekto", function (d) { if (d && d.seekTime != null) { try { A.currentTime = d.seekTime; } catch (e) {} } });
+      navigator.mediaSession.setActionHandler("nexttrack", function () { nextEp(); });
+      navigator.mediaSession.setActionHandler("previoustrack", function () { prevEp(); });
+    } catch (e) {}
+  }
+
+  /* A stalled enclosure: nothing has arrived 5 s after the tap. Unwrap the tracker chain once.
+     5 s is the number that separates "the file is on its way" from "this hop is not answering":
+     an mp3's metadata normally lands in well under a second. */
+  var stallTimer = 0;
+  function armStallWatch() {
+    clearTimeout(stallTimer);
+    stallTimer = setTimeout(function () {
+      if (!P.ep || A.paused || A.readyState !== 0) return;
+      var orig = P.ep.audio, alt = directURL(orig);
+      if (!alt || bestURL(orig) === alt) return;
+      rememberUnwrap(orig, alt);
+      A.src = alt;
+      A.playbackRate = rate();
+      try { A.load(); } catch (e) {}
+      playNow();
+      toast("That show's host was slow — connected straight to the audio.", 4200);
+    }, 5000);
+  }
+  function disarmStallWatch() { clearTimeout(stallTimer); }
+
+  function playNow() {
+    /* Every sound this page makes goes through here, so this is where the radio is told to
+       stand down — not only in startEpisode(): pressing ▶ to resume an episode must quiet a
+       station playing in another tab just as firmly as picking a new episode does. */
+    stopRadio();
+    var pr = A.play();
+    if (pr && pr.catch) pr.catch(function (e) {
+      /* Kept for the suites: the radio page's debug API has lastErr() for the same reason. */
+      window.__playErr = (e && (e.name + ": " + e.message)) || String(e);
+      if (e && e.name === "NotAllowedError") {
+        toast("Your browser blocked playback — press ▶ again.");
+      } else if (S.qi >= 0 && S.qi < S.queue.length - 1) {
+        /* A dead enclosure is normal in a 71k-station world; offer the way forward instead of
+           a dead end. */
+        toast("This episode won't play from its host.", 7000, "Next episode", function () { nextEp(false); });
+      } else {
+        toast("Couldn't play this episode — the host may have moved the file.");
+      }
+      paintBar();
+    });
+  }
+
+  /* Starting an episode: set the source, WAIT for metadata, apply the saved position, and only
+     then play. The obvious order (play first, seek when the metadata lands) loses the play in
+     Chromium — the seek aborts the pending play() and the element sits loaded, positioned and
+     silent — which is exactly the resume-every-time bug this comment exists to stop. */
+  function startEpisode(ep, show, at) {
+    if (!ep || !ep.audio) { toast("That episode has no audio file in its feed."); return; }
+    var want = bestURL(ep.audio);          // a URL we already learned to unwrap goes direct
+    var sameSrc = A.getAttribute("src") === want;
+    P.ep = ep;
+    P.show = show || { title: "" };
+    S.qi = currentIndex();
+    $("pbar").hidden = false;
+    syncBarSpace();
+    if (!sameSrc) {
+      A.src = want;
+      A.playbackRate = rate();
+      P.pendingSeek = (at != null) ? at : savedPos(ep);
+      try { A.load(); } catch (e) {}
+      /* Play inside the tap: the gesture token is what lets the audio start at all. The saved
+         position is applied later, on "playing" — a seek issued while play() is still pending
+         aborts it ("the play() request was interrupted by a seek") and leaves the episode
+         loaded, positioned and silent. */
+      playNow();
+      armStallWatch();
+    } else {
+      if (at != null) { try { A.currentTime = at; } catch (e) {} }
+      P.pendingSeek = 0;
+      playNow();
+    }
+    paintBar();
+    paintEpRows();
+    setMedia(ep, show);
+  }
+  function togglePlay() {
+    if (!P.ep) { toast("Pick an episode first."); return; }
+    if (A.paused) {
+      if (A.ended) { try { A.currentTime = 0; } catch (e) {} }   // ▶ on a finished episode starts it over
+      playNow();
+    } else A.pause();
+  }
+  function seekBy(s) {
+    if (!P.ep) return;
+    var d = isFinite(A.duration) ? A.duration : (P.ep.duration || 0);
+    var t = clampNum((A.currentTime || 0) + s, 0, d > 0 ? d - 0.5 : 0);
+    try { A.currentTime = t; } catch (e) {}
+    paintBar();
+  }
+  function nextEp(auto) {
+    if (S.qi >= 0 && S.qi < S.queue.length - 1) {
+      S.qi += 1;
+      var ep = S.queue[S.qi];
+      if (ep) startEpisode(ep, S.show.data && S.show.meta ? S.show.meta : P.show, 0);
+      return true;
+    }
+    if (!auto) toast("That's the last episode in this queue.");
+    return false;
+  }
+  function prevEp() {
+    if ((A.currentTime || 0) > 5) { try { A.currentTime = 0; } catch (e) {} paintBar(); return; }
+    if (S.qi > 0) {
+      S.qi -= 1;
+      var ep = S.queue[S.qi];
+      if (ep) startEpisode(ep, P.show, 0);
+      return;
+    }
+    toast("Start of the queue.");
+  }
+  function closePlayer() {
+    savePos();
+    try { A.pause(); } catch (e) {}
+    try { A.removeAttribute("src"); A.load(); } catch (e) {}
+    P.ep = null; P.show = null;
+    $("pbar").hidden = true;
+    syncBarSpace();
+    paintEpRows();
+    renderContinue();
+  }
+
+  /* --- the element's own events --- */
+  A.addEventListener("loadedmetadata", function () { paintBar(); });
+  /* The saved position goes on once the episode is really running — see startEpisode(). */
+  A.addEventListener("playing", function () {
+    disarmStallWatch();
+    if (P.pendingSeek > 1) {
+      var d = A.duration, target = P.pendingSeek;
+      if (isFinite(d) && d > 0) target = Math.min(target, d - 1);
+      try { A.currentTime = target; } catch (e) {}
+      if (P.pendingSeek > 20) {
+        toast("Resuming at " + fmtDur(P.pendingSeek), 10000, "Start over", function () {
+          try { A.currentTime = 0; } catch (e) {}
+          paintBar();
+        });
+      }
+      P.pendingSeek = 0;
+    }
+    paintBar();
+    paintEpRows();
+  });
+  A.addEventListener("timeupdate", function () {
+    var t = A.currentTime || 0;
+    var d = isFinite(A.duration) ? A.duration : (P.ep && P.ep.duration) || 0;
+    var cur = $("pbCur"); if (cur) cur.textContent = fmtDur(t);
+    var dur = $("pbDur"); if (dur) dur.textContent = d ? fmtDur(d) : "—";
+    var rng = $("pbRange");
+    if (rng && d > 0 && document.activeElement !== rng) rng.value = Math.round(t / d * 1000);
+    var bucket = Math.floor(t / 5);
+    if (bucket !== P.lastBucket) {
+      P.lastBucket = bucket;
+      savePos();
+      paintEpRows();
+      if ("mediaSession" in navigator && navigator.mediaSession.setPositionState && d > 0) {
+        try {
+          navigator.mediaSession.setPositionState({ duration: d, playbackRate: A.playbackRate, position: Math.min(t, d) });
+        } catch (e) {}
+      }
+    }
+  });
+  A.addEventListener("play", function () {
+    paintBar(); paintEpRows();
+    if ("mediaSession" in navigator) { try { navigator.mediaSession.playbackState = "playing"; } catch (e) {} }
+  });
+  A.addEventListener("pause", function () {
+    paintBar(); paintEpRows(); savePos();
+    if ("mediaSession" in navigator) { try { navigator.mediaSession.playbackState = "paused"; } catch (e) {} }
+  });
+  A.addEventListener("ended", function () {
+    savePos();
+    paintEpRows();
+    renderContinue();
+    nextEp(true);
+  });
+  A.addEventListener("error", function () {
+    if (!P.ep) return;
+    toast("⚠ This episode won't play here — the host may block hot-linking. Try another episode.");
+  });
+  window.addEventListener("pagehide", function () { savePos(); });
+
+  /* ========================================================================
+     Rendering
+     ======================================================================== */
+  function skeleton(n) {
+    var out = [];
+    for (var i = 0; i < n; i++) out.push('<div class="sk" aria-hidden="true"></div>');
+    return out.join("");
+  }
+  function cardHTML(s) {
+    var fav = isFollowed(s.id);
+    return '<article class="pcard" data-act="open" data-id="' + esc(s.id) + '" tabindex="0" role="button" ' +
+        'aria-label="Open ' + esc(s.title) + '">' +
+      '<div class="part">' + imgTag(s.art, s.artOrig, "", 'loading="lazy"') + '</div>' +
+      '<div class="pmeta"><b>' + esc(s.title) + '</b>' +
+        '<span>' + esc(s.author || "—") + '</span>' +
+        (s.genre ? '<i>' + esc(s.genre) + '</i>' : "") +
+      '</div>' +
+      '<button class="pfav' + (fav ? " on" : "") + '" type="button" data-act="fav" data-id="' + esc(s.id) + '" ' +
+        'aria-pressed="' + fav + '" title="' + (fav ? "Unfollow" : "Follow") + '" ' +
+        'aria-label="' + (fav ? "Unfollow " : "Follow ") + esc(s.title) + '">★</button>' +
+    '</article>';
+  }
+  function errHTML(title, detail, act) {
+    return '<div class="errbox"><b>' + esc(title) + '</b><span>' + esc(detail) + '</span>' +
+      '<button class="btn" type="button" data-act="' + act + '">Try again</button></div>';
+  }
+
+  function showView(name) {
+    S.view = name;
+    $("browseView").hidden = name !== "browse";
+    $("showView").hidden = name !== "show";
+    $("searchView").hidden = name !== "search";
+    /* The toolbar stays put in every view: a search field that vanishes the moment you open a
+       show is a search field you stop trusting. */
+  }
+
+  /* ========================================================================
+     The directory — 10,953 shows from the Podcast Index bulk dump, shipped as pod-index.js
+     and loaded ONLY when the Browse section first needs it (2.3 MB is too much to make every
+     visitor pay for). Each card opens by feed URL, so a show that Apple never lists still
+     plays: the Worker fetches its RSS exactly as it does for an Apple show.
+     ======================================================================== */
+  var PINDEX = null, PINDEX_WANT = false;
+  var DIR = { shelf: "", limit: 120 };
+
+  function loadIndex() {
+    if (PINDEX) return Promise.resolve(PINDEX);
+    if (PINDEX_WANT) return PINDEX_WANT;
+    PINDEX_WANT = new Promise(function (resolve, reject) {
+      var sc = document.createElement("script");
+      sc.src = "pod-index.js?v=20261030a";
+      sc.onload = function () {
+        if (!window.POD_INDEX || !window.POD_INDEX.shelves) { reject(new Error("pod-index.js has no shelves")); return; }
+        PINDEX = window.POD_INDEX;
+        if (window.POD_SEARCH && window.POD_SEARCH.id && PINDEX.id && window.POD_SEARCH.id !== PINDEX.id) {
+          SI_STALE = true;      /* mismatched builds: a row index may now be a different show */
+        }
+        if ($("idxDate") && PINDEX.built) {
+          $("idxDate").textContent = "index built " + PINDEX.built +
+            (PINDEX.total ? " · " + PINDEX.total.toLocaleString() + " shows" : "");
+        }
+        resolve(PINDEX);
+      };
+      sc.onerror = function () { reject(new Error("pod-index.js could not be loaded")); };
+      document.head.appendChild(sc);
+    });
+    return PINDEX_WANT;
+  }
+
+  var SHELF_PENDING = {};
+  /* One shelf at a time: the manifest names the file, the file appends itself to POD_SHELF. */
+  function loadShelf(shelf) {
+    var id = shelf.id;
+    if (SHELF_PENDING[id]) return SHELF_PENDING[id];
+    SHELF_PENDING[id] = new Promise(function (resolve, reject) {
+      var sc = document.createElement("script");
+      sc.src = "pod-i/" + (shelf.file || id.replace(":", "-") + ".js") + "?v=20261030b";
+      sc.onload = function () {
+        delete SHELF_PENDING[id];
+        var rows = (window.POD_SHELF || {})[id];
+        if (!rows) { reject(new Error("that shelf file carried no shows")); return; }
+        renderDirectory();
+        resolve(rows);
+      };
+      sc.onerror = function () {
+        delete SHELF_PENDING[id];
+        var st = $("dirState");
+        if (st) st.innerHTML = '<div class="errbox"><b>Could not load that shelf</b><span>' + esc(id) + '</span></div>';
+        reject(new Error("shelf " + id + " failed to load"));
+      };
+      document.head.appendChild(sc);
+    });
+    return SHELF_PENDING[id];
+  }
+
+  function dirCard(sh) {
+    return '<article class="pcard" data-act="openfeed" data-feed="' + esc(sh[1]) + '" ' +
+        'data-t="' + esc(sh[0]) + '" data-a="' + esc(sh[2] || "") + '" tabindex="0" role="button" ' +
+        'aria-label="Open ' + esc(sh[0]) + '">' +
+      '<div class="part">' + imgTag(sh[2], sh[2], "", 'loading="lazy"') + '</div>' +
+      '<div class="pmeta"><b>' + esc(sh[0]) + '</b>' +
+        '<span>' + esc(sh[4] || "") + '</span>' +
+        (sh[3] ? '<i>' + esc(sh[3]) + '</i>' : "") +
+      '</div>' +
+    '</article>';
+  }
+
+  function renderDirShelves() {
+    var wrap = $("dirShelves");
+    if (!PINDEX || !wrap) return;
+    wrap.innerHTML = PINDEX.shelves.map(function (sh) {
+      var on = sh.id === DIR.shelf;
+      return '<button class="gchip' + (on ? " on" : "") + '" type="button" data-act="shelf" ' +
+        'data-shelf="' + esc(sh.id) + '" aria-pressed="' + on + '">' + esc(sh.name) + '</button>';
+    }).join("");
+  }
+
+  function renderDirectory() {
+    var state = $("dirState"), grid = $("dirGrid"), where = $("dirWhere"), more = $("dirMore");
+    if (!state || !grid) return;
+    if (!PINDEX) {
+      if (state.getAttribute("data-state") === "loading") return;
+      state.setAttribute("data-state", "loading");
+      state.innerHTML = '<div class="note">Loading the directory…</div>';
+      grid.innerHTML = skeleton(8);
+      loadIndex().then(function () {
+        state.removeAttribute("data-state");
+        DIR.shelf = DIR.shelf || (PINDEX.shelves[0] || {}).id || "";
+        renderDirShelves(); renderDirectory();
+      }).catch(function (e) {
+        state.removeAttribute("data-state");
+        state.innerHTML = '<div class="errbox"><b>The directory did not load</b><span>' + esc(msgOf(e)) + '</span></div>';
+        grid.innerHTML = "";
+      });
+      return;
+    }
+    state.innerHTML = "";
+    if (!DIR.shelf && PINDEX.shelves.length) DIR.shelf = PINDEX.shelves[0].id;
+    var sh = null;
+    for (var i = 0; i < PINDEX.shelves.length; i++) if (PINDEX.shelves[i].id === DIR.shelf) sh = PINDEX.shelves[i];
+    if (!sh) { state.innerHTML = '<div class="note">No shelves in the index.</div>'; return; }
+    var rows = (window.POD_SHELF || {})[sh.id];
+    if (!rows) {
+      state.innerHTML = '<div class="note">Loading ' + esc(sh.name) + '…</div>';
+      grid.innerHTML = skeleton(8);
+      if (more) more.hidden = true;
+      loadShelf(sh).catch(function () {});
+      return;
+    }
+    if (where) where.textContent = rows.length + " shows · " + sh.name;
+    grid.innerHTML = rows.slice(0, DIR.limit).map(dirCard).join("");
+    if (more) more.hidden = rows.length <= DIR.limit;
+  }
+
+  /* A show opened by feed URL: no Apple record, no lookup — the RSS itself is the record. */
+  function openShowFeed(feed, title, artUrl, push) {
+    feed = String(feed || "");
+    if (!feed) return;
+    var id = "feed:" + feed;
+    S.view = "show";
+    S.show = {
+      id: id, loading: true, err: "",
+      meta: { id: id, title: title || "", author: "", art: art(artUrl, 600), artOrig: artUrl || "",
+              genre: "", feed: feed, desc: "", count: 0 },
+      data: null
+    };
+    showView("show");
+    renderShow();
+    if (push !== false) pushURL({ feed: feed, t: title || "", a: artUrl || "" });
+    try { window.scrollTo({ top: 0, behavior: REDUCED ? "auto" : "smooth" }); } catch (e) { window.scrollTo(0, 0); }
+    loadFeed(feed).then(function (d) {
+      if (S.show.id !== id) return;
+      S.show.data = d;
+      S.show.loading = false;
+      if (!S.show.meta.title) S.show.meta.title = (d.show && d.show.title) || "";
+      if (d.show && d.show.author) S.show.meta.author = d.show.author;
+      S.queue = d.episodes.slice();
+      S.qi = currentIndex();
+      renderShow();
+      refreshFollowButtons();
+    }).catch(function (e) {
+      if (S.show.id !== id) return;
+      S.show.loading = false;
+      S.show.err = msgOf(e);
+      renderShow();
+    });
+  }
+
+  function renderTop() {
+    var state = $("topState"), grid = $("topGrid"), where = $("topWhere");
+    if (where) where.textContent = ccFlag(S.cc) + " " + ccName(S.cc) +
+      (S.genre ? " · " + (genreName(S.genre) || "") : " · all genres");
+    if (S.top.loading) {
+      state.innerHTML = '<div class="note">Loading the charts…</div>';
+      grid.innerHTML = skeleton(8);
+      return;
+    }
+    if (S.top.err) {
+      state.innerHTML = errHTML("Couldn't load the charts", "Apple Podcasts said: " + S.top.err, "retry-top");
+      grid.innerHTML = "";
+      return;
+    }
+    state.innerHTML = S.top.shows.length ? "" : '<div class="note">No chart entries for this country and genre.</div>';
+    grid.innerHTML = S.top.shows.map(cardHTML).join("");
+  }
+  function genreName(id) {
+    for (var i = 0; i < GENRES.length; i++) if (GENRES[i][0] === String(id)) return GENRES[i][1];
+    return "";
+  }
+
+  function renderFollows() {
+    var sec = $("secFollow"), grid = $("followGrid"), count = $("followCount");
+    if (!S.follows.length) { sec.hidden = true; grid.innerHTML = ""; return; }
+    sec.hidden = false;
+    count.textContent = S.follows.length + (S.follows.length === 1 ? " show" : " shows");
+    grid.innerHTML = S.follows.map(cardHTML).join("");
+  }
+
+  function renderContinue() {
+    var sec = $("secCont"), list = $("contList"), count = $("contCount");
+    var rows = continueList();
+    if (!rows.length) { sec.hidden = true; list.innerHTML = ""; return; }
+    sec.hidden = false;
+    count.textContent = "pick up where you stopped";
+    list.innerHTML = rows.map(function (r) {
+      var pct = r.d ? Math.min(100, Math.round(r.p / r.d * 100)) : 0;
+      var left = r.d ? Math.max(0, r.d - r.p) : 0;
+      return '<div class="controw" data-act="cont" data-id="' + esc(r.id) + '">' +
+        imgTag(r.a, r.a) +
+        '<div class="cmain"><b>' + esc(r.t) + '</b><span>' + esc(r.s || "") + '</span>' +
+          '<i class="epbar"><u style="width:' + pct + '%"></u></i></div>' +
+        '<span class="cleft">' + (left ? fmtDur(left) + " left" : "resume") + '</span>' +
+        '<button class="cx" type="button" data-act="forget" data-id="' + esc(r.id) + '" ' +
+          'aria-label="Remove from continue listening" title="Remove">✕</button>' +
+      '</div>';
+    }).join("");
+  }
+
+  function renderShow() {
+    var v = $("showView");
+    var meta = S.show.meta, data = S.show.data;
+    var back = '<div class="sec"><button class="btn" type="button" data-act="back">← Back</button></div>';
+    if (S.show.loading) {
+      v.innerHTML = back + '<div class="note">Opening the show…</div>' +
+        '<div class="grid">' + skeleton(3) + '</div>';
+      return;
+    }
+    if (S.show.err) {
+      v.innerHTML = back + errHTML("Couldn't open this show", S.show.err, "retry-show");
+      return;
+    }
+    if (!meta || !data) { v.innerHTML = back + '<div class="note">Nothing to show.</div>'; return; }
+
+    var showTitle = (data.show && data.show.title) || meta.title;
+    /* Apple's 600px artwork FIRST, the feed's own image only as a fallback. They are usually the
+       same creative, but a feed loves to publish a 3000x3000 square: 2-5 MB to fill a 150px
+       slot, and the page looked art-less for as long as that download took. */
+    var showArt = art(meta.art || (data.show && data.show.artwork), 600);
+    var showArtOrig = meta.artOrig || (data.show && data.show.artwork) || meta.art || "";
+    var author = (data.show && data.show.author) || meta.author;
+    var desc = (data.show && data.show.description) || meta.desc || "";
+    var eps = data.episodes || [];
+    var fav = isFollowed(meta.id);
+
+    var html = back +
+      '<div class="shead">' +
+        '<div class="sartwrap">' + imgTag(showArt, showArtOrig, "sart") + '</div>' +
+        '<div class="smain">' +
+          '<h2>' + esc(showTitle) + '</h2>' +
+          (author ? '<p class="sauth">' + esc(author) + '</p>' : "") +
+          '<p class="smeta">' + esc(meta.genre || "Podcast") + " · " + eps.length + " episodes in the feed" +
+            (meta.count ? " · " + meta.count + " published" : "") + '</p>' +
+          '<div class="sacts">' +
+            (eps.length ? '<button class="btn pink" type="button" data-act="play-latest">▶ Play latest</button>' : "") +
+            '<button class="btn' + (fav ? " on" : "") + '" type="button" data-act="follow" data-id="' + esc(meta.id) + '" ' +
+              'aria-pressed="' + fav + '">★ ' + (fav ? "Following" : "Follow") + '</button>' +
+            (meta.link ? '<a class="btn" href="' + esc(meta.link) + '" target="_blank" rel="noopener noreferrer">↗ Apple page</a>' : "") +
+          '</div>' +
+          (desc ? '<p class="shdesc">' + esc(desc) + '</p>' : "") +
+        '</div>' +
+      '</div>' +
+      '<div class="sechead"><h2>Episodes</h2><span>newest first · tap to play</span></div>' +
+      '<div class="eplist" id="epList">' +
+        (eps.length ? eps.map(epRowHTML).join("") : '<div class="note">This feed lists no playable episodes.</div>') +
+      '</div>';
+    v.innerHTML = html;
+  }
+
+  function epRowHTML(e, i) {
+    var cur = !!(P.ep && P.ep.id === e.id);
+    var saved = S.prog[e.id];
+    var pct = (cur && A.duration) ? Math.min(100, Math.round(A.currentTime / A.duration * 100))
+            : (saved && saved.d ? Math.min(100, Math.round(saved.p / saved.d * 100)) : 0);
+    var dur = e.duration ? fmtDur(e.duration) : (saved && saved.d ? fmtDur(saved.d) : "");
+    var bits = [fmtDate(e.published), dur].filter(Boolean).join(" · ");
+    return '<div class="eprow' + (cur ? " on" : "") + '" data-i="' + i + '">' +
+      '<button class="epbtn" type="button" data-act="play" data-i="' + i + '" ' +
+        'aria-label="' + (cur && !A.paused ? "Pause " : "Play ") + esc(e.title) + '">' +
+        (cur && !A.paused ? "⏸" : "▶") + '</button>' +
+      '<div class="epmain"><b>' + esc(e.title) + '</b>' +
+        '<span>' + esc(bits) + (pct ? ' · <em>' + pct + '% played</em>' : "") + '</span>' +
+        (pct ? '<i class="epbar"><u style="width:' + pct + '%"></u></i>' : "") +
+      '</div>' +
+    '</div>';
+  }
+
+  /* Repaint only what the clock changes: the row buttons and the % line. Re-rendering the
+     whole list every 5 seconds would drop the tap a thumb was already on its way to. */
+  function paintEpRows() {
+    if (S.view !== "show" || !S.show.data) return;
+    var list = $("epList");
+    if (!list) return;
+    var rows = list.querySelectorAll(".eprow");
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i], ep = S.show.data.episodes[+row.getAttribute("data-i")];
+      if (!ep) continue;
+      var cur = !!(P.ep && P.ep.id === ep.id);
+      row.classList.toggle("on", cur);
+      var btn = row.querySelector(".epbtn");
+      if (btn) btn.textContent = cur && !A.paused ? "⏸" : "▶";
+      var bar = row.querySelector(".epbar u");
+      if (bar) {
+        var pct = 0;
+        if (cur && A.duration) pct = Math.min(100, Math.round(A.currentTime / A.duration * 100));
+        else if (S.prog[ep.id] && S.prog[ep.id].d) pct = Math.min(100, Math.round(S.prog[ep.id].p / S.prog[ep.id].d * 100));
+        bar.style.width = pct + "%";
+      }
+    }
+  }
+
+  /* ========================================================================
+     Search — a real podcast index, in the page
+
+     54,539 shows ship as a compact corpus (title, shelf, row, category, language, episodes).
+     It is loaded on the first keystroke, not with the page, and it carries no feed or artwork:
+     a result row is TEXT, and the full record comes out of the shelf file when it is opened.
+     Apple is still there underneath — not as the search, but as the long tail for what our
+     index does not hold (it answers "nothing here, but these exist").
+     ======================================================================== */
+  var SEARCH_T = null, SEARCH_LIVE = null, SI_STALE = false;
+  var LANG_NAME = { en: "English", de: "German", es: "Spanish", fr: "French", pt: "Portuguese",
+    it: "Italian", nl: "Dutch", ja: "Japanese", zh: "Chinese", ru: "Russian", pl: "Polish",
+    sv: "Swedish", ko: "Korean", hi: "Hindi", ar: "Arabic", tr: "Turkish", da: "Danish",
+    no: "Norwegian", fi: "Finnish", cs: "Czech", el: "Greek", he: "Hebrew", id: "Indonesian",
+    uk: "Ukrainian", ro: "Romanian", hu: "Hungarian", th: "Thai", vi: "Vietnamese" };
+  function podStat(k) {
+    try {
+      var st = JSON.parse(localStorage.getItem("rbg-pod-stats") || "{}");
+      st[k] = (st[k] || 0) + 1;
+      st.searches = (st.searches || 0) + (k === "zero" || k === "hits" ? 1 : 0);
+      localStorage.setItem("rbg-pod-stats", JSON.stringify(st));
+    } catch (e) { /* private mode: measuring is not worth a broken search */ }
+  }
+  window.__podStats = function () {
+    try { return JSON.parse(localStorage.getItem("rbg-pod-stats") || "{}"); } catch (e) { return {}; }
+  };
+
+  function recentSearches() {
+    try { var a = JSON.parse(localStorage.getItem("rbg-pod-recents") || "[]"); return Array.isArray(a) ? a.slice(0, 6) : []; }
+    catch (e) { return []; }
+  }
+  function addRecentSearch(t) {
+    t = String(t || "").trim();
+    if (t.length < 2) return;
+    var a = recentSearches().filter(function (x) { return String(x).toLowerCase() !== t.toLowerCase(); });
+    a.unshift(t);
+    try { localStorage.setItem("rbg-pod-recents", JSON.stringify(a.slice(0, 6))); } catch (e) { /* private mode */ }
+  }
+
+  function langName(c) { return LANG_NAME[String(c || "").toLowerCase()] || String(c || "").toUpperCase(); }
+  function titleCase(v) {
+    return String(v || "").replace(/\b[a-z]/g, function (m) { return m.toUpperCase(); });
+  }
+  var SI = { data: null, want: null, norm: null };
+  /* A query that IS a category ("comedy") is settled by popularity among equals, and a strong
+     non-English show would lead an English page. This nudges, it never hides: 60 points is less
+     than one word-start, so a better match still wins. */
+  var PREF_LANG = ((document.documentElement.lang || "en") + "").slice(0, 2).toLowerCase();
+
+  function loadSearchIndex() {
+    if (SI.data) return Promise.resolve(SI.data);
+    if (SI.want) return SI.want;
+    SI.want = new Promise(function (res, rej) {
+      var sc = document.createElement("script");
+      sc.src = "pod-search.js?v=20261030a";
+      sc.onload = function () {
+        if (!window.POD_SEARCH || !window.POD_SEARCH.recs) { rej(new Error("pod-search.js is empty")); return; }
+        SI.data = window.POD_SEARCH;
+        SI.norm = SI.data.recs.map(function (r) { return normText(r[0]); });
+        fillSearchFilters();
+        res(SI.data);
+      };
+      sc.onerror = function () { rej(new Error("pod-search.js could not be loaded")); };
+      document.head.appendChild(sc);
+    });
+    return SI.want;
+  }
+
+  /* The corpus already knows every category and language it holds, so the filters cost one pass
+     and stay honest: the counts are of shows, not of query results. */
+  function fillSearchFilters() {
+    var fc = $("fCat"), fl = $("fLang"), box = $("searchFilters");
+    if (!fc || !fl || !SI.data) return;
+    var cats = {}, langs = {};
+    SI.data.recs.forEach(function (r) {
+      var c = SI.data.cats[r[3]], l = SI.data.langs[r[4]];
+      if (c) cats[c] = (cats[c] || 0) + 1;
+      if (l) langs[l] = (langs[l] || 0) + 1;
+    });
+    var cl = Object.keys(cats).sort(function (a, b) { return cats[b] - cats[a]; });
+    fc.innerHTML = '<option value="">All categories</option>' + cl.map(function (c) {
+      return '<option value="' + esc(c) + '">' + esc(titleCase(c)) + ' (' + cats[c] + ')</option>';
+    }).join("");
+    var ll = Object.keys(langs).sort(function (a, b) { return langs[b] - langs[a]; }).slice(0, 24);
+    fl.innerHTML = '<option value="">Any language</option>' + ll.map(function (l) {
+      return '<option value="' + esc(l) + '">' + esc(langName(l)) + ' (' + langs[l] + ')</option>';
+    }).join("");
+    fc.value = (S.search && S.search.cat) || "";
+    fl.value = (S.search && S.search.lang) || "";
+    if (box) box.hidden = false;
+  }
+
+  /* lower, strip the diacritics that fenced non-English titles out, keep words */
+  function normText(v) {
+    var t = String(v || "").toLowerCase();
+    try { t = t.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); } catch (e) { /* old engine */ }
+    return t.replace(/[^a-z0-9]+/g, " ").trim();
+  }
+
+  /* Ranking, in the order a listener means it: the exact show, shows that start with what was
+     typed, then shows where every word appears (word-start beats mid-word), and a popularity
+     nudge so "news" surfaces the long-running daily rather than a three-episode namesake. */
+  function searchLocal(q, limit, filters) {
+    if (SI_STALE) return Promise.resolve({ ids: [], total: 0, stale: true });
+    var toks = normText(q).split(" ").filter(Boolean);
+    var f = filters || {};
+    if (!toks.length && !f.cat && !f.lang) return Promise.resolve({ ids: [], total: 0 });
+    return loadSearchIndex().then(function (d) {
+      var recs = d.recs, norms = SI.norm, qn = toks.join(" "), out = [];
+      for (var i = 0; i < norms.length; i++) {
+        var t = norms[i];
+        if (!t) continue;
+        if (f.cat && d.cats[recs[i][3]] !== f.cat) continue;
+        if (f.lang && d.langs[recs[i][4]] !== f.lang) continue;
+        var score = 0;
+        if (!toks.length) score = 0;                 /* a filter on its own browses the index */
+        else if (t === qn) score = 1200;
+        else if (t.indexOf(qn) === 0) {
+          /* A prefix hit is only worth more than a phrase hit when the query is most of the
+             title: "joe rogan" must find THE show, not a namesake that merely starts with it. */
+          score = 700 + Math.round(300 * (qn.length / Math.max(qn.length, t.length)));
+        }
+        else {
+          var atStart = 0, all = true;
+          for (var k = 0; k < toks.length; k++) {
+            var at = t.indexOf(toks[k]);
+            if (at < 0) { all = false; break; }
+            if (at === 0 || t.charAt(at - 1) === " ") atStart++;
+          }
+          if (!all) continue;
+          score = 120 + 160 * atStart;
+          if (atStart === toks.length) score += 200;
+          /* the words together, in that order: "the joe rogan experience" must beat a namesake
+             that merely starts with the words typed */
+          if ((" " + t + " ").indexOf(" " + qn + " ") >= 0) score += 220;
+        }
+        /* episodes are capped at 1000 in the source, so popularity is the honest tie-breaker */
+        score += (recs[i][6] || 0) * 26;
+        score += Math.min(60, Math.round(10 * Math.log10(1 + (recs[i][5] || 0))));
+        if (d.langs[recs[i][4]] === PREF_LANG) score += 60;
+        out.push([score, i]);
+      }
+      out.sort(function (a, b) { return b[0] - a[0] || (recs[b[1]][5] || 0) - (recs[a[1]][5] || 0); });
+      return { ids: out.slice(0, limit || 60).map(function (x) { return x[1]; }), total: out.length };
+    });
+  }
+
+  function sresRow(i) {
+    var r = SI.data.recs[i], d = SI.data;
+    var shelf = d.shelves[r[1]];
+    var meta = [titleCase(d.cats[r[3]]), langName(d.langs[r[4]]), (r[5] || 0) + " episodes"]
+      .filter(Boolean).join(" · ");
+    return '<button class="sres" type="button" role="option" aria-selected="false" data-act="openrow"' +
+      ' data-shelf="' + esc(shelf) + '" data-row="' + r[2] + '"><b>' + esc(r[0]) + '</b>' +
+      '<span>' + esc(meta) + '</span></button>';
+  }
+
+  /* a search result knows its shelf and its row there; the shelf file carries the feed + art */
+  function openIndexRow(shelfFile, ri) {
+    if (!PINDEX) {
+      loadIndex().then(function () { openIndexRow(shelfFile, ri); }).catch(function (e) { toast(msgOf(e)); });
+      return;
+    }
+    var sh = null;
+    for (var i = 0; i < PINDEX.shelves.length; i++) {
+      var f = (PINDEX.shelves[i].file || "").replace(/\.js$/, "");
+      if (f === shelfFile || PINDEX.shelves[i].id.replace(":", "-") === shelfFile) { sh = PINDEX.shelves[i]; break; }
+    }
+    if (!sh) { toast("That show's shelf is missing from the index."); return; }
+    loadShelf(sh).then(function (rows) {
+      var r = rows[ri];
+      window.__lastRow = r || null;          /* probe hook: what the row pointer resolved to */
+      if (r) openShowFeed(r[1], r[0], r[2], true);
+      else toast("That row moved when the index was rebuilt.");
+    }).catch(function (e) { toast(msgOf(e)); });
+  }
+
+  /* typing searches the index immediately; Apple is asked on Enter (and on a slow query) */
+  function searchTyping(q) {
+    clearTimeout(SEARCH_T);
+    if (q.length < 2) return;
+    SEARCH_T = setTimeout(function () {
+      if (S.view !== "search") { S.view = "search"; showView("search"); }
+      if (!S.search || S.search.q !== q) {
+        /* a new query must not drop the filters the reader set: that is the whole point of them */
+        S.search = { q: q, loading: false, err: "", shows: [], local: [], apple: null,
+                     cat: (S.search && S.search.cat) || "", lang: (S.search && S.search.lang) || "" };
+      }
+      renderSearch();
+      searchLocal(q, 60, { cat: (S.search && S.search.cat) || "", lang: (S.search && S.search.lang) || "" }).then(function (res) {
+        if (!S.search || S.search.q !== q) return;
+        S.search.local = res.ids; S.search.total = res.total;
+        if (!S.search._counted) { S.search._counted = true; podStat(res.total ? "hits" : "zero"); }
+        renderSearch();
+      }).catch(function (e) {
+        if (!S.search || S.search.q !== q) return;
+        S.search.err = msgOf(e);
+        renderSearch();
+      });
+    }, 130);
+  }
+
+  window.__podSearch = searchLocal;      /* probe hook: the ranking pass on its own */
+
+  /* The section switch can drop a reader into search with no history behind it, so Back needs a
+     real destination here - history.back() fell through to the radio page, which is not "back". */
+  function backToBrowse() {
+    if (S.search) { S.search.q = ""; S.search.local = []; S.search.total = 0; S.search.apple = null; S.search._counted = false; }
+    var q = $("q"); if (q) q.value = "";
+    S.view = "browse";
+    showView("browse");
+    renderFollows(); renderContinue(); renderTop();
+    if ($("secDir")) { $("secDir").hidden = false; renderDirectory(); }
+    try { window.scrollTo({ top: 0, behavior: REDUCED ? "auto" : "smooth" }); } catch (e) { window.scrollTo(0, 0); }
+  }
+
+  function renderSearch() {
+    var state = $("searchState"), grid = $("searchGrid"), where = $("searchWhere");
+    var q = (S.search && S.search.q) || "";
+    if (where) where.textContent = q ? 'shows for “' + q + '”' : "";
+    var local = (S.search && S.search.local) || [];
+    if (!q && !(S.search && (S.search.cat || S.search.lang))) {
+      var recents = recentSearches();
+      var cats = (PINDEX && PINDEX.shelves ? PINDEX.shelves.filter(function (x) { return x.kind === "cat"; })
+        .slice().sort(function (a, b) { return (b.n || 0) - (a.n || 0); }) : []).slice(0, 10);
+      var eh = '<div class="sres-sep">Search ' + (SI.data ? SI.data.n.toLocaleString() : "58,000") + ' shows</div>';
+      if (recents.length) {
+        eh += '<div class="sres-rec">' + recents.map(function (t) {
+          return '<button class="gchip" type="button" data-act="research" data-q="' + esc(t) + '">' + esc(t) + '</button>';
+        }).join("") + "</div>";
+      }
+      if (cats.length) {
+        eh += '<div class="sres-sep">Or start from a category</div><div class="sres-rec">' +
+          cats.map(function (c) {
+            return '<button class="gchip" type="button" data-act="shelfsearch" data-cat="' + esc(c.id.split(":")[1]) + '">' + esc(titleCase(c.name)) + '</button>';
+          }).join("") + "</div>";
+      }
+      if (apple) eh += apple.map(cardHTML).join("");
+      grid.innerHTML = eh;
+      state.innerHTML = "";
+      return;
+    }
+    var apple = (S.search && S.search.apple) || null;
+    if (!local.length && S.search && S.search.loading) {
+      state.innerHTML = '<div class="note">Searching…</div>';
+      grid.innerHTML = skeleton(6);
+      return;
+    }
+    state.innerHTML = "";
+    var body = local.map(sresRow).join("");
+    if (apple && apple.length) {
+      body += '<div class="sres-sep">Also on Apple Podcasts</div>' + apple.map(cardHTML).join("");
+    }
+    if (SI_STALE && !apple) {
+      state.innerHTML = '<div class="note">The local index was rebuilt since this page loaded — ' +
+        'refresh for search. Apple results are below.</div>';
+    }
+    if (!body) {
+      var hasFilter = (S.search && (S.search.cat || S.search.lang));
+      body = '<div class="note">No shows matched <b>' + esc(q) + '</b>.' +
+        (apple === null ? " Still asking Apple…" : "") +
+        ' Try a shorter word, a host name, or a category like <b>comedy</b>.' +
+        (hasFilter ? '<br><button class="btn" type="button" data-act="clearfilters">Clear the filters</button>' : '') +
+        '</div>';
+    }
+    /* "60 of 1,240" — a silent cap reads as "that is all there is" */
+    var total = (S.search && S.search.total) || 0;
+    if (local.length && total > local.length) {
+      body = '<div class="sres-count">showing ' + local.length + ' of ' + total.toLocaleString() +
+        ' matches — add a word to narrow it</div>' + body;
+    }
+    if (SEARCH_LIVE) {
+      SEARCH_LIVE.textContent = total ? (total + " shows found") : (q ? "no shows found" : "");
+    }
+
+    if (!local.length && apple === null && q) {
+      body += '<div class="sres-sep">Apple Podcasts</div><div class="note">asking…</div>';
+    }
+    grid.innerHTML = body;
+  }
+
+  function refreshFollowButtons() {
+    var all = document.querySelectorAll("[data-act='fav']");
+    for (var i = 0; i < all.length; i++) {
+      var id = all[i].getAttribute("data-id"), on = isFollowed(id);
+      all[i].classList.toggle("on", on);
+      all[i].setAttribute("aria-pressed", on ? "true" : "false");
+      all[i].title = on ? "Unfollow" : "Follow";
+    }
+    var f = document.querySelector("[data-act='follow']");
+    if (f && S.show.meta) {
+      var on2 = isFollowed(S.show.meta.id);
+      f.classList.toggle("on", on2);
+      f.setAttribute("aria-pressed", on2 ? "true" : "false");
+      f.textContent = "★ " + (on2 ? "Following" : "Follow");
+    }
+  }
+
+  /* --- the bar --- */
+  function syncBarSpace() {
+    var h = $("pbar").hidden ? 0 : $("pbar").offsetHeight;
+    document.documentElement.style.setProperty("--barh", h + "px");
+    document.body.style.paddingBottom = h ? (h + 26) + "px" : "";
+  }
+  function paintBar() {
+    if (!P.ep) return;
+    var d = isFinite(A.duration) && A.duration > 0 ? A.duration : (P.ep.duration || 0);
+    $("pbTitle").textContent = P.ep.title || "—";
+    $("pbShow").textContent = (P.show && (P.show.author || P.show.title)) || "";
+    var a = $("pbArt");
+    var src = (P.show && P.show.art) || P.ep.artwork || "";
+    if (a && src && a.getAttribute("src") !== src) a.src = src;
+    $("pbPlay").textContent = A.paused ? "▶" : "⏸";
+    $("pbPlay").setAttribute("aria-label", A.paused ? "Play" : "Pause");
+    $("pbCur").textContent = fmtDur(A.currentTime || 0);
+    $("pbDur").textContent = d ? fmtDur(d) : "—";
+    if (document.activeElement !== $("pbRange") && d > 0) {
+      $("pbRange").value = Math.round((A.currentTime || 0) / d * 1000);
+    }
+    $("pbPrev").disabled = !(S.qi > 0 || (A.currentTime || 0) > 5);
+    $("pbNext").disabled = !(S.qi >= 0 && S.qi < S.queue.length - 1);
+  }
+
+  /* ========================================================================
+     URL: the page is deep-linkable, and Back never dumps you off the site
+     ======================================================================== */
+  function pushURL(params, mode) {
+    var u;
+    try { u = new URL(location.href); } catch (e) { return; }
+    u.searchParams.delete("show"); u.searchParams.delete("q");
+    if (params) Object.keys(params).forEach(function (k) { u.searchParams.set(k, params[k]); });
+    var next = u.pathname + (u.search || "") + (u.hash || "");
+    try {
+      /* Typing in the search field must not bury the Back button in a stack of keystrokes,
+         so those writes replace the current entry instead of pushing a new one. */
+      if (mode === "replace") { history.replaceState({ pod: 1 }, "", next); return; }
+      history.pushState({ pod: 1 }, "", next);
+      S.depth += 1;
+    } catch (e) { /* file:// in some browsers refuses pushState: navigation still works */ }
+  }
+  function goBack() {
+    if (S.depth > 0) { history.back(); return; }
+    location.href = PAGE;
+  }
+  function route() {
+    var p;
+    try { p = new URLSearchParams(location.search); } catch (e) { p = null; }
+    var id = p && p.get("show");
+    var q = p && p.get("q");
+    var fd = p && p.get("feed");
+    if (fd) { openShowFeed(fd, p.get("t") || "", p.get("a") || "", false); return; }
+    if (id) { openShow(id, false); return; }
+    if (q) { doSearch(q, false); return; }
+    S.view = "browse";
+    showView("browse");
+    renderFollows(); renderContinue(); renderTop();
+    if ($("secDir")) $("secDir").hidden = false;
+    renderDirectory();
+  }
+  window.addEventListener("popstate", function () {
+    S.depth = Math.max(0, S.depth - 1);
+    route();
+  });
+
+  /* ========================================================================
+     Wiring
+     ======================================================================== */
+  function buildToolbar() {
+    var sel = $("selCountry");
+    sel.innerHTML = COUNTRIES.map(function (p) {
+      return '<option value="' + p[0] + '">' + ccFlag(p[0]) + " " + esc(p[1]) + "</option>";
+    }).join("");
+    sel.value = S.cc;
+    var g = $("genres");
+    g.innerHTML = GENRES.map(function (p) {
+      return '<button class="gchip' + (String(S.genre) === p[0] ? " on" : "") + '" type="button" ' +
+        'data-genre="' + p[0] + '" aria-pressed="' + (String(S.genre) === p[0]) + '">' + esc(p[1]) + "</button>";
+    }).join("");
+  }
+
+  function onClick(ev) {
+    var t = ev.target;
+    var card = t.closest ? t.closest("[data-act]") : null;
+    if (!card) return;
+    var act = card.getAttribute("data-act");
+    if (act === "open") { openShow(card.getAttribute("data-id"), true); return; }
+    if (act === "openfeed") { openShowFeed(card.getAttribute("data-feed"), card.getAttribute("data-t") || "", card.getAttribute("data-a") || "", true); return; }
+    if (act === "openrow") {
+      addRecentSearch(S.search && S.search.q);
+      podStat("opens");
+      openIndexRow(card.getAttribute("data-shelf"), +card.getAttribute("data-row"));
+      return;
+    }
+    if (act === "research") {
+      var tq = card.getAttribute("data-q") || "";
+      $("q").value = tq;
+      searchTyping(tq);
+      return;
+    }
+    if (act === "shelfsearch") {
+      if (!S.search) S.search = { q: "", local: [], apple: null };
+      S.search.cat = card.getAttribute("data-cat") || "";
+      var fc = $("fCat"); if (fc) fc.value = S.search.cat;
+      $("q").value = "";
+      searchLocal("", 60, { cat: S.search.cat, lang: S.search.lang }).then(function (res) {
+        S.search.local = res.ids; S.search.total = res.total; renderSearch();
+      });
+      renderSearch();
+      return;
+    }
+    if (act === "backbrowse") { backToBrowse(); return; }
+    if (act === "goto") {
+      var go = card.getAttribute("data-go");
+      if (go === "search") { $("q").focus(); $("q").scrollIntoView({ block: "center" }); }
+      else {
+        var el = go === "charts" ? $("secTop") : $("secDir");
+        if (el) el.scrollIntoView({ block: "start", behavior: REDUCED ? "auto" : "smooth" });
+      }
+      return;
+    }
+    if (act === "clearfilters") {
+      S.search.cat = ""; S.search.lang = "";
+      if ($("fCat")) $("fCat").value = "";
+      if ($("fLang")) $("fLang").value = "";
+      searchLocal(S.search.q || "", 60, {}).then(function (res) {
+        S.search.local = res.ids; S.search.total = res.total; renderSearch();
+      });
+      return;
+    }
+    if (act === "shelf") { DIR.shelf = card.getAttribute("data-shelf"); DIR.limit = 120; renderDirShelves(); renderDirectory(); return; }
+    if (act === "dirmore") { DIR.limit += 120; renderDirectory(); return; }
+    if (act === "fav") { ev.stopPropagation(); toggleFollow(card.getAttribute("data-id")); return; }
+    if (act === "follow") { toggleFollow(card.getAttribute("data-id")); return; }
+    if (act === "back") { goBack(); return; }
+    if (act === "play") {
+      var i = +card.getAttribute("data-i");
+      var ep = S.show.data && S.show.data.episodes[i];
+      if (!ep) return;
+      S.qi = i;
+      if (P.ep && P.ep.id === ep.id) { togglePlay(); return; }
+      startEpisode(ep, { id: S.show.meta.id, title: (S.show.data.show.title || S.show.meta.title), author: S.show.data.show.author || S.show.meta.author, art: S.show.meta.art, feed: S.show.meta.feed }, null);
+      return;
+    }
+    if (act === "play-latest") {
+      var eps = (S.show.data && S.show.data.episodes) || [];
+      if (!eps.length) return;
+      S.qi = 0;
+      startEpisode(eps[0], { id: S.show.meta.id, title: (S.show.data.show.title || S.show.meta.title), author: S.show.data.show.author || S.show.meta.author, art: S.show.meta.art, feed: S.show.meta.feed }, null);
+      return;
+    }
+    if (act === "cont") {
+      var rec = S.prog[card.getAttribute("data-id")];
+      if (!rec) return;
+      S.queue = [{ id: rec.id, title: rec.t, audio: rec.u, duration: rec.d || 0, artwork: rec.a || "" }];
+      S.qi = 0;
+      startEpisode(S.queue[0], { id: "", title: rec.s || "", author: rec.s || "", art: rec.a || "", feed: rec.f || "" }, rec.p);
+      return;
+    }
+    if (act === "forget") {
+      ev.stopPropagation();
+      var id = card.getAttribute("data-id");
+      var prog = S.prog; delete prog[id]; S.prog = prog; Store.progress(prog);
+      renderContinue(); paintEpRows();
+      toast("Removed from continue listening.");
+      return;
+    }
+    if (act === "retry-top") { loadTop(); return; }
+    if (act === "retry-show") { openShow(S.show.id, false); return; }
+    if (act === "retry-search") { doSearch(S.search.q, false); return; }
+  }
+
+  function onKey(ev) {
+    var tag = (ev.target && ev.target.tagName || "").toLowerCase();
+    if (tag === "input" || tag === "select" || tag === "textarea" || ev.target.isContentEditable) return;
+    if (ev.key === " " || ev.key === "Spacebar") { if (P.ep) { ev.preventDefault(); togglePlay(); } return; }
+    if (ev.key === "ArrowRight") { if (P.ep) { ev.preventDefault(); seekBy(30); } return; }
+    if (ev.key === "ArrowLeft") { if (P.ep) { ev.preventDefault(); seekBy(-30); } return; }
+    if (ev.key === "Escape") { if (S.view !== "browse") goBack(); return; }
+    if (ev.key === "Enter") {
+      var card = ev.target.closest && ev.target.closest("[data-act='open']");
+      if (card) { ev.preventDefault(); openShow(card.getAttribute("data-id"), true); }
+    }
+  }
+
+  function wire() {
+    document.addEventListener("click", onClick);
+    document.addEventListener("keydown", onKey);
+
+    $("btnQGo").addEventListener("click", function () { doSearch($("q").value, true); });
+    $("q").addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter") { ev.preventDefault(); doSearch($("q").value, true); }
+    });
+    var tmr = 0;
+    $("q").addEventListener("input", function () {
+      clearTimeout(tmr);
+      var v = $("q").value.trim();
+      if (v.length < 3) return;                     // 3+, or wait for the magnifier / Enter
+      tmr = setTimeout(function () { doSearch(v, "replace"); }, 650);
+    });
+    $("btnClearSearch").addEventListener("click", function () {
+      $("q").value = "";
+      showView("browse");
+      pushURL(null, "replace");
+      renderTop();
+    });
+    $("selCountry").addEventListener("change", function () {
+      S.cc = this.value; Store.cc(S.cc); loadTop();
+    });
+    $("genres").addEventListener("click", function (ev) {
+      var b = ev.target.closest ? ev.target.closest("[data-genre]") : null;
+      if (!b) return;
+      S.genre = b.getAttribute("data-genre");
+      Store.genre(S.genre);
+      var all = this.querySelectorAll(".gchip");
+      for (var i = 0; i < all.length; i++) {
+        var on = all[i] === b;
+        all[i].classList.toggle("on", on);
+        all[i].setAttribute("aria-pressed", on ? "true" : "false");
+      }
+      loadTop();
+    });
+    $("noteGo").addEventListener("click", function () { location.href = "radio.html"; });
+
+    $("pbPlay").addEventListener("click", togglePlay);
+    $("pbBack").addEventListener("click", function () { seekBy(-30); });
+    $("pbFwd").addEventListener("click", function () { seekBy(30); });
+    $("pbPrev").addEventListener("click", prevEp);
+    $("pbNext").addEventListener("click", function () { nextEp(false); });
+    $("pbClose").addEventListener("click", closePlayer);
+    $("pbRange").addEventListener("input", function () {
+      var d = isFinite(A.duration) ? A.duration : (P.ep && P.ep.duration) || 0;
+      if (d > 0) { try { A.currentTime = (+this.value / 1000) * d; } catch (e) {} }
+    });
+    $("pbRate").addEventListener("change", function () {
+      var r = +this.value || 1;
+      Store.rate(r);
+      A.playbackRate = r;
+      toast("Playback speed " + r + "×", 1800);
+    });
+    $("pbVol").addEventListener("input", function () {
+      var v = clampNum(+this.value / 100, 0, 1);
+      A.volume = v;
+      ls.set("vol", v);
+    });
+    window.addEventListener("resize", syncBarSpace);
+  }
+
+  /* ========================================================================
+     Debug surface for the suites (the same idea as the radio page's __dbg)
+     ======================================================================== */
+  window.__dbg = {
+    version: "1.0",
+    view: function () {
+      return {
+        name: S.view, cc: S.cc, genre: S.genre,
+        top: S.top.shows.length, topLoading: S.top.loading, topErr: S.top.err,
+        show: S.show.id, showLoading: S.show.loading, showErr: S.show.err,
+        showTitle: S.show.meta && S.show.meta.title || "",
+        eps: (S.show.data && S.show.data.episodes && S.show.data.episodes.length) || 0,
+        search: S.search.q, results: S.search.shows.length, searchErr: S.search.err,
+        follows: S.follows.length, cont: continueList().length
+      };
+    },
+    player: function () {
+      return {
+        ep: (P.ep && P.ep.id) || null,
+        title: (P.ep && P.ep.title) || "",
+        show: (P.show && P.show.title) || "",
+        src: (P.ep && P.ep.audio) || "",
+        srcNow: A.getAttribute("src") || "",     // what the element is actually loading
+        unwrapped: Object.keys(UNWRAP).length,
+        ready: A.readyState,
+        playing: !!P.ep && !A.paused,
+        t: A.currentTime || 0,
+        d: isFinite(A.duration) ? A.duration : 0,
+        rate: A.playbackRate,
+        vol: A.volume,
+        queue: S.queue.length, qi: S.qi,
+        bar: !$("pbar").hidden
+      };
+    },
+    follows: function () { return S.follows.map(function (f) { return { id: f.id, title: f.title, feed: f.feed }; }); },
+    progress: function () {
+      return Object.keys(S.prog).map(function (k) {
+        return { id: k, p: S.prog[k].p, d: S.prog[k].d, t: S.prog[k].t };
+      });
+    },
+    seek: function (s) { try { A.currentTime = +s || 0; } catch (e) {} paintBar(); },
+    lastErr: function () { return window.__playErr || ""; },
+    /* The MediaError behind a refusal: 1 aborted, 2 network, 3 decode, 4 src-not-supported. */
+    mediaErr: function () { return A.error ? { code: A.error.code, message: A.error.message } : null; },
+    rate: function (r) { if (r) { Store.rate(+r); A.playbackRate = +r; $("pbRate").value = String(r); } return A.playbackRate; },
+    radioNote: function () { return !$("radioNote").hidden; }
+  };
+
+  /* ========================================================================
+     Boot
+     ======================================================================== */
+  function init() {
+    /* The mirror of radio.html's forward: ?mode=radio (the app shells may still send it) goes
+       to the radio page rather than leaving the reader on podcasts. */
+    try {
+      var mp = new URLSearchParams(location.search);
+      if (mp.get("mode") === "radio") { location.replace("radio.html"); return; }
+    } catch (e) {}
+    if (!CC_NAME[S.cc]) { S.cc = "us"; Store.cc(S.cc); }   // a stored storefront that no longer exists
+    buildToolbar();
+    wire();
+    SEARCH_LIVE = document.getElementById("searchLive");
+    [["fCat", "cat"], ["fLang", "lang"]].forEach(function (pair) {
+      var el = document.getElementById(pair[0]);
+      if (!el) return;
+      el.addEventListener("change", function () {
+        if (!S.search) S.search = { q: "", loading: false, err: "", shows: [], local: [], apple: null };
+        S.search[pair[1]] = el.value;
+        var q = (document.getElementById("q").value || "").trim();
+        S.search.q = q;
+        if (S.view !== "search") { S.view = "search"; showView("search"); }
+        searchLocal(q, 60, { cat: S.search.cat, lang: S.search.lang }).then(function (res) {
+          S.search.local = res.ids; S.search.total = res.total; renderSearch();
+        });
+        renderSearch();
+      });
+    });
+    /* the field searches the index as you type; Enter still asks Apple for the long tail */
+    (function () {
+      var qEl = document.getElementById("q");
+      if (qEl) {
+        qEl.addEventListener("input", function (e) { searchTyping(String(e.target.value || "").trim()); });
+        /* ↑/↓ walk the result rows from the field; Enter on a focused row opens it */
+        qEl.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && !String(qEl.value || "").trim()) {
+            e.preventDefault();
+            backToBrowse();
+            return;
+          }
+          if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+          var rows = document.querySelectorAll("#searchGrid .sres");
+          if (!rows.length) return;
+          e.preventDefault();
+          var at = -1, i;
+          for (i = 0; i < rows.length; i++) if (rows[i] === document.activeElement) at = i;
+          var next = e.key === "ArrowDown" ? Math.min(rows.length - 1, at + 1) : Math.max(0, at - 1);
+          rows[next].focus();
+        });
+        /* warm the corpus on focus, so the first keystroke is a filter and not a download */
+        qEl.addEventListener("focus", function () {
+          /* intent, not accident: 250 ms of actually being in the field buys the 1 MB corpus */
+          setTimeout(function () { loadSearchIndex().catch(function () {}); }, 250);
+          /* an empty box is an invitation: open the search view so the recents and categories
+             are visible, instead of leaving the reader on the charts wondering where to type */
+          if (!qEl.value.trim() && S.view !== "search") {
+            S.search = S.search || { q: "", local: [], apple: null };
+            S.view = "search";
+            showView("search");
+            renderSearch();
+          }
+        });
+      }
+    })();
+    $("pbVol").value = Math.round(A.volume * 100);
+    $("pbRate").value = String(rate());
+    A.playbackRate = rate();
+    renderFollows();
+    renderContinue();
+    route();               // deep link first (podcasts.html?show=… / ?q=…)
+    loadTop();             // the browse shelf is always worth loading
+    post({ type: "hello" });   // "any radio playing?" - the owner answers with its state
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+})();
+</script>
+</body>
+</html>
