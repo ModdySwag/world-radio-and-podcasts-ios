@@ -1,27 +1,41 @@
-# MODDYS World Radio for iOS v1.3.0
+# MODDYS World Radio & Podcasts for iOS v2.0.0
 
-The app becomes the pure radio it always was on a phone: the site links that led nowhere are gone from the header, the search module folds away when you are done searching, and the search field gets a go magnifier.
+The app stops being a pure radio. The podcast directory now lives inside it - 58,795 shows to
+browse, 54,539 of them searchable by typing, ranked on the phone rather than by a server - so the
+one door the header keeps is a door that opens something.
 
 ## What changed
 
-**The header drops the five site links.** DOWNLOADS / SYNTHHUB / MUSIC HUB / PATTERN FORGE / RESONANCE open pages the app does not carry - in a pure radio app they were five dead links. They are hidden inside the app now; the website keeps them, where they lead somewhere.
+**The podcast directory ships in the app.** `podcasts.html`, the shelf manifest, the search corpus
+and the 81 shelf files ride in `Resources/www`. Browsing needs no network; only a show's feed, its
+charts and its artwork go online.
 
-**The search module folds.** A ▾ sits at the right end of the search field on a phone: tap it and the stations bar, the Format / Bitrate / Country selects and the Add / Saved / Reset row tuck away, so the results get the screen - about 150px of it back on a 390px phone. The field itself stays, it is the thing you reach for again. Committing a search folds it for you (the keyboard's enter/go key, the field's ✕, or the new magnifier - the same habit the World View page's bar has); the ▴ brings everything straight back, and the choice is remembered on the device. Desktops never fold.
+**One door in the header.** Inside the app the site doors were hidden outright, because they led
+to pages the app does not carry. Now exactly one survives - the podcast directory - and it opens.
+The Radio link at the top of the directory brings you back.
 
-**A go magnifier in the search bar.** The 🔍 inside the field commits the search exactly like the keyboard's search key - and inside the app it drops the on-screen keyboard the moment you tap it.
+**Under the icon the name is shorter.** "MODDYS World Radio & Podcasts" is 29 characters and iOS
+ellipsises that under an icon. The icon says **Radio & Podcasts**; the store listing carries the
+full name.
 
-**The bundled web app is the current one**, byte for byte - the same `index.html` moddys.net serves, and the same file Android 1.9.0 carries.
+**The bundled web app is today's**, byte for byte - the newer globe, the World View labels and
+the current 71,577-station catalogue, which the bundle had been two weeks behind on.
 
 ## Verified
 
-- `tools/shim_harness.py --only ios` over the iOS bridge, against the bundled page: 35 checks, 0 failed - the same harness file Android runs
-- `scripts/verify_bundle.py` reads the published `.app`: every bundled web file is byte-identical to the repo copy
+- `scripts/verify_bundle.py` reads the published `.app` - the simulator build and the device
+  archive: **64 checks, 0 failed** each, including that all 81 shelf files are in the bundle and
+  that the page files are byte-identical to the repo copies
+- `tools/shim_harness.py` over the iOS bridge: **80 checks, 0 failed** - the same harness file the
+  Android app runs, including the two new checks that pin `podcasts.html` and `radio.html` as
+  in-app pages
 - the shared shell is pinned to the same revision Android ships (`SHIM.sha256`)
-- the site's page suite against this page: 275 checks, 0 failed (twelve of them new: the five doors, the fold, the magnifier)
-- the same suite against what moddys.net serves: 275 checks, 0 failed
+- the site's page suite against this page: **277 checks, 0 failed**
+- the site's podcast suite: **80 checks, 0 failed**
 
 ## Install
 
-Sideload the unsigned `.ipa` with Sideloadly (or an on-device signer) and your own Apple ID - see the download page for the two steps. Your stations and favourites stay.
+Sideload the unsigned `.ipa` with Sideloadly (or an on-device signer) and your own Apple ID - see
+the download page for the two steps. Your stations and favourites stay.
 
 ## Cheers Moddy !
