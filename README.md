@@ -1,27 +1,34 @@
-# MODDYS World Radio — iPhone & iPad
+# MODDYS World Radio & Podcasts — iPhone & iPad
 
-**SPRAY IT LOUD, in your pocket — on iOS this time.** The same MODDYS World Radio web app,
-in a WKWebView shell that keeps playing when you leave the app or lock the screen, puts the
-station on your lock screen with play/pause, and doesn't lose the ~8,300 stations that stream
-over plain `http://`.
+**SPRAY IT LOUD, in your pocket — on iOS this time.** The same MODDYS World Radio & Podcasts
+web app, in a WKWebView shell that keeps playing when you leave the app or lock the screen,
+puts the station on your lock screen with play/pause, and doesn't lose the ~11,600 stations
+that stream over plain `http://`. The app is the radio **and** the podcast directory:
+**71,577 live stations** plus **58,795 shows** you can browse by shelf and search on the
+device.
 
 It is the iOS twin of [world-radio-android](https://github.com/ModdySwag/world-radio-android),
-built to behave identically: both apps ship the **same** `index.html`, `stations.js` and
-`countries.js` as moddys.net, and the **same shell script** (`_shell_shim.js`, byte-identical
-— `SHIM.sha256` proves it). One player, two platforms.
+built to behave identically: both apps ship the **same** `index.html`, `podcasts.html`,
+`stations.js` and `countries.js` as moddys.net, and the **same shell script**
+(`_shell_shim.js`, byte-identical — `SHIM.sha256` proves it). One player, two platforms.
 
 ## Screenshots
 
-The door at the top of the list, and the full World View it opens — the same pages the site
-serves, riding inside the app since 1.2.0:
+The podcast directory and the station list, and the full World View the radio still opens —
+the same pages the site serves, riding inside the app:
 
-<img src="shots/phone-list.jpg" width="300" alt="MODDYS World Radio on iPhone — the station list with the World View door">
-<img src="shots/phone-world.jpg" width="300" alt="MODDYS World Radio on iPhone — the World View on a phone">
-<img src="shots/desktop-world.jpg" width="720" alt="MODDYS World Radio — the World View at desktop width">
-<img src="shots/desktop-world-drawer.jpg" width="720" alt="MODDYS World Radio — a dot opened: the station drawer and the player">
+<img src="shots/phone-podcasts.jpg" width="300" alt="MODDYS World Radio &amp; Podcasts on iPhone — podcast search">
+<img src="shots/phone-list.jpg" width="300" alt="MODDYS World Radio &amp; Podcasts on iPhone — the station list with the World View door">
+<img src="shots/phone-world.jpg" width="300" alt="MODDYS World Radio &amp; Podcasts on iPhone — the World View on a phone">
+<img src="shots/desktop-world.jpg" width="720" alt="MODDYS World Radio &amp; Podcasts — the World View at desktop width">
+<img src="shots/desktop-world-drawer.jpg" width="720" alt="MODDYS World Radio &amp; Podcasts — a dot opened: the station drawer and the player">
 
 ## What it does
 
+- **The podcast directory is in here.** `podcasts.html`, its index and all 81 shelf files
+  ride in `Resources/www`, so browsing works with no network at all — only a show's feed,
+  its charts and its artwork go online. Search ranks on the device, and shows you follow
+  pick episodes up where you stopped.
 - **Background playback.** An `AVAudioSession` in the `.playback` category plus the `audio`
   background mode: the stream survives leaving the app and locking the device.
 - **Lock-screen controls.** A real Now Playing card — artwork, station name, country ·
@@ -35,7 +42,7 @@ serves, riding inside the app since 1.2.0:
 - **Light mode**, remembered between launches.
 - **The Check panel used to report the WebView.** The Check panel reports this device: iOS
   version, hardware model, the WebKit version that decides which streams decode, codec
-  support, and how many of the 47,994 stations this device can actually play — plus a **Copy
+  support, and how many of the 71,577 stations this device can actually play — plus a **Copy
   report** button.
 - **Station links go to Safari**, not into the player, exactly as on Android.
 - **Favourites persist.** The page is served from a loopback address rather than `file://`
@@ -60,6 +67,18 @@ same file exists on the Android side with Android's numbers.
 The honest summary: **iOS is the better of the two platforms for this catalogue.** HLS
 (`.m3u8`, roughly 3,000 stations) is native on iOS and only works on Android where the System
 WebView can decode it, so the Playable count on an iPhone is higher than on most Androids.
+
+## The podcast directory
+
+`podcasts.html` is the site's own page, byte-identical, served from the app bundle: shelves by
+genre, top charts by country, search over 54,539 shows, and a **Following** shelf that keeps
+your place in an episode. The bundled index is what makes it work on a plane — browsing and
+search never touch the network. Charts, artwork and episode audio do: those are the show's
+own feed.
+
+Inside the app the site's other doors are hidden, because they lead to pages the app does not
+carry. The podcast directory is the one that stays, and the **Radio** link at the top of it
+brings you back.
 
 ## Quick start
 
@@ -109,7 +128,7 @@ Two more honest notes about the App Store route:
   gets rejected. The defence is everything above: background playback, lock-screen controls,
   the player sheet, the visualiser, the per-device system check.
 - **Cleartext `http://`** is declared in `NSAppTransportSecurity`. That is permitted with a
-  justification, and the justification is in the plist comment: 8,330 of the 47,994 stations
+  justification, and the justification is in the plist comment: 11,610 of the 71,577 stations
   are plain HTTP. Certificate validation is **not** weakened.
 
 ## How it fits together
@@ -122,6 +141,7 @@ Two more honest notes about the App Store route:
 | `Sources/Compatibility.swift` | reads `compat.json`, decides the verdict, shows the one-time notice |
 | `Sources/AppDelegate.swift` | one window, no storyboard, no scene manifest |
 | `Resources/www/_shell_shim.js` | the shared front end: player sheet, theme, visualiser, Check panel, bridge adapter |
+| `Resources/www/podcasts.html`, `pod-index.js`, `pod-search.js`, `pod-i/` | the podcast directory and its offline index — the site's own files, byte-identical |
 | `Resources/www/compat.json` | the version thresholds, in one place |
 | `Resources/Info.plist` | `MinimumOSVersion`, background audio, ATS, orientation, both device families |
 | `tools/shim_harness.py` | drives that shell in a real browser, on the iOS bridge path too |
@@ -173,7 +193,7 @@ rather than invent a verdict).
 | Devices | iPhone **and** iPad, portrait and landscape, Split View and Slide Over |
 | Playback engine | Apple's **WebKit**, which ships with iOS — updated by updating iOS, not by the app |
 | Formats | MP3 and AAC everywhere; **HLS is native on iOS**, so the ~3,000 `.m3u8` stations play here |
-| Cleartext | allowed app-wide in `NSAppTransportSecurity`: ~8,330 stations are plain `http://` |
+| Cleartext | allowed app-wide in `NSAppTransportSecurity`: ~11,600 stations are plain `http://` |
 | No usable WebKit / page missing | the app says so in words instead of showing a blank screen |
 
 ## What you give up
@@ -188,7 +208,7 @@ rather than invent a verdict).
 ## Privacy & safety
 
 Nothing is collected and nothing is transmitted anywhere except the radio streams you press
-play on. There are no analytics, no ads, no third-party SDKs and **no external dependencies
+play on and, when you open a show, that show's feed and artwork. There are no analytics, no ads, no third-party SDKs and **no external dependencies
 at all** — only Apple's own WKWebView, AVFoundation and MediaPlayer frameworks, plus a
 loopback HTTP server that is bound to `127.0.0.1` and reachable by nothing off the device.
 Cleartext HTTP is permitted because your catalogue needs it; that permits no certificate
