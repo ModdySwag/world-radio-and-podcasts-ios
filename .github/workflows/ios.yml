@@ -207,7 +207,7 @@ jobs:
           set -e
           ls -la dist
           TAG="${{ github.ref_name }}"
-          mv dist/MODDYSWorldRadio-unsigned.ipa "dist/MODDYSWorldRadio-${TAG}-unsigned.ipa"
+          mv dist/MODDYSWorldRadio-unsigned.ipa "dist/MODDYSWorldRadioAndPodcasts-${TAG}-unsigned.ipa"
           ls -la dist
 
       - name: Publish the GitHub Release
@@ -220,7 +220,7 @@ jobs:
             gh release upload "$TAG" dist/*.ipa --clobber
           else
             gh release create "$TAG" dist/*.ipa \
-              --title "MODDYS World Radio for iOS $TAG" \
+              --title "MODDYS World Radio & Podcasts for iOS $TAG" \
               --notes-file RELEASE_NOTES.md
           fi
           echo "--- release state ---"
