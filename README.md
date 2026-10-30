@@ -7,7 +7,7 @@ that stream over plain `http://`. The app is the radio **and** the podcast direc
 **71,577 live stations** plus **58,795 shows** you can browse by shelf and search on the
 device.
 
-It is the iOS twin of [world-radio-android](https://github.com/ModdySwag/world-radio-android),
+It is the iOS twin of [world-radio-and-podcasts-android](https://github.com/ModdySwag/world-radio-and-podcasts-android),
 built to behave identically: both apps ship the **same** `index.html`, `podcasts.html`,
 `stations.js` and `countries.js` as moddys.net, and the **same shell script**
 (`_shell_shim.js`, byte-identical — `SHIM.sha256` proves it). One player, two platforms.
