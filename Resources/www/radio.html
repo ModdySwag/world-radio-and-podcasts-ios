@@ -531,18 +531,40 @@ html.sc-player #bar{display:none !important}
 .sc-bar #viz{display:none;flex:0 1 260px;min-width:70px;max-width:420px;height:30px;
   border:1px solid rgba(255,255,255,.13);border-radius:3px;background:rgba(255,255,255,.03);margin:0 4px}
 /* Phones: the strip becomes two rows on this page — navigation, name and the theme on top, the
-   transport and its options under it. Nothing is dropped: the words on Website / Random give way
-   to their glyphs, and the visualiser keeps its own row under both. */
+   transport and its options under it, with the visualiser as a band between them when it is on
+   (the transport keeps the bottom edge, where a thumb is). Nothing is dropped: the words on
+   Website / Random give way to their glyphs. */
 @media(max-width:760px){
   .sc-bar{flex-wrap:wrap;row-gap:2px;padding-top:3px;padding-bottom:3px}
   .sc-bar .sc-now{flex:1 1 40px}
   .sc-x{flex:1 1 100%;order:9;justify-content:flex-start;gap:2px;border-top:1px solid rgba(255,255,255,.09);
     padding-top:3px;margin-top:1px}
   .sc-bar #volWrap{flex:1 1 auto;max-width:150px}
-  .sc-bar #btnRandom,.sc-bar #btnBarSite{padding:0 7px}
+  .sc-bar #btnRandom,.sc-bar #btnBarSite{padding:0 9px}
   .sc-bar #btnRandom .lbl,.sc-bar #btnBarSite .lbl{display:none}
   .sc-bar #btnBarSite .ico-n{display:inline;font-size:13px}
   .sc-bar #viz{flex:1 1 100%;max-width:none;height:34px;order:8;margin:2px 0 0}
+  /* thumb-sized, like the strip's own buttons at this width: 30px is a desktop mouse target */
+  .sc-bar .bctrl{width:34px;height:34px;font-size:15px}
+  .sc-bar #btnViz,.sc-bar #btnBarSite,.sc-bar #btnRandom{height:34px;min-width:34px}
+}
+/* The narrowest phones (320-420px): the name gives way first, then the volume's read-out — the
+   slider still shows the level — so that nothing is ever clipped off the right edge. */
+@media(max-width:420px){
+  .sc-bar .sc-now{min-width:0}
+  .sc-bar #volPct{display:none}
+  .sc-bar #volWrap{flex:0 1 78px;min-width:44px}
+  .sc-bar #btnViz,.sc-bar #btnBarSite,.sc-bar #btnRandom{padding:0 5px}
+  /* the four switches on a 320-420px screen: the track would eat the label, so the labels keep the
+     row and the on state is carried by the button's own tint and border */
+  .countrow .btn{font-size:10px;padding:0 4px;gap:0}
+  .countrow .sw{display:none}
+}
+/* Below 360px there is not room for everything on the nav row, and the station name is the thing
+   that must survive: back and forward step aside (a phone has a system back gesture, and the menu
+   lists every page) so the name and its country/codec line stay readable. */
+@media(max-width:359px){
+  .sc-bar [data-sc="back"],.sc-bar [data-sc="fwd"]{display:none}
 }
 /* modal */
 #modal{position:fixed;inset:0;background:rgba(5,6,10,.78);z-index:80;display:none;align-items:center;justify-content:center;padding:18px}
@@ -1308,7 +1330,12 @@ let barPinned = false;
 function barAway() { const q = $("#q");
   return narrowBar() && !barPinned && !!q && q.value.trim() !== ""; }
 function syncBarAway() {
-  const away = barAway(), bar = $("#bar");
+  const away = barAway();
+  /* The strip IS the bar on the web now, so "the bar steps aside while you search" has to be asked
+     of the strip. It is the strip's own away state, not the hand toggle: it clears itself when the
+     search box empties and a play claim beats it (barPinned). */
+  if (stripBar) { if (window.__sc) window.__sc.away(away); return; }
+  const bar = $("#bar");
   if (!bar) return;
   bar.classList.toggle("wr-away", away);
   /* re-measure either way, so the page takes back the room the bar was holding */
