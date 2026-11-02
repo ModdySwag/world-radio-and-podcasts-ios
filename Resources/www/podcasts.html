@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- MODDYS World Radio — the PODCASTS page, at /podcasts.html
+<!-- MODDYS World Radio & Podcasts — the PODCASTS page, at /podcasts.html
      The second mode of one app: radio.html is live radio (71,577 stations), this page is
      shows and episodes. They share the brand, the player language, the volume and the
      single-audio rule; they do not share a catalogue, because episodes only exist in each
@@ -16,23 +16,26 @@
      account, nothing sent anywhere — the same promise the radio side keeps. Every read and
      write goes through the small Store object below, so syncing later is a swap there and
      not a rewrite here. -->
-<html lang="en">
+<html lang="en" data-theme="black">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="dark">
 <meta name="theme-color" content="#101117">
-<meta name="description" content="MODDYS Podcasts — 58,000 shows to search and browse, top charts by country, follow shows and pick episodes up exactly where you stopped. No account, no tracking.">
+<script>/* theme before first paint */
+(function(){try{var t=localStorage.getItem('moddys-theme')||'black';
+document.documentElement.setAttribute('data-theme',t);
+var c={black:'#0B0C0E',chrome:'#D9DDE1',valve:'#15100A',ice:'#070F14',oxblood:'#14090B',moss:'#0C110D',spray:'#120E18',paper:'#F4F1E8',blueprint:'#0A1626',observatory:'#0D0F1A',arcade:'#141B33'};
+var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',c[t]||'#0B0C0E');}catch(e){}})();
+</script>
+<link rel="stylesheet" href="theme-tokens.css?v=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="MODDYS Podcasts — 58,795 shows to search and browse, top charts by country, follow shows and pick episodes up exactly where you stopped. No account, no tracking.">
 <meta name="robots" content="index, follow">
 <title>MODDYS Podcasts</title>
 <link rel="canonical" href="https://moddys.net/podcasts.html">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎙️</text></svg>">
 <style>
 :root{
-  --bg:#101117; --bg2:#171824; --panel:#1a1b28; --panel2:#22233a; --line:#2e3050;
-  --tx:#f4f1ea; --mut:#9aa0b8;
-  --pink:#ff3ea5; --cyan:#1fe3ff; --lime:#c9ff3d; --orange:#ff9f1c; --purp:#a06bff; --yel:#ffe14d;
-  --ok:#7dffa8; --warn:#ffb454;
   --rough:7px 18px 8px 20px/22px 6px 24px 8px;
   --barh:0px;                 /* the player bar's height, measured, so the page can clear it */
 }
@@ -41,16 +44,16 @@ html,body{margin:0;padding:0}
 body{background:var(--bg);color:var(--tx);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",sans-serif;
   min-height:100vh;overflow-x:hidden;-webkit-user-select:none;user-select:none}
 input,textarea,select{ -webkit-user-select:text;user-select:text }
-::selection{background:var(--pink);color:#fff}
+::selection{background:var(--pink);color:var(--accent-ink)}
 [hidden]{display:none !important}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.5;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.09'/%3E%3C/svg%3E")}
 body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.16;
   background:
-   radial-gradient(260px 120px at 8% 12%, rgba(255,62,165,.55), transparent 70%),
-   radial-gradient(300px 160px at 92% 8%, rgba(31,227,255,.4), transparent 70%),
-   radial-gradient(340px 190px at 85% 88%, rgba(201,255,61,.28), transparent 70%),
-   radial-gradient(240px 130px at 12% 85%, rgba(255,159,28,.3), transparent 70%)}
+   radial-gradient(260px 120px at 8% 12%, color-mix(in srgb,var(--pink) 55%,transparent), transparent 70%),
+   radial-gradient(300px 160px at 92% 8%, color-mix(in srgb,var(--cyan) 40%,transparent), transparent 70%),
+   radial-gradient(340px 190px at 85% 88%, color-mix(in srgb,var(--lime) 28%,transparent), transparent 70%),
+   radial-gradient(240px 130px at 12% 85%, color-mix(in srgb,var(--orange) 30%,transparent), transparent 70%)}
 .spraybar{position:fixed;top:0;left:0;right:0;height:7px;z-index:90;display:flex}
 .spraybar i{flex:1;display:block}
 .spraybar i:nth-child(1){background:var(--pink)}.spraybar i:nth-child(2){background:var(--orange)}
@@ -59,43 +62,43 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opac
 .wrap{position:relative;z-index:1;max-width:1240px;margin:0 auto;padding:26px 16px 60px}
 header{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin:4px 0 14px}
 h1{margin:0;font-size:clamp(26px,4.6vw,44px);line-height:.95;font-weight:900;letter-spacing:-1px;text-transform:uppercase;
-  color:#fff;transform:rotate(-1.2deg);text-shadow:3px 3px 0 var(--pink),6px 6px 0 rgba(0,0,0,.45)}
-h1 .brand{font-size:1.08em;letter-spacing:.2px;color:#fff;text-shadow:2px 2px 0 var(--lime),5px 5px 0 var(--pink),8px 8px 0 rgba(0,0,0,.45)}
-h1 .o{color:var(--cyan)} h1 .g{color:var(--lime)}
+  color:var(--ink);transform:rotate(-1.2deg);text-shadow:3px 3px 0 var(--pink),6px 6px 0 rgba(0,0,0,.45)}
+h1 .brand{font-size:1.08em;letter-spacing:.2px;color:var(--ink);text-shadow:2px 2px 0 var(--lime),5px 5px 0 var(--pink),8px 8px 0 rgba(0,0,0,.45)}
+h1 .o{color:var(--cyan-t)} h1 .g{color:var(--lime-t)}
 
 /* ===== the mode switch: the one control both pages carry =====
    Radio and Podcasts are two pages, so this is two links drawn as one segmented control.
    Laying it out as a segmented control (and not as two loose badges) is what makes the pair
    read as ONE app with two modes rather than two sites that link to each other. */
 .modesw{display:inline-flex;align-items:stretch;border:2px solid var(--line);border-radius:12px;
-  overflow:hidden;background:#0d0e16;transform:rotate(.7deg);box-shadow:4px 4px 0 rgba(0,0,0,.35)}
+  overflow:hidden;background:var(--bg2);transform:rotate(.7deg);box-shadow:4px 4px 0 rgba(0,0,0,.35)}
 .modesw a{display:inline-flex;align-items:center;gap:6px;padding:9px 13px;font-size:12.5px;font-weight:900;
   letter-spacing:.6px;text-transform:uppercase;text-decoration:none;color:var(--mut);white-space:nowrap;
   transition:background .12s,color .12s}
 .modesw a+a{border-left:2px solid var(--line)}
-.modesw a:hover{color:var(--tx);background:rgba(255,255,255,.05)}
-.modesw a[aria-current="page"]{background:linear-gradient(100deg,var(--pink),var(--purp));color:#12040d;
+.modesw a:hover{color:var(--tx);background:color-mix(in srgb,var(--ink) 5%,transparent)}
+.modesw a[aria-current="page"]{background:linear-gradient(100deg,var(--pink),var(--purp));color:var(--accent-ink);
   text-shadow:none;cursor:default}
 .modesw a[aria-current="page"]:hover{background:linear-gradient(100deg,var(--pink),var(--purp))}
 header .spraytag{margin-left:auto;transform:rotate(1.6deg);font-weight:800;text-transform:uppercase;font-size:12px;
-  letter-spacing:1px;color:#0c0d14;background:linear-gradient(90deg,var(--cyan),var(--lime));
+  letter-spacing:1px;color:var(--led-ink);background:linear-gradient(90deg,var(--cyan),var(--lime));
   padding:6px 12px;border-radius:3px;box-shadow:4px 4px 0 rgba(0,0,0,.4)}
 
 /* ===== toolbar: search, country, genres ===== */
 .toolbar{position:sticky;top:6px;z-index:50;padding:8px 0 6px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;
-  background:linear-gradient(180deg,rgba(16,17,23,.94) 0%,rgba(16,17,23,.94) 82%,transparent)}
+  background:linear-gradient(180deg,color-mix(in srgb,var(--bg) 94%,transparent) 0%,color-mix(in srgb,var(--bg) 94%,transparent) 82%,transparent)}
 .searchwrap{position:relative;display:flex;align-items:center;flex:1 1 260px;min-width:0}
-#q{flex:1 1 auto;min-width:0;width:100%;background:#0d0e16;border:2px solid var(--line);color:var(--tx);
+#q{flex:1 1 auto;min-width:0;width:100%;background:var(--bg2);border:2px solid var(--line);color:var(--tx);
   border-radius:12px;padding:10px 52px 10px 14px;font-size:15px;outline:none;font-family:inherit;
   transition:border-color .12s,box-shadow .12s}
-#q:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(31,227,255,.18)}
-#q::placeholder{color:#6f7590}
+#q:focus{border-color:var(--cyan);box-shadow:0 0 0 3px color-mix(in srgb,var(--cyan) 18%,transparent)}
+#q::placeholder{color:var(--dim)}
 .qbtn{position:absolute;top:3px;bottom:3px;right:4px;width:42px;display:inline-flex;align-items:center;justify-content:center;
   border:none;background:none;color:var(--mut);font-size:15px;line-height:1;cursor:pointer;border-radius:10px;padding:0;font-family:inherit}
-.qbtn:hover,.qbtn:focus-visible{color:var(--cyan);background:rgba(31,227,255,.1)}
+.qbtn:hover,.qbtn:focus-visible{color:var(--cyan-t);background:color-mix(in srgb,var(--cyan) 10%,transparent)}
 .selwrap{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;
   letter-spacing:.8px;color:var(--mut);flex:0 0 auto}
-select{background:#0d0e16;border:2px solid var(--line);color:var(--tx);border-radius:10px;padding:8px 9px;
+select{background:var(--bg2);border:2px solid var(--line);color:var(--tx);border-radius:10px;padding:8px 9px;
   font-size:13.5px;outline:none;max-width:220px;font-family:inherit}
 select:focus{border-color:var(--purp)}
 .genres{display:flex;gap:5px;overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch;
@@ -103,7 +106,7 @@ select:focus{border-color:var(--purp)}
 .genres::-webkit-scrollbar{height:5px}
 .sfilters{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 12px}
 .sfilters label{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--mut)}
-.sfilters select{appearance:none;border:1.5px solid var(--line);background:#10111c;color:var(--tx);
+.sfilters select{appearance:none;border:1.5px solid var(--line);background:var(--bg2);color:var(--tx);
   border-radius:8px;padding:6px 10px;font:inherit;font-size:12.5px}
 .sfilters select:focus-visible{border-color:var(--cyan);outline:none}
 .sres-count{grid-column:1/-1;color:var(--mut);font-size:12px;margin:2px 0 6px}
@@ -114,8 +117,8 @@ select:focus{border-color:var(--purp)}
 .secnav-note{color:var(--mut);font-size:11.5px;margin-left:auto}
 .sres{grid-column:1/-1;display:flex;justify-content:space-between;gap:14px;align-items:baseline;
   width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;
-  background:rgba(16,18,28,.72);color:var(--tx);font:inherit;text-align:left;cursor:pointer}
-.sres:hover,.sres:focus-visible{border-color:var(--cyan);background:rgba(31,227,255,.07);outline:none}
+  background:var(--panel);color:var(--tx);font:inherit;text-align:left;cursor:pointer}
+.sres:hover,.sres:focus-visible{border-color:var(--cyan);background:color-mix(in srgb,var(--cyan) 7%,transparent);outline:none}
 .sres b{font-size:14px;font-weight:700}
 .sres span{color:var(--mut);font-size:12px;white-space:nowrap}
 .sres-sep{grid-column:1/-1;margin:10px 0 -4px;color:var(--mut);font-size:11.5px;
@@ -123,44 +126,45 @@ select:focus{border-color:var(--purp)}
 .dirchips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
 .dirchips .gchip{font-size:12.5px}
 .dirfoot{display:flex;justify-content:center;margin:18px 0 6px}
-.gchip{flex:0 0 auto;border:1.5px solid var(--line);background:rgba(15,16,26,.9);color:var(--tx);border-radius:8px;
+.gchip{flex:0 0 auto;border:1.5px solid var(--line);background:var(--bg2);color:var(--tx);border-radius:8px;
   padding:6px 11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;
   transition:border-color .12s,background .12s,color .12s}
-.gchip:hover{border-color:var(--cyan);color:var(--cyan)}
-.gchip.on{background:var(--cyan);border-color:var(--cyan);color:#04141a;font-weight:900}
+.gchip:hover{border-color:var(--cyan);color:var(--cyan-t)}
+.gchip.on{background:var(--cyan);border-color:var(--cyan);color:var(--led-ink);font-weight:900}
 
 /* ===== section chrome ===== */
 .sec{margin:20px 0 6px}
 .sechead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 0 10px}
+.moresec{margin-top:22px}
 .sechead h2{margin:0;font-size:clamp(17px,2.4vw,21px);font-weight:900;text-transform:uppercase;letter-spacing:.4px}
-.sechead h2 .em{color:var(--pink)}
+.sechead h2 .em{color:var(--pink-t)}
 .sechead span{font-size:12.5px;color:var(--mut)}
 .sechead .right{margin-left:auto;display:flex;gap:6px;align-items:center}
 .note{font-size:13px;color:var(--mut);padding:10px 2px}
 .note b{color:var(--tx)}
 .errbox{display:flex;flex-direction:column;align-items:flex-start;gap:9px;border:2px solid var(--warn);
-  background:rgba(255,159,28,.1);border-radius:14px 6px 14px 6px;padding:13px 15px;margin:4px 0 10px}
+  background:color-mix(in srgb,var(--warn) 10%,transparent);border-radius:14px 6px 14px 6px;padding:13px 15px;margin:4px 0 10px}
 .errbox b{font-size:14px}
-.errbox span{font-size:12.5px;color:#ffd9a8;line-height:1.5;word-break:break-word}
-.btn{appearance:none;border:2px solid var(--line);background:#10111c;color:var(--tx);border-radius:10px;
+.errbox span{font-size:12.5px;color:var(--warn-t);line-height:1.5;word-break:break-word}
+.btn{appearance:none;border:2px solid var(--line);background:var(--bg2);color:var(--tx);border-radius:10px;
   padding:8px 13px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;text-decoration:none;
   display:inline-flex;align-items:center;gap:6px;transition:transform .08s,box-shadow .08s,background .12s,border-color .12s}
-.btn:hover{border-color:var(--cyan);box-shadow:3px 3px 0 rgba(31,227,255,.35);transform:translate(-1px,-1px)}
+.btn:hover{border-color:var(--cyan);box-shadow:3px 3px 0 color-mix(in srgb,var(--cyan) 35%,transparent);transform:translate(-1px,-1px)}
 .btn:active{transform:translate(1px,1px);box-shadow:none}
-.btn.pink{border-color:var(--pink);color:#ffd3ea}
-.btn.pink:hover{background:var(--pink);color:#1a0312;box-shadow:3px 3px 0 rgba(255,62,165,.4)}
-.btn.on{border-color:var(--cyan);background:rgba(31,227,255,.16);color:var(--cyan)}
+.btn.pink{border-color:var(--pink);color:var(--pink-t)}
+.btn.pink:hover{background:var(--pink);color:var(--accent-ink);box-shadow:3px 3px 0 color-mix(in srgb,var(--pink) 40%,transparent)}
+.btn.on{border-color:var(--cyan);background:color-mix(in srgb,var(--cyan) 16%,transparent);color:var(--ink)}
 .btn[disabled]{opacity:.45;cursor:default;transform:none;box-shadow:none;border-color:var(--line);color:var(--mut)}
 
 /* ===== show cards ===== */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:12px}
-.pcard{position:relative;background:linear-gradient(160deg,#191a29 0%,#14151f 100%);border:1px solid rgba(255,255,255,.14);
+.pcard{position:relative;background:linear-gradient(160deg,var(--panel2) 0%,var(--panel) 100%);border:1px solid color-mix(in srgb,var(--ink) 14%,transparent);
   border-radius:var(--rough);padding:9px 9px 11px;display:flex;flex-direction:column;gap:8px;cursor:pointer;
   transition:border-color .12s,box-shadow .12s,transform .08s;min-width:0}
-.pcard:hover,.pcard:focus-visible{border-color:var(--pink);box-shadow:4px 4px 0 rgba(255,62,165,.22);
+.pcard:hover,.pcard:focus-visible{border-color:var(--pink);box-shadow:4px 4px 0 color-mix(in srgb,var(--pink) 22%,transparent);
   transform:translate(-1px,-1px);outline:none}
 .pcard .part{position:relative;width:100%;aspect-ratio:1/1;border-radius:10px 4px 10px 4px;overflow:hidden;
-  background:linear-gradient(140deg,#20213a,#12131e);flex:0 0 auto}
+  background:linear-gradient(140deg,var(--panel2),var(--panel));flex:0 0 auto}
 .pcard .part img{width:100%;height:100%;object-fit:cover;display:block}
 .imgfail{visibility:hidden}
 .pcard .pmeta{min-width:0;display:flex;flex-direction:column;gap:2px}
@@ -168,55 +172,55 @@ select:focus{border-color:var(--purp)}
   overflow:hidden;word-break:break-word}
 .pcard .pmeta span{font-size:11.5px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pcard .pmeta i{font-style:normal;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--purp)}
-.pfav{position:absolute;top:5px;right:5px;width:34px;height:34px;border-radius:10px;border:1.5px solid rgba(255,255,255,.28);
-  background:rgba(9,10,16,.72);color:#fff;font-size:15px;line-height:1;cursor:pointer;padding:0;
+.pfav{position:absolute;top:5px;right:5px;width:34px;height:34px;border-radius:10px;border:1.5px solid color-mix(in srgb,var(--ink) 28%,transparent);
+  background:color-mix(in srgb,var(--bg) 74%,transparent);color:var(--ink);font-size:15px;line-height:1;cursor:pointer;padding:0;
   display:inline-flex;align-items:center;justify-content:center;transition:background .12s,color .12s,border-color .12s}
-.pfav:hover{border-color:var(--yel);color:var(--yel)}
+.pfav:hover{border-color:var(--yel);color:var(--ink)}
 .pfav.on{background:var(--yel);border-color:var(--yel);color:#1a1400}
-.sk{border:1px solid var(--line);border-radius:var(--rough);height:212px;background:linear-gradient(120deg,#171827,#1d1e31,#171827);
+.sk{border:1px solid var(--line);border-radius:var(--rough);height:212px;background:linear-gradient(120deg,var(--panel),var(--panel2),var(--panel));
   background-size:220% 100%;animation:shimmer 1.4s linear infinite}
 @keyframes shimmer{to{background-position:-220% 0}}
 
 /* ===== the show page ===== */
 .shead{display:grid;grid-template-columns:150px 1fr;gap:16px;align-items:start;margin:6px 0 16px}
-.shead .sart{width:150px;height:150px;border-radius:14px 5px 14px 5px;object-fit:cover;background:#0b0c12;
-  border:1px solid rgba(255,255,255,.16);box-shadow:6px 6px 0 rgba(0,0,0,.45)}
+.shead .sart{width:150px;height:150px;border-radius:14px 5px 14px 5px;object-fit:cover;background:var(--bg2);
+  border:1px solid color-mix(in srgb,var(--ink) 16%,transparent);box-shadow:6px 6px 0 rgba(0,0,0,.45)}
 .shead .sartwrap{position:relative}
 .smain{min-width:0}
 .smain h2{margin:0 0 4px;font-size:clamp(19px,3vw,27px);line-height:1.12;font-weight:900;word-break:break-word}
-.smain .sauth{font-size:14px;color:var(--cyan);font-weight:700;margin:0 0 4px}
+.smain .sauth{font-size:14px;color:var(--cyan-t);font-weight:700;margin:0 0 4px}
 .smain .smeta{font-size:11.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin:0 0 9px}
 .sacts{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 10px}
-.shdesc{font-size:12.8px;color:#c9cee4;line-height:1.55;margin:0;max-width:70ch;
+.shdesc{font-size:12.8px;color:var(--mut);line-height:1.55;margin:0;max-width:70ch;
   display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
 .eplist{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--line)}
-.eprow{display:flex;gap:11px;align-items:flex-start;padding:11px 4px;border-bottom:1px solid rgba(255,255,255,.09)}
-.eprow.on{background:linear-gradient(90deg,rgba(255,62,165,.12),transparent 70%)}
-.epbtn{flex:0 0 auto;width:42px;height:42px;border-radius:50%;border:2px solid var(--pink);background:rgba(255,62,165,.14);
-  color:#ff9fd2;font-size:15px;line-height:1;cursor:pointer;font-family:inherit;display:inline-flex;
+.eprow{display:flex;gap:11px;align-items:flex-start;padding:11px 4px;border-bottom:1px solid color-mix(in srgb,var(--ink) 9%,transparent)}
+.eprow.on{background:linear-gradient(90deg,color-mix(in srgb,var(--pink) 12%,transparent),transparent 70%)}
+.epbtn{flex:0 0 auto;width:42px;height:42px;border-radius:50%;border:2px solid var(--pink);background:color-mix(in srgb,var(--pink) 14%,transparent);
+  color:var(--pink-t);font-size:15px;line-height:1;cursor:pointer;font-family:inherit;display:inline-flex;
   align-items:center;justify-content:center;padding:0;transition:background .12s,color .12s}
-.epbtn:hover{background:var(--pink);color:#1a0312}
-.eprow.on .epbtn{background:var(--pink);color:#fff;border-color:#fff}
+.epbtn:hover{background:var(--pink);color:var(--accent-ink)}
+.eprow.on .epbtn{background:var(--pink);color:var(--accent-ink);border-color:var(--ink)}
 .epmain{min-width:0;flex:1 1 auto}
 .epmain b{display:block;font-size:13.8px;line-height:1.35;font-weight:700;word-break:break-word}
 .epmain span{display:block;font-size:11.5px;color:var(--mut);margin-top:2px}
-.epmain span em{font-style:normal;color:var(--pink);font-weight:700}
-.epbar{display:block;height:4px;border-radius:3px;background:rgba(255,255,255,.13);margin-top:6px;overflow:hidden}
+.epmain span em{font-style:normal;color:var(--pink-t);font-weight:700}
+.epbar{display:block;height:4px;border-radius:3px;background:color-mix(in srgb,var(--ink) 13%,transparent);margin-top:6px;overflow:hidden}
 .epbar u{display:block;height:100%;background:linear-gradient(90deg,var(--pink),var(--purp));text-decoration:none}
 
 /* ===== continue listening ===== */
 .clist{display:flex;flex-direction:column;gap:8px}
-.controw{display:flex;gap:11px;align-items:center;padding:9px 10px;border:1px solid rgba(255,255,255,.13);
-  border-radius:12px 5px 12px 5px;background:rgba(23,24,38,.72);cursor:pointer;transition:border-color .12s,transform .08s}
+.controw{display:flex;gap:11px;align-items:center;padding:9px 10px;border:1px solid color-mix(in srgb,var(--ink) 13%,transparent);
+  border-radius:12px 5px 12px 5px;background:color-mix(in srgb,var(--panel) 72%,transparent);cursor:pointer;transition:border-color .12s,transform .08s}
 .controw:hover{border-color:var(--cyan);transform:translate(-1px,-1px)}
-.controw img{width:46px;height:46px;border-radius:9px 3px 9px 3px;object-fit:cover;background:#0b0c12;flex:0 0 auto}
+.controw img{width:46px;height:46px;border-radius:9px 3px 9px 3px;object-fit:cover;background:var(--bg2);flex:0 0 auto}
 .cmain{min-width:0;flex:1 1 auto}
 .cmain b{display:block;font-size:13.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cmain span{display:block;font-size:11px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cleft{flex:0 0 auto;font:800 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--cyan);white-space:nowrap}
-.cx{flex:0 0 auto;width:32px;height:32px;border-radius:9px;border:1.5px solid var(--line);background:#10111c;
+.cleft{flex:0 0 auto;font:800 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--cyan-t);white-space:nowrap}
+.cx{flex:0 0 auto;width:32px;height:32px;border-radius:9px;border:1.5px solid var(--line);background:var(--bg2);
   color:var(--mut);cursor:pointer;font-family:inherit;font-size:13px;line-height:1}
-.cx:hover{border-color:var(--pink);color:var(--pink)}
+.cx:hover{border-color:var(--pink);color:var(--pink-t)}
 
 /* ===== the player bar =====
    One audio element, fixed to the bottom, carrying what a live stream never needs: a seek
@@ -224,20 +228,20 @@ select:focus{border-color:var(--purp)}
    phone (who / controls / seek), because a seek bar squeezed to 80px is not a seek bar. */
 #pbar{position:fixed;left:0;right:0;bottom:0;z-index:80;display:flex;align-items:center;gap:11px;
   padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));
-  background:linear-gradient(180deg,rgba(24,25,40,.98),rgba(11,12,19,.99));
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
   border-top:2px solid var(--pink);box-shadow:0 -10px 34px rgba(0,0,0,.55)}
-#pbar .pb-art{width:46px;height:46px;border-radius:10px 4px 10px 4px;object-fit:cover;background:#0b0c12;flex:0 0 auto}
+#pbar .pb-art{width:46px;height:46px;border-radius:10px 4px 10px 4px;object-fit:cover;background:var(--bg2);flex:0 0 auto}
 .pb-who{min-width:0;flex:1 1 180px;display:flex;flex-direction:column;gap:1px}
 .pb-who b{font-size:13px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pb-who span{font-size:11px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pb-ctrls{display:flex;align-items:center;gap:5px;flex:0 0 auto}
-.pb-btn{min-width:38px;height:38px;border-radius:10px;border:2px solid var(--line);background:#12131f;color:var(--tx);
+.pb-btn{min-width:38px;height:38px;border-radius:10px;border:2px solid var(--line);background:var(--bg2);color:var(--tx);
   font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;padding:0 8px;display:inline-flex;
   align-items:center;justify-content:center;line-height:1}
-.pb-btn:hover{border-color:var(--cyan);color:var(--cyan)}
-.pb-btn.pb-play{width:46px;height:46px;border-radius:50%;border-color:var(--pink);color:#ff9fd2;font-size:17px;
-  background:rgba(255,62,165,.16)}
-.pb-btn.pb-play:hover{background:var(--pink);color:#1a0312}
+.pb-btn:hover{border-color:var(--cyan);color:var(--cyan-t)}
+.pb-btn.pb-play{width:46px;height:46px;border-radius:50%;border-color:var(--pink);color:var(--pink-t);font-size:17px;
+  background:color-mix(in srgb,var(--pink) 16%,transparent)}
+.pb-btn.pb-play:hover{background:var(--pink);color:var(--accent-ink)}
 .pb-seek{display:flex;align-items:center;gap:8px;flex:1 1 260px;max-width:560px;min-width:150px}
 .pb-seek span{font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--mut);min-width:38px;text-align:center}
 #pbRange{flex:1 1 auto;min-width:0;accent-color:var(--pink);height:22px;cursor:pointer}
@@ -246,26 +250,26 @@ select:focus{border-color:var(--purp)}
 #pbVol{flex:0 0 76px;max-width:76px;min-width:60px;accent-color:var(--cyan);opacity:.85;height:20px;cursor:pointer}
 #pbVol:hover{opacity:1}
 #pbRate{padding:5px 6px;font-size:12px;border-radius:9px;max-width:88px}
-#pbClose{border-color:rgba(255,255,255,.2);color:var(--mut);min-width:34px}
-#pbClose:hover{border-color:var(--pink);color:var(--pink)}
+#pbClose{border-color:color-mix(in srgb,var(--ink) 20%,transparent);color:var(--mut);min-width:34px}
+#pbClose:hover{border-color:var(--pink);color:var(--pink-t)}
 
 /* the "radio is playing in another tab" note: one line, dismissible by acting on it */
 #radioNote{display:flex;align-items:center;gap:9px;margin:8px 0 0;padding:8px 12px;font-size:12.5px;
-  border:1.5px solid var(--cyan);border-radius:10px;background:rgba(31,227,255,.1);color:#dff6ff}
-#radioNote button{margin-left:auto;background:none;border:1.5px solid rgba(31,227,255,.5);color:var(--cyan);
+  border:1.5px solid var(--cyan);border-radius:10px;background:color-mix(in srgb,var(--cyan) 10%,transparent);color:var(--ink)}
+#radioNote button{margin-left:auto;background:none;border:1.5px solid color-mix(in srgb,var(--cyan) 50%,transparent);color:var(--ink);
   border-radius:8px;padding:3px 9px;font:800 11px/1.4 inherit;cursor:pointer}
 
 /* ===== toast ===== */
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--barh,0px) + 22px);z-index:95;
-  background:#241207;border:2px solid var(--warn);color:#ffe2bd;border-radius:12px;padding:9px 16px;font-size:13px;
+  background:var(--panel2);border:2px solid var(--warn);color:var(--warn-t);border-radius:12px;padding:9px 16px;font-size:13px;
   display:none;max-width:84vw;font-weight:600;align-items:center;gap:9px;box-shadow:0 8px 26px rgba(0,0,0,.5)}
 #toast.show{display:flex}
 #toast button{background:none;border:1.5px solid currentColor;border-radius:8px;padding:2px 10px;
-  font:inherit;font-weight:800;color:var(--lime);cursor:pointer;white-space:nowrap}
+  font:inherit;font-weight:800;color:var(--lime-t);cursor:pointer;white-space:nowrap}
 
 /* ===== footer ===== */
 .attrib{margin:26px 0 0;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--mut);line-height:1.7}
-.attrib a{color:var(--cyan);text-decoration:none}
+.attrib a{color:var(--cyan-t);text-decoration:none}
 .attrib a:hover{text-decoration:underline}
 
 /* ===== phones ===== */
@@ -308,10 +312,10 @@ select:focus{border-color:var(--purp)}
 </head>
 <body>
 <noscript>
-<div style="position:fixed;inset:0;background:#101117;color:#f4f1ea;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font:16px/1.65 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;z-index:999">
+<div style="position:fixed;inset:0;background:var(--bg);color:var(--ink);display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;font:16px/1.65 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;z-index:999">
   <div style="max-width:540px">
     <div style="margin:0 0 12px;font-size:26px">🎙️ MODDYS Podcasts needs JavaScript</div>
-    <p style="margin:0;color:#9aa0b8">Episode lists are read from each show's own feed in the browser. Please enable JavaScript for this site and reload the page.</p>
+    <p style="margin:0;color:var(--mut)">Episode lists are read from each show's own feed in the browser. Please enable JavaScript for this site and reload the page.</p>
   </div>
 </div>
 </noscript>
@@ -758,11 +762,16 @@ select:focus{border-color:var(--purp)}
   function doSearch(term, push) {
     term = String(term || "").trim();
     if (term.length < 2) { toast("Type at least two characters to search."); return; }
-    S.view = "search";
+    /* A debounced search can land AFTER the reader has tapped a result: wire() starts a 650 ms
+       timer on every keystroke, and a tap inside that window used to be undone by it -
+       showView("search") hid the show that had just opened, leaving it loaded and invisible,
+       which reads as "the result did nothing". Search still runs and still stores its results;
+       it just does not take the screen from a show that is already open. */
+    var steal = S.view !== "show";
+    if (steal) S.view = "search";
     S.search = { q: term, loading: true, err: "", shows: [], local: [], apple: null,
                  cat: (S.search && S.search.cat) || "", lang: (S.search && S.search.lang) || "" };
-    showView("search");
-    renderSearch();
+    if (steal) { showView("search"); renderSearch(); }
     searchLocal(term, 60, { cat: S.search.cat, lang: S.search.lang }).then(function (res) {
       if (S.search.q !== term) return;
       S.search.local = res.ids; S.search.total = res.total;
@@ -920,12 +929,18 @@ select:focus{border-color:var(--purp)}
       var m = e.data || {};
       if (!m || m.from === "pod") return;
       if (m.type === "state") {
+        /* One stream at a time across the site: radio taking the sound pauses the episode. */
         if (m.playing) { radioPlaying = true; noteRadio(true); if (!A.paused) pauseForRadio(); }
         else { radioPlaying = false; noteRadio(false); }
+      } else if (m.type === "hello") {
+        if (P.ep && !A.paused) castState();          // a strip on another page asks what is on
       } else if (m.type === "cmd" && m.cmd === "play") {
+        if (radioPlaying) return;                    // the radio owns the sound
+        if (P.ep && A.paused) { playNow(); return; } // the strip's ▶, on this page
         radioPlaying = true; noteRadio(true); if (!A.paused) pauseForRadio();
       } else if (m.type === "cmd" && m.cmd === "stop") {
         radioPlaying = false; noteRadio(false);
+        if (P.ep && !A.paused) { try { A.pause(); } catch (err) {} }   // the strip's ■ stops it
       }
     };
   }
@@ -984,13 +999,83 @@ select:focus{border-color:var(--purp)}
   }
   function disarmStallWatch() { clearTimeout(stallTimer); }
 
+  /* --- keeping the episode alive when this page goes ---------------------------------------
+     The pop-out player is the one window that survives a navigation. On the way out we hand it
+     the episode, the show and the position, then silence this copy — one decoder, one sound.
+     A blocked window costs the hand-over, not the page. */
+  /* --- publishing what this page is playing, and carrying it across the site --------------
+     There is no pop-out window any more (owner, 2026-10-31). `state` still goes out so the strip
+     on any page can name what is playing, and `rbg-now` is the record the NEXT page reads to pick
+     the episode back up: a page cannot keep a decoder alive through a navigation, so continuity
+     is resume, not a second window. Fresh means "the visitor only changed pages" - an older
+     record is never started unprompted. */
+  function podMeta(at) {
+    if (!P.ep) return null;
+    return { i: "pod:" + (P.ep.guid || P.ep.audio || ""),
+             u: A.currentSrc || A.getAttribute("src") || P.ep.audio,
+             n: P.ep.title || "Podcast",
+             c: (P.show && P.show.title) || "",
+             x: "podcast",
+             t: at != null ? at : (A.currentTime || 0) };
+  }
+  function castState() {
+    if (!P.ep || !A.getAttribute("src")) return;
+    var m = podMeta();
+    ls.set("pod-last", m);          // this page's own record; rbg-last stays the radio's
+    if (!A.paused) ls.set("now", { x: "podcast", ts: Date.now(), M: m });
+    post({ type: "state", kind: "pod", playing: !A.paused, mine: false, vol: A.volume, M: m });
+  }
+  function clearNow() {
+    var r = ls.get("now", null);
+    if (r && r.x === "podcast") ls.set("now", null);
+  }
+  setInterval(function () { if (P.ep && !A.paused) castState(); }, 5000);   // keeps ts fresh
+  /* Boot: the page that left was playing an episode. Pick it up where it stopped. */
+  /* Carry only when the visitor ARRIVED here from another page of this site. A reload, a typed
+     address or a bookmark starts fresh - and a suite that opens the page directly must not find
+     something already playing. */
+  function arrivedFromSite() {
+    try {
+      var r = document.referrer || ""; if (!r) return false;
+      var u = new URL(r);
+      if (u.origin !== location.origin) return false;
+      return u.pathname !== location.pathname;      /* a reload of this page is not an arrival */
+    } catch (e) { return false; }
+  }
+  function carryIn() {
+    if (!arrivedFromSite()) return;     // only a hop from another site page carries
+    var r = ls.get("now", null);
+    if (!r || r.x !== "podcast" || !r.M || !r.M.u) return;
+    if (Date.now() - (r.ts || 0) > 30000) return;       // not a page switch: never start unprompted
+    var m = r.M;
+    var ep = { id: m.i || ("carry:" + m.u), title: m.n || "Podcast", audio: m.u,
+               duration: 0, artwork: "" };
+    S.queue = [ep]; S.qi = 0;
+    startEpisode(ep, { id: "", title: m.c || "", author: m.c || "", art: "", feed: "" }, +m.t || 0);
+    /* startEpisode() plays into a page load with no gesture of its own; if the browser refuses,
+       say it once and leave the player bar's ▶ as the way back (it always is). */
+    setTimeout(function () {
+      if (P.ep && A.paused) toast("Your episode is ready — press ▶ to carry on.", 9000);
+    }, 1800);
+  }
+  document.addEventListener("sc-play", function () {     // the site strip's ▶, from any page
+    if (P.ep) playNow();
+    else carryIn();
+  });
+
   function playNow() {
     /* Every sound this page makes goes through here, so this is where the radio is told to
        stand down — not only in startEpisode(): pressing ▶ to resume an episode must quiet a
        station playing in another tab just as firmly as picking a new episode does. */
     stopRadio();
     var pr = A.play();
+    /* .then(ok, fail) rather than .then().catch(): a derived promise with no rejection handler
+       reports the hand-over's AbortError as an unhandled rejection on the page. */
+    if (pr && pr.then) pr.then(castState, function () {});
     if (pr && pr.catch) pr.catch(function (e) {
+      /* The mini player claiming the episode pauses this element, and that pause aborts the
+         pending play() with AbortError. Not a failure: the sound moved to the player window. */
+      if (e && e.name === "AbortError") return;
       /* Kept for the suites: the radio page's debug API has lastErr() for the same reason. */
       window.__playErr = (e && (e.name + ": " + e.message)) || String(e);
       if (e && e.name === "NotAllowedError") {
@@ -1125,16 +1210,20 @@ select:focus{border-color:var(--purp)}
   });
   A.addEventListener("play", function () {
     paintBar(); paintEpRows();
+    castState();
     if ("mediaSession" in navigator) { try { navigator.mediaSession.playbackState = "playing"; } catch (e) {} }
   });
   A.addEventListener("pause", function () {
     paintBar(); paintEpRows(); savePos();
+    castState();
+    clearNow();                          // a pause means "do not carry this to the next page"
     if ("mediaSession" in navigator) { try { navigator.mediaSession.playbackState = "paused"; } catch (e) {} }
   });
   A.addEventListener("ended", function () {
     savePos();
     paintEpRows();
     renderContinue();
+    castState();
     nextEp(true);
   });
   A.addEventListener("error", function () {
@@ -1193,7 +1282,7 @@ select:focus{border-color:var(--purp)}
     if (PINDEX_WANT) return PINDEX_WANT;
     PINDEX_WANT = new Promise(function (resolve, reject) {
       var sc = document.createElement("script");
-      sc.src = "pod-index.js?v=20261030a";
+      sc.src = "pod-index.js?v=2026110104";
       sc.onload = function () {
         if (!window.POD_INDEX || !window.POD_INDEX.shelves) { reject(new Error("pod-index.js has no shelves")); return; }
         PINDEX = window.POD_INDEX;
@@ -1219,7 +1308,7 @@ select:focus{border-color:var(--purp)}
     if (SHELF_PENDING[id]) return SHELF_PENDING[id];
     SHELF_PENDING[id] = new Promise(function (resolve, reject) {
       var sc = document.createElement("script");
-      sc.src = "pod-i/" + (shelf.file || id.replace(":", "-") + ".js") + "?v=20261030b";
+      sc.src = "pod-i/" + (shelf.file || id.replace(":", "-") + ".js") + "?v=2026110104";
       sc.onload = function () {
         delete SHELF_PENDING[id];
         var rows = (window.POD_SHELF || {})[id];
@@ -1298,7 +1387,11 @@ select:focus{border-color:var(--purp)}
   }
 
   /* A show opened by feed URL: no Apple record, no lookup — the RSS itself is the record. */
-  function openShowFeed(feed, title, artUrl, push) {
+  /* `cat` is the category this show was filed under in the directory, carried on the shelf row
+     ([title, feed, art, cat, lang, count]). It is what "More in this category" filters on, and
+     it is free - the row already had it. Apple-opened shows have no row, so they fall back to
+     the genre name the chart gives (see showCategory()). */
+  function openShowFeed(feed, title, artUrl, push, cat) {
     feed = String(feed || "");
     if (!feed) return;
     var id = "feed:" + feed;
@@ -1306,7 +1399,7 @@ select:focus{border-color:var(--purp)}
     S.show = {
       id: id, loading: true, err: "",
       meta: { id: id, title: title || "", author: "", art: art(artUrl, 600), artOrig: artUrl || "",
-              genre: "", feed: feed, desc: "", count: 0 },
+              genre: "", cat: String(cat || ""), feed: feed, desc: "", count: 0 },
       data: null
     };
     showView("show");
@@ -1427,8 +1520,12 @@ select:focus{border-color:var(--purp)}
       '<div class="sechead"><h2>Episodes</h2><span>newest first · tap to play</span></div>' +
       '<div class="eplist" id="epList">' +
         (eps.length ? eps.map(epRowHTML).join("") : '<div class="note">This feed lists no playable episodes.</div>') +
-      '</div>';
+      '</div>' +
+      '<div class="sechead moresec" id="moreSec" hidden><h2 id="moreHead">More like this</h2>' +
+        '<span id="moreNote"></span></div>' +
+      '<div class="grid" id="moreList"></div>';
     v.innerHTML = html;
+    renderMore();
   }
 
   function epRowHTML(e, i) {
@@ -1496,6 +1593,11 @@ select:focus{border-color:var(--purp)}
       localStorage.setItem("rbg-pod-stats", JSON.stringify(st));
     } catch (e) { /* private mode: measuring is not worth a broken search */ }
   }
+  /* The counters stay on the device, by decision (MODDY, 2026-10-30). searches / hits / zero /
+     opens live in localStorage and are read by window.__podStats() for a probe; nothing is
+     flushed to the Worker or anywhere else. The page and both store listings promise "no
+     analytics, nothing collected", and a beacon would make that sentence false for a number
+     nobody needs. Do not "just add" one later. */
   window.__podStats = function () {
     try { return JSON.parse(localStorage.getItem("rbg-pod-stats") || "{}"); } catch (e) { return {}; }
   };
@@ -1527,7 +1629,7 @@ select:focus{border-color:var(--purp)}
     if (SI.want) return SI.want;
     SI.want = new Promise(function (res, rej) {
       var sc = document.createElement("script");
-      sc.src = "pod-search.js?v=20261030a";
+      sc.src = "pod-search.js?v=2026110104";
       sc.onload = function () {
         if (!window.POD_SEARCH || !window.POD_SEARCH.recs) { rej(new Error("pod-search.js is empty")); return; }
         SI.data = window.POD_SEARCH;
@@ -1630,6 +1732,56 @@ select:focus{border-color:var(--purp)}
       '<span>' + esc(meta) + '</span></button>';
   }
 
+  /* ---- More in this category -------------------------------------------------------------
+     The corpus already carries every show's category, episode count and popularity, so this is
+     a filter and a sort - no new data and no new request. Each card is a corpus pointer (shelf +
+     row), exactly like a search result, so tapping one opens that show through openIndexRow and
+     nothing (feed, artwork) has to be fetched to paint the list. */
+  function showCategory() {
+    var meta = (S.show && S.show.meta) || {};
+    if (meta.cat) return String(meta.cat).toLowerCase();
+    var g = genreName(meta.genre || "");
+    return g ? g.toLowerCase() : "";
+  }
+
+  function moreRow(rec) {
+    var d = SI.data;
+    var meta = [titleCase(d.cats[rec[3]]), langName(d.langs[rec[4]]), (rec[5] || 0) + " episodes"]
+      .filter(Boolean).join(" · ");
+    return '<button class="sres" type="button" data-act="openrow"' +
+      ' data-shelf="' + esc(d.shelves[rec[1]]) + '" data-row="' + rec[2] + '"' +
+      ' data-cat="' + esc(d.cats[rec[3]] || "") + '"><b>' + esc(rec[0]) + '</b>' +
+      '<span>' + esc(meta) + '</span></button>';
+  }
+
+  function renderMore() {
+    var sec = $("moreSec"), list = $("moreList"), head = $("moreHead"), note = $("moreNote");
+    if (!sec || !list) return;
+    var cat = showCategory();
+    if (!cat || SI_STALE) { sec.hidden = true; list.innerHTML = ""; return; }
+    var here = String(((S.show.data && S.show.data.show && S.show.data.show.title) ||
+                       (S.show.meta && S.show.meta.title) || "")).toLowerCase();
+    loadSearchIndex().then(function (d) {
+      if (S.view !== "show") return;                  /* a later tap moved on */
+      var hits = [], i;
+      for (i = 0; i < d.recs.length; i++) {
+        var r = d.recs[i];
+        if (d.cats[r[3]] !== cat) continue;
+        if (String(r[0]).toLowerCase() === here) continue;   /* that is the show above */
+        hits.push(r);
+      }
+      /* popularity first, then episode count: episodeCount is capped at 1000 in the source, so
+         it cannot separate a giant from a namesake on its own (same reason the ranking uses it) */
+      hits.sort(function (a, b) { return (b[6] || 0) - (a[6] || 0) || (b[5] || 0) - (a[5] || 0); });
+      var take = hits.slice(0, 12);
+      if (!take.length) { sec.hidden = true; list.innerHTML = ""; return; }
+      sec.hidden = false;
+      head.textContent = "More in " + titleCase(cat);
+      note.textContent = hits.length.toLocaleString() + " shows · most popular first";
+      list.innerHTML = take.map(moreRow).join("");
+    }).catch(function () { sec.hidden = true; list.innerHTML = ""; });
+  }
+
   /* a search result knows its shelf and its row there; the shelf file carries the feed + art */
   function openIndexRow(shelfFile, ri) {
     if (!PINDEX) {
@@ -1645,7 +1797,7 @@ select:focus{border-color:var(--purp)}
     loadShelf(sh).then(function (rows) {
       var r = rows[ri];
       window.__lastRow = r || null;          /* probe hook: what the row pointer resolved to */
-      if (r) openShowFeed(r[1], r[0], r[2], true);
+      if (r) openShowFeed(r[1], r[0], r[2], true, r[3]);
       else toast("That row moved when the index was rebuilt.");
     }).catch(function (e) { toast(msgOf(e)); });
   }
@@ -1698,7 +1850,7 @@ select:focus{border-color:var(--purp)}
       var recents = recentSearches();
       var cats = (PINDEX && PINDEX.shelves ? PINDEX.shelves.filter(function (x) { return x.kind === "cat"; })
         .slice().sort(function (a, b) { return (b.n || 0) - (a.n || 0); }) : []).slice(0, 10);
-      var eh = '<div class="sres-sep">Search ' + (SI.data ? SI.data.n.toLocaleString() : "58,000") + ' shows</div>';
+      var eh = '<div class="sres-sep">Search ' + (SI.data ? SI.data.n.toLocaleString() : "58,795") + ' shows</div>';
       if (recents.length) {
         eh += '<div class="sres-rec">' + recents.map(function (t) {
           return '<button class="gchip" type="button" data-act="research" data-q="' + esc(t) + '">' + esc(t) + '</button>';
@@ -2140,6 +2292,7 @@ select:focus{border-color:var(--purp)}
     renderContinue();
     route();               // deep link first (podcasts.html?show=… / ?q=…)
     loadTop();             // the browse shelf is always worth loading
+    carryIn();             // an episode was playing when the last page left: pick it back up
     post({ type: "hello" });   // "any radio playing?" - the owner answers with its state
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

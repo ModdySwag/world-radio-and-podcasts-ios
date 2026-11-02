@@ -1,37 +1,58 @@
-# MODDYS World Radio & Podcasts for iOS v2.0.0
+# MODDYS World Radio & Podcasts for iOS v2.1.0
 
-The app stops being a pure radio. The podcast directory now lives inside it - 58,795 shows to
-browse, 54,539 of them searchable by typing, ranked on the phone rather than by a server - so the
-one door the header keeps is a door that opens something.
+The radio page stopped drawing two bars. On the web its controls now move into the site's
+bottom strip, which is the one player there; inside the app there is no strip at all, so the
+shell's sheet is the player and the page hands it the same controls it always owned. The
+bundled page is today's - and it finally carries its own palette.
 
 ## What changed
 
-**The podcast directory ships in the app.** `podcasts.html`, the shelf manifest, the search corpus
-and the 81 shelf files ride in `Resources/www`. Browsing needs no network; only a show's feed, its
-charts and its artwork go online.
+**One player, and the app keeps the one it had.** `radio.html` now hands `#bPlay`, `#bStop`,
+the volume, the visualiser, Website and Random to the site strip at load (`adoptStrip`), and
+stops drawing the second bar it used to stack underneath it. A bundle ships no site chrome, so
+the sync script cuts the strip's `<link>` and `<script>` out of every bundled page: inside the
+app nothing tries to draw the site's navigation under the player sheet, and the page keeps its
+own bar, hidden, as the control plane the sheet drives. The page was written for exactly this -
+no strip, no adoption, its bar as it was.
 
-**One door in the header.** Inside the app the site doors were hidden outright, because they led
-to pages the app does not carry. Now exactly one survives - the podcast directory - and it opens.
-The Radio link at the top of the directory brings you back.
+**The page keeps its colours in the app.** The site links `/theme-tokens.css`, an absolute path
+that does not resolve inside the bundle - the page would have painted with no palette at all.
+`theme-tokens.css` ships in `Resources/www` now and the link is relative, on every bundled page:
+the radio, the World View and the podcast directory.
 
-**Under the icon the name is shorter.** "MODDYS World Radio & Podcasts" is 29 characters and iOS
-ellipsises that under an icon. The icon says **Radio & Podcasts**; the store listing carries the
-full name.
+**The idle player says what it means.** The MINI pop-out is retired, so the bar reads
+**Nothing playing** until a station is chosen. The sheet and the Now Playing card take their
+wording from it, and the shell sends an empty station name to the lock screen rather than the
+words. The meta line under the name now skips the fields a station does not have, instead of
+printing a bare "· ·".
 
-**The bundled web app is today's**, byte for byte - the newer globe, the World View labels and
-the current 71,577-station catalogue, which the bundle had been two weeks behind on.
+**Auto-hide is the strip's switch**, not the app's: it folds the *site's* bar into a tab, and
+there is no strip in here. The shell takes it off the screen rather than leave a switch that
+promises something it cannot do.
+
+**A drift check that fails.** `tools/sync-assets.py --check` now applies those two steps to the
+site's bytes and compares every file - 17 of them - exiting non-zero if the bundle is behind.
+"Current" is a command now, not a memory.
+
+**The bundled web app is today's** - the single-player page, the 71,577-station catalogue, the
+newer globe and the podcast directory - with only those two app-only differences.
 
 ## Verified
 
-- `scripts/verify_bundle.py` reads the published `.app` - the simulator build and the device
-  archive: **64 checks, 0 failed** each, including that all 81 shelf files are in the bundle and
-  that the page files are byte-identical to the repo copies
-- `tools/shim_harness.py` over the iOS bridge: **80 checks, 0 failed** - the same harness file the
-  Android app runs, including the two new checks that pin `podcasts.html` and `radio.html` as
-  in-app pages
-- the shared shell is pinned to the same revision Android ships (`SHIM.sha256`)
-- the site's page suite against this page: **277 checks, 0 failed**
-- the site's podcast suite: **80 checks, 0 failed**
+- `python3 tools/sync-assets.py --check`: **17 files, all match the site's bytes**; every
+  bundled page carries no site strip and links its palette relatively; `index.html` and
+  `radio.html` are identical
+- `python3 scripts/verify_bundle.py --repo` checks the payload this host can reach without
+  Xcode - Info.plist and the build settings it defers to, every shipped file, the page contract
+  and the shim revision: **41 checks, 0 failed**
+- `python3 tools/shim_harness.py` drives the real shell in a real browser on the iOS bridge
+  (and the Android one, same file) against the bundled page: **84 checks, 0 failed** - including
+  two new ones pinning that the idle player reads "Nothing playing" and that nothing on screen
+  still says MINI
+- the same files pulled from `https://moddys.net` with `--from-url` are identical to the local
+  sync, byte for byte - so the CI path and the local path agree
+- screenshots at 412×915 over `file://`, sheet collapsed and expanded: painted in the real
+  palette, "Nothing playing", the transport and the nine nav buttons where they belong
 
 ## Install
 

@@ -22,17 +22,48 @@ window.Viz = (function () {
 
   var STYLES = ["bars", "waves", "mirror", "dots", "blocks"];
 
+  /* The canvas follows the page's position. Tokens are read once per position and
+     cached, so switching the theme repaints in the new palette with no reload. A
+     token may be a color-mix(), which canvas does not parse reliably - it is
+     resolved through a throwaway element's computed colour first. */
+  var _tkey = null, _tc = {}, _probe = null;
+
+  function resolveColour(v) {
+    try {
+      if (!_probe) {
+        _probe = document.createElement("span");
+        _probe.style.cssText = "position:absolute;left:-9999px;top:0;width:0;height:0";
+        (document.body || document.documentElement).appendChild(_probe);
+      }
+      _probe.style.color = "";
+      _probe.style.color = v;
+      var out = getComputedStyle(_probe).color;
+      return out && out !== "rgba(0, 0, 0, 0)" ? out : v;
+    } catch (e) { return v; }
+  }
+
+  function tok(name, fallback) {
+    try {
+      var key = document.documentElement.getAttribute("data-theme") || "";
+      if (key !== _tkey) { _tkey = key; _tc = {}; }
+      if (_tc[name]) return _tc[name];
+      var raw = getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+      _tc[name] = resolveColour(raw);
+      return _tc[name];
+    } catch (e) { return fallback; }
+  }
+
   function draw(ctx, W, H, levels, style) {
     ctx.clearRect(0, 0, W, H);
     var n = levels.length, bw = W / n;
 
     /* one gradient for every style: the site's pink-to-cyan spray, bottom to top */
     var grad = ctx.createLinearGradient(0, H, 0, 0);
-    grad.addColorStop(0, "#ff3ea5");
-    grad.addColorStop(.35, "#ff9f1c");
-    grad.addColorStop(.6, "#ffe14d");
-    grad.addColorStop(.82, "#c9ff3d");
-    grad.addColorStop(1, "#1fe3ff");
+    grad.addColorStop(0, tok("--pink", "#ff3ea5"));
+    grad.addColorStop(.35, tok("--orange", "#ff9f1c"));
+    grad.addColorStop(.6, tok("--yel", "#ffe14d"));
+    grad.addColorStop(.82, tok("--lime", "#c9ff3d"));
+    grad.addColorStop(1, tok("--cyan", "#1fe3ff"));
     ctx.fillStyle = grad;
     ctx.strokeStyle = grad;
 
@@ -45,7 +76,7 @@ window.Viz = (function () {
       }
     } else if (style === 1) {                /* waves - a line and its reflection */
       ctx.lineWidth = Math.max(1.5, W * 0.004);
-      ctx.shadowColor = "#1fe3ff";
+      ctx.shadowColor = tok("--cyan", "#1fe3ff");
       ctx.shadowBlur = 9;
       ctx.beginPath();
       for (i = 0; i < n; i++) {

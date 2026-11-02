@@ -149,6 +149,20 @@ def run_platform(page, name, global_name, setup, device, headed):
     sheet = page.evaluate("!!document.getElementById('wrSheet')")
     check("%s: player sheet built" % name, sheet is True)
 
+    # The idle label. The owner retired the MINI pop-out identity: the page says "Nothing
+    # playing" until a station is chosen, and the sheet mirrors the page rather than its own
+    # wording - so the words the user reads come from the page, not from this shell.
+    idle = page.evaluate("""() => ({
+        name: (document.getElementById('wrName') || {}).textContent || '',
+        big: (document.getElementById('wrBigName') || {}).textContent || '',
+        page: (document.getElementById('bName') || {}).textContent || ''
+    })""")
+    check("%s: the idle player reads 'Nothing playing'" % name,
+          idle["name"].strip() == "Nothing playing" and idle["big"].strip() == "Nothing playing",
+          idle)
+    check("%s: and nothing on screen still says MINI" % name,
+          "MINI" not in (idle["name"] + idle["big"] + idle["page"]), idle)
+
     check("%s: marks the page as running inside the app" % name,
           page.evaluate("document.documentElement.classList.contains('wr-app')") is True)
 

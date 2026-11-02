@@ -70,11 +70,10 @@ WebView can decode it, so the Playable count on an iPhone is higher than on most
 
 ## The podcast directory
 
-`podcasts.html` is the site's own page, byte-identical, served from the app bundle: shelves by
-genre, top charts by country, search over 54,539 shows, and a **Following** shelf that keeps
-your place in an episode. The bundled index is what makes it work on a plane — browsing and
-search never touch the network. Charts, artwork and episode audio do: those are the show's
-own feed.
+`podcasts.html` is the site's own page, served from the app bundle: shelves by genre, top
+charts by country, search over 54,539 shows, and a **Following** shelf that keeps your place in
+an episode. The bundled index is what makes it work on a plane — browsing and search never touch
+the network. Charts, artwork and episode audio do: those are the show's own feed.
 
 Inside the app the site's other doors are hidden, because they lead to pages the app does not
 carry. The podcast directory is the one that stays, and the **Radio** link at the top of it
@@ -103,6 +102,17 @@ xcodebuild -project MODDYSWorldRadio.xcodeproj -scheme MODDYSWorldRadio \
 There is no `.pbxproj` to review: the project is generated from `project.yml`, which is a page
 you can actually read. CI regenerates it and commits it back, so the checkout is openable in
 Xcode without running anything first.
+
+### Refreshing the bundled web app
+
+`Resources/www` is a copy of the site, taken with `python3 tools/sync-assets.py`
+(`--from-url` pulls whatever is live; `--check` compares the copy with the site and exits
+non-zero on drift). Two things are deliberately not copied verbatim, because a bundle is not
+the site: the site's bottom strip (`site-chrome.css` / `site-chrome.js`) is cut out of every
+bundled page — inside the app the shell's sheet is the player, and a strip drawn underneath it
+is the site's navigation, not the app's — and `/theme-tokens.css` (an absolute site path, so a
+404 under `file://`) ships beside the pages and is linked relatively. Both steps live in the
+sync script, so they happen on every refresh.
 
 ## Getting it onto a device — read this part
 
@@ -141,7 +151,7 @@ Two more honest notes about the App Store route:
 | `Sources/Compatibility.swift` | reads `compat.json`, decides the verdict, shows the one-time notice |
 | `Sources/AppDelegate.swift` | one window, no storyboard, no scene manifest |
 | `Resources/www/_shell_shim.js` | the shared front end: player sheet, theme, visualiser, Check panel, bridge adapter |
-| `Resources/www/podcasts.html`, `pod-index.js`, `pod-search.js`, `pod-i/` | the podcast directory and its offline index — the site's own files, byte-identical |
+| `Resources/www/podcasts.html`, `pod-index.js`, `pod-search.js`, `pod-i/` | the podcast directory and its offline index — the site's own files (the page without the site strip, see the sync note) |
 | `Resources/www/compat.json` | the version thresholds, in one place |
 | `Resources/Info.plist` | `MinimumOSVersion`, background audio, ATS, orientation, both device families |
 | `tools/shim_harness.py` | drives that shell in a real browser, on the iOS bridge path too |
@@ -178,7 +188,10 @@ were wrong: bundle identity, `MinimumOSVersion` against `compat.json`, `UIBackgr
 the ATS declaration, both device families, that `index.html`/`stations.js`/`countries.js` are
 **byte-identical** to the repo copies, that the shim is the recorded shared revision, and that
 the compiled binary actually contains the bridge and the notice strings. CI runs it on both
-the simulator build and the device archive, and keeps the reports as artifacts.
+the simulator build and the device archive, and keeps the reports as artifacts. Without Xcode,
+`python3 scripts/verify_bundle.py --repo` checks the half that is reachable from the checkout:
+the Info.plist values (and the build settings they defer to), every shipped file, and the page
+contract — no site strip, a relative palette link, `index.html` identical to `radio.html`.
 
 The shell itself is verified separately: `tools/shim_harness.py` drives the real page with the
 real shim in headless Chromium on three paths — the Android bridge, the iOS message-handler

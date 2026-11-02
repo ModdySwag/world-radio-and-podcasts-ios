@@ -1043,59 +1043,6 @@
   $("#tStop").addEventListener("click", function () { WR.play.requestStop(); });
   $("#tVol").addEventListener("input", function (e) { WR.play.setVol(+e.target.value); });
 
-  /* ---- the pop-out mini player (S3c): the window index.html opens, so the music truly rides
-     between the two pages. A real pop-up window on a desktop; on a mobile browser the same
-     click opens a tab (popout.html holds itself to a centred column there). The World View has
-     no page chrome to give up, so there is no dock here - just the window - and the normal
-     owner relay carries the stream out and back. ---- */
-  var winPop = null;
-  var popAliveFresh = function () { return (Date.now() - (WR.ls.get("pop-alive", 0) || 0)) < 5000; };
-  var popOutOpen = function () { return !!((winPop && !winPop.closed) || popAliveFresh()); };
-  function mobileBrowser() {
-    var ua = navigator.userAgent || "";
-    if (/Android|iPhone|iPad|iPod|Mobile/i.test(ua)) return true;
-    if (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1) return true;   // iPadOS reports itself as a Mac
-    try { if (window.matchMedia && window.matchMedia("(hover:none) and (pointer:coarse)").matches) return true; } catch (e) {}
-    return false;
-  }
-  function popSync() {
-    var b = $("#tPop"); if (!b) return;
-    var open = popOutOpen();
-    b.classList.toggle("on", open);
-    b.setAttribute("aria-pressed", String(open));
-    b.title = open ? "Hide the mini player — playback continues here"
-                   : "Pop out the mini player — it keeps playing while you explore the globe";
-  }
-  function popupBlockedNotice() {
-    notice("🚫 <b>Your browser blocked the pop-up</b>, so the mini player could not open. Click your browser's <b>“pop-ups blocked”</b> icon in the address bar, choose <b>always allow pop-ups for this site</b>, then press the pop-out button again.", "warn");
-  }
-  function togglePopOut() {
-    if (winPop && !winPop.closed) { try { winPop.close(); } catch (e) {} winPop = null; popSync();
-      toast("Mini player hidden — playback continues on this page."); return; }
-    if (popAliveFresh()) { WR.chan.post({ type: "pop-hide" });     // it lives in another tab: ask it to close itself
-      popSync(); toast("Mini player hidden — playback continues on this page."); return; }
-    var w = null;
-    try {
-      w = mobileBrowser()
-        ? window.open("popout.html", "rbgPop")
-        : window.open("popout.html", "rbgPop", "popup=1,width=330,height=250,left=" + Math.max(0, (screen.availWidth - 340)) + ",top=" + Math.max(0, (screen.availHeight - 300)) + ",resizable=yes,scrollbars=no");
-    } catch (e) { w = null; }
-    if (w) {
-      winPop = w;
-      /* it opens small and out of the way: this page keeps the focus, the player expands on click */
-      var keepFocus = function () { try { window.focus(); } catch (e) {} };
-      setTimeout(keepFocus, 120); setTimeout(keepFocus, 800);
-      /* some blockers let the window open and then close it again - treat that as blocked too */
-      setTimeout(function () { if (winPop && winPop.closed) { winPop = null; popSync(); popupBlockedNotice(); } }, 1100);
-      toast("Mini player opened minimised — click it to expand.");
-      popSync();
-    } else popupBlockedNotice();
-  }
-  if ($("#tPop")) $("#tPop").addEventListener("click", togglePopOut);
-  window.addEventListener("message", function (e) { if (e.data === "rbg-pop-closed") { winPop = null; popSync(); } });
-  setInterval(popSync, 1000);
-  popSync();
-
   /* ============================== the chrome ============================== */
   /* the zoom buttons: click = a firm step, press-and-hold = keep zooming (the gesture a
      person expects from a map control; a plain tap still steps exactly once) */

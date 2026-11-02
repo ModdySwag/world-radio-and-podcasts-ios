@@ -1,4 +1,4 @@
-/* MODDYS World Radio - the app install helper.
+/* MODDYS World Radio & Podcasts - the app install helper.
  *
  * One file, used twice: by the small "Get the app" block in the site header, and by the
  * full downloads page. Both need the same three things, and none of them should ever
@@ -22,20 +22,20 @@ window.WrInstall = (function () {
     android: {
       hard: 8.0, hardLabel: "Android 8.0",
       soft: 11.0, softLabel: "Android 11",
-      version: "1.9.0",
+      version: "2.0.0",
       /* Upload the APK to /downloads/ and this is the one people get. */
-      file: "downloads/world-radio-v1.9.0.apk",
+      file: "downloads/world-radio-and-podcasts-v2.0.0.apk",
       /* Always-available fallback: the same file, from the GitHub release. */
-      mirror: "https://github.com/ModdySwag/world-radio-android/releases/latest"
+      mirror: "https://github.com/ModdySwag/world-radio-and-podcasts-android/releases/latest"
     },
     ios: {
       hard: 15.0, hardLabel: "iOS 15",
       soft: 18.0, softLabel: "iOS 18",
-      version: "1.3.0",
+      version: "2.0.0",
       /* The .ipa is UNSIGNED - that is expected: iOS will not install it until a signing
          tool (Sideloadly, Feather, ESign...) signs it with an Apple ID. */
-      file: "downloads/MODDYSWorldRadio-v1.3.0-unsigned.ipa",
-      mirror: "https://github.com/ModdySwag/world-radio-ios/releases/latest",
+      file: "downloads/MODDYSWorldRadioAndPodcasts-v2.0.0-unsigned.ipa",
+      mirror: "https://github.com/ModdySwag/world-radio-and-podcasts-ios/releases/latest",
       /* Set this the day it is on the App Store and the page changes by itself. */
       store: ""
     },

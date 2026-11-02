@@ -80,27 +80,18 @@ def find_resource(app, name):
     return None
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("app", help="path to the built .app bundle")
-    ap.add_argument("--json", default=None, help="write the result as JSON here")
-    args = ap.parse_args()
+def check_plist(info, built=True):
+    """The Info.plist contract, whether it is read out of a built .app or out of the repo.
 
-    app = args.app
-    print("app bundle: " + app)
-    check("the .app exists", os.path.isdir(app), app)
-    if not os.path.isdir(app):
-        return 1
-
-    # ---------------------------------------------------------------- Info.plist
-    plist_path = os.path.join(app, "Info.plist")
-    check("Info.plist is present", os.path.isfile(plist_path))
-    with open(plist_path, "rb") as handle:
-        info = plistlib.load(handle)
-
+    A built plist carries resolved values. The repo's copy defers three of them to build
+    settings ($(PRODUCT_BUNDLE_IDENTIFIER), $(IPHONEOS_DEPLOYMENT_TARGET),
+    $(TARGETED_DEVICE_FAMILY)), so in the repo the deferral is what can be checked - and
+    verify_repo() then checks that project.yml resolves it to the value asserted here.
+    """
+    ident = info.get("CFBundleIdentifier")
     check("bundle id is the release id",
-          info.get("CFBundleIdentifier") == "com.moddys.worldradio",
-          info.get("CFBundleIdentifier"))
+          ident == "com.moddys.worldradio" or (not built and ident == "$(PRODUCT_BUNDLE_IDENTIFIER)"),
+          ident)
     check("display name",
           info.get("CFBundleDisplayName") == "Radio & Podcasts",
           info.get("CFBundleDisplayName"))
@@ -111,9 +102,13 @@ def main():
     wanted = str(spec["os"]["hard"]["os"])
     found = str(info.get("MinimumOSVersion", ""))
     check("MinimumOSVersion matches compat.json's hard floor (%s)" % wanted,
-          found == wanted, found)
+          found == wanted or (not built and found == "$(IPHONEOS_DEPLOYMENT_TARGET)"), found)
+    family = info.get("UIDeviceFamily")
+    # The repo's plist omits this key entirely: Xcode fills it from TARGETED_DEVICE_FAMILY
+    # while it processes the plist, and verify_repo() checks that setting.
     check("UIDeviceFamily is iPhone + iPad",
-          sorted(info.get("UIDeviceFamily", [])) == [1, 2], info.get("UIDeviceFamily"))
+          (sorted(family) == [1, 2]) if isinstance(family, list)
+          else (not built and family is None), family)
     check("background audio is declared",
           "audio" in (info.get("UIBackgroundModes") or []), info.get("UIBackgroundModes"))
 
@@ -124,6 +119,108 @@ def main():
           not ats.get("NSExceptionDomains"), ats.get("NSExceptionDomains"))
     check("the bundled page's loopback origin is allowed",
           ats.get("NSAllowsLocalNetworking") is True, ats)
+
+
+def verify_repo():
+    """Check the payload that goes INTO the .app, from the repo.
+
+    A Windows host cannot build an iOS app, so this is the half of the gate that is reachable
+    without a Mac: the Info.plist values, and the web payload exactly as XcodeGen copies it.
+    The page contract is checked here too - a bundle must carry no site strip and must link
+    its palette relatively, or the app opens a page with no colours over file://.
+    Pass a path to a built .app on a Mac for the other half (the installed copy and the
+    compiled binary's markers).
+    """
+    print("app bundle: (repo payload) " + WWW)
+    plist_path = os.path.join(PROJECT, "Resources", "Info.plist")
+    check("Info.plist is present", os.path.isfile(plist_path), plist_path)
+    if not os.path.isfile(plist_path):
+        return 1
+    with open(plist_path, "rb") as handle:
+        info = plistlib.load(handle)
+    check_plist(info, built=False)
+
+    # The three deferred values, resolved where XcodeGen reads them.
+    with open(os.path.join(PROJECT, "project.yml"), encoding="utf-8") as handle:
+        yml = handle.read()
+    with open(os.path.join(WWW, "compat.json"), encoding="utf-8") as handle:
+        spec = json.load(handle)
+    check("project.yml sets the release bundle id",
+          "PRODUCT_BUNDLE_IDENTIFIER: com.moddys.worldradio" in yml)
+    check("project.yml sets the deployment floor compat.json wants (%s)" % spec["os"]["hard"]["os"],
+          'IPHONEOS_DEPLOYMENT_TARGET: "%s"' % spec["os"]["hard"]["os"] in yml)
+    check("project.yml targets iPhone + iPad", 'TARGETED_DEVICE_FAMILY: "1,2"' in yml)
+
+    print("\n  the web payload:")
+    for name in SITE_FILES + SHARED_FILES:
+        path = os.path.join(WWW, name)
+        check("ships %s" % name, os.path.isfile(path) and os.path.getsize(path) > 0, path)
+    check("ships theme-tokens.css (the page's palette)", os.path.isfile(os.path.join(WWW, "theme-tokens.css")))
+
+    index = os.path.join(WWW, "index.html")
+    radio = os.path.join(WWW, "radio.html")
+    if os.path.isfile(index) and os.path.isfile(radio):
+        check("index.html (what the shell opens) is radio.html, byte for byte",
+              sha256(index) == sha256(radio),
+              "%s vs %s" % (sha256(index)[:16], sha256(radio)[:16]))
+
+    for name in ["index.html", "radio.html", "world.html", "podcasts.html"]:
+        path = os.path.join(WWW, name)
+        if not os.path.isfile(path):
+            continue
+        html = open(path, encoding="utf-8", errors="replace").read()
+        check("%s carries no site strip" % name,
+              'href="/site-chrome.css' not in html and 'src="/site-chrome.js' not in html)
+        check("%s links the palette relatively" % name,
+              'href="theme-tokens.css' in html)
+
+    shim = os.path.join(WWW, "_shell_shim.js")
+    if os.path.isfile(shim):
+        note = open(os.path.join(PROJECT, "SHIM.sha256"), encoding="utf-8").read().split()[0]
+        check("the shim in the repo is the recorded shared-shell revision",
+              sha256(shim) == note, "%s vs %s" % (sha256(shim)[:16], note[:16]))
+
+    with open(os.path.join(WWW, "compat.json"), encoding="utf-8") as handle:
+        spec = json.load(handle)
+    check("compat.json says ios", spec.get("platform") == "ios", spec.get("platform"))
+    check("compat.json still blocks installs below the hard floor",
+          spec.get("os", {}).get("hardBlocksInstall") is True)
+
+    print("\n%d checks, %d failed" % (checks, len(failures)))
+    for failure in failures:
+        print("  FAILED: " + failure)
+    return 1 if failures else 0
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("app", nargs="?", help="path to the built .app bundle (omit with --repo)")
+    ap.add_argument("--repo", action="store_true",
+                    help="check the repo payload (Info.plist + Resources/www) instead of a built .app")
+    ap.add_argument("--json", default=None, help="write the result as JSON here")
+    args = ap.parse_args()
+
+    if args.repo:
+        return verify_repo()
+    if not args.app:
+        print("Pass the path to a built .app, or --repo to check the payload in this checkout.",
+              file=sys.stderr)
+        return 2
+
+    app = args.app
+    print("app bundle: " + app)
+    check("the .app exists", os.path.isdir(app), app)
+    if not os.path.isdir(app):
+        return 1
+
+    # ---------------------------------------------------------------- Info.plist
+    plist_path = os.path.join(app, "Info.plist")
+    check("Info.plist is present", os.path.isfile(plist_path))
+    if not os.path.isfile(plist_path):
+        return 1
+    with open(plist_path, "rb") as handle:
+        info = plistlib.load(handle)
+    check_plist(info)
 
     # ---------------------------------------------------------------- the web app
     for name in SITE_FILES + SHARED_FILES:

@@ -14,8 +14,8 @@ options:
 
 settings:
   base:
-    MARKETING_VERSION: "2.0.0"
-    CURRENT_PROJECT_VERSION: "15"
+    MARKETING_VERSION: "2.1.0"
+    CURRENT_PROJECT_VERSION: "16"
     SWIFT_VERSION: "5.0"
     # iPhone and iPad, one binary. The web app is responsive and the shell's sheet is
     # height-relative, so this is a config flag rather than a second UI.

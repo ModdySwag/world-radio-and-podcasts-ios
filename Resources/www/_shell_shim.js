@@ -55,6 +55,13 @@
   var doc = document;
   var $ = function (sel) { return doc.querySelector(sel); };
 
+  /* The page's idle label. It used to read MINI - the pop-out's identity, which the owner
+     retired; the page now says "Nothing playing", and an older bundled page still says
+     "Pick a station". Both mean the same thing to the shell: no station, so there is nothing
+     to name on the lock screen. */
+  var IDLE_NAME = "Nothing playing";
+  var IDLE_NAMES = { "Nothing playing": 1, "Pick a station": 1 };
+
   function report(msg) {
     native("log", [String(msg)]);
   }
@@ -96,7 +103,7 @@
   function pushNowPlaying() {
     var nameNode = $("#bName"), metaNode = $("#bMeta"), artNode = $("#bArt");
     var name = nameNode ? (nameNode.textContent || "").trim() : "";
-    if (name === "Pick a station") name = "";               // nothing chosen yet
+    if (IDLE_NAMES[name]) name = "";                         // nothing chosen yet
     var meta = metaNode ? (metaNode.textContent || "").trim() : "";
     var art = artNode ? (artNode.getAttribute("src") || "") : "";
     var key = name + "|" + meta + "|" + art;
@@ -158,6 +165,10 @@
       "#btnPop,#dock{display:none !important}" +
       /* the page's own bar stays in the layout as a hidden control plane */
       "#bar{display:none !important}" +
+      /* Auto-hide is the site strip's switch: it folds the SITE's bar into a tab, and in here
+         there is no strip - the sheet is the player - so leaving it on screen would toast a
+         promise the shell cannot keep. */
+      "#btnAutoHide{display:none !important}" +
       /* keep room for the sheet so the list is never trapped behind it */
       "body{padding-bottom:0 !important}";
     (doc.head || doc.documentElement).appendChild(css);
@@ -351,7 +362,7 @@
       '<div class="wr-row" data-wr="row">' +
       '  <img class="wr-art" id="wrArt" alt="">' +
       '  <div class="wr-txt">' +
-      '    <div class="wr-name" id="wrName">Pick a station</div>' +
+      '    <div class="wr-name" id="wrName">Nothing playing</div>' +
       '    <div class="wr-meta" id="wrMeta"></div>' +
       '  </div>' +
       '  <span class="wr-chip" id="wrChip"></span>' +
@@ -361,7 +372,7 @@
       '  <div class="wr-hero">' +
       '    <img id="wrBigArt" alt="">' +
       '    <div style="min-width:0">' +
-      '      <div class="wr-h1" id="wrBigName">Pick a station</div>' +
+      '      <div class="wr-h1" id="wrBigName">Nothing playing</div>' +
       '      <div class="wr-sub" id="wrBigMeta"></div>' +
       '    </div>' +
       '  </div>' +
@@ -551,7 +562,7 @@
     function text(node) { return node ? (node.textContent || "").trim() : ""; }
 
     function sync() {
-      var name = text(srcName) || "Pick a station";
+      var name = text(srcName) || IDLE_NAME;
       var meta = text(srcMeta);
       var art = srcArt ? srcArt.getAttribute("src") : "";
       var chip = text(srcChip);
@@ -561,7 +572,7 @@
         seen.name = name;
         out.name.textContent = name;
         out.bigName.textContent = name;
-        doc.title = name === "Pick a station" ? doc.title : name + " — MODDYS World Radio";
+        doc.title = IDLE_NAMES[name] ? doc.title : name + " — MODDYS World Radio";
       }
       if (seen.meta !== meta) {
         seen.meta = meta;

@@ -1,0 +1,128 @@
+/* ============================================================================
+   theme-tokens.css — the eleven positions, as tokens only.
+
+   This file DEFINES the palette. It does not restyle anything by itself: a page
+   that links it and then paints with var(--…) follows the chosen position;
+   a page that keeps hard-coded colours does not change (which is the point —
+   token definitions alone can never half-convert a page).
+
+   Names come in three groups:
+     surfaces  --bg --bg2 --panel --panel2 --line --line-soft
+     text      --ink (body) --mut (secondary) --dim (labels)
+     accents   --accent --accent-ink (text on an accent fill) --led
+   The older pages invented their own accent names (--pink --cyan --lime
+   --orange --purp --yel) and their own body-text alias (--tx); those are
+   derived from the position below, so a converted page keeps its own shell
+   vocabulary without listing eleven palettes.
+
+   Position order: the six originals first, then spray · paper · blueprint ·
+   observatory · arcade. Values are copied from the front door; run
+   `python3 moddys-landing/frontdoor-2026-10-30/tools/contrast_check.py
+   deploy/theme-tokens.css` after any edit.
+   ========================================================================== */
+
+:root{
+  /* the fallback is the black position, so a page renders correctly even if
+     the pre-paint script never runs */
+  color-scheme:dark;
+  --bg:#0B0C0E; --bg2:#131519; --panel:#131519; --panel2:#191C21;
+  --line:#2A2F37; --line-soft:#1E2228;
+  --ink:#ECEBE6; --mut:#9AA0AA; --dim:#757C84;
+  --accent:#FFB454; --accent-ink:#0B0C0E; --led:#7DFF9E; --led-ink:#0B0C0E;
+
+  /* the older pages' vocabulary */
+  --tx:var(--ink);
+  --pink:var(--accent);
+  --cyan:var(--led);
+  --lime:color-mix(in srgb, var(--led) 70%, var(--accent));
+  --orange:color-mix(in srgb, var(--accent) 75%, #FFFFFF);
+  --purp:color-mix(in srgb, var(--accent) 55%, var(--led));
+  --yel:color-mix(in srgb, var(--accent) 45%, #FFE94A);
+  --ok:var(--led);
+  --warn:var(--accent);
+
+  /* TEXT-safe accents. A 25% pull toward the ink keeps the hue but lifts the
+     ratio past 4.5 on every position (chrome's green is 3.0 raw, paper's is
+     3.7). Use the -t names for `color:`; keep the raw names for fills,
+     rules, glows and shadows, where the ratio rule does not apply. */
+  --pink-t:color-mix(in srgb, var(--pink) 75%, var(--ink));
+  --cyan-t:color-mix(in srgb, var(--cyan) 75%, var(--ink));
+  --lime-t:color-mix(in srgb, var(--lime) 75%, var(--ink));
+  --orange-t:color-mix(in srgb, var(--orange) 75%, var(--ink));
+  --purp-t:color-mix(in srgb, var(--purp) 75%, var(--ink));
+  --yel-t:color-mix(in srgb, var(--yel) 75%, var(--ink));
+  --ok-t:color-mix(in srgb, var(--ok) 75%, var(--ink));
+  --warn-t:color-mix(in srgb, var(--warn) 75%, var(--ink));
+
+  /* sticker / card shadows that used to be literal black */
+  --h1-shadow:3px 3px 0 var(--accent), 6px 6px 0 rgba(0,0,0,.35);
+  --brand-shadow:2px 2px 0 var(--led), 5px 5px 0 var(--accent), 8px 8px 0 rgba(0,0,0,.35);
+  --card-shadow:6px 6px 0 rgba(0,0,0,.35);
+}
+
+:root[data-theme="black"]{
+  color-scheme:dark;
+  --bg:#0B0C0E; --bg2:#131519; --panel:#131519; --panel2:#191C21; --line:#2A2F37; --line-soft:#1E2228;
+  --ink:#ECEBE6; --mut:#9AA0AA; --dim:#757C84;
+  --accent:#FFB454; --accent-ink:#0B0C0E; --led:#7DFF9E; --led-ink:#0B0C0E;
+}
+:root[data-theme="chrome"]{
+  color-scheme:light;
+  --bg:#D9DDE1; --bg2:#E9ECEF; --panel:#E9ECEF; --panel2:#F3F5F7; --line:#B2BAC3; --line-soft:#C8CFD6;
+  --ink:#14171B; --mut:#4E565F; --dim:#5A6068;
+  --accent:#0B6774; --accent-ink:#FFFFFF; --led:#1B8F5A; --led-ink:#000000;
+}
+:root[data-theme="valve"]{
+  color-scheme:dark;
+  --bg:#15100A; --bg2:#1F1810; --panel:#1F1810; --panel2:#271E15; --line:#3E3123; --line-soft:#2C2318;
+  --ink:#F3E7D3; --mut:#C4B096; --dim:#8E7C63;
+  --accent:#FF9F43; --accent-ink:#15100A; --led:#FFD166; --led-ink:#15100A;
+}
+:root[data-theme="ice"]{
+  color-scheme:dark;
+  --bg:#070F14; --bg2:#0C1922; --panel:#0C1922; --panel2:#11222C; --line:#1D3442; --line-soft:#142834;
+  --ink:#E7F4FB; --mut:#9DBECD; --dim:#6E93A3;
+  --accent:#5FD0FF; --accent-ink:#070F14; --led:#6EFFC0; --led-ink:#070F14;
+}
+:root[data-theme="oxblood"]{
+  color-scheme:dark;
+  --bg:#14090B; --bg2:#1E0E11; --panel:#1E0E11; --panel2:#271317; --line:#40202A; --line-soft:#2D161C;
+  --ink:#F6E9E4; --mut:#CBA9A4; --dim:#98736F;
+  --accent:#F0C987; --accent-ink:#14090B; --led:#FF8F6B; --led-ink:#14090B;
+}
+:root[data-theme="moss"]{
+  color-scheme:dark;
+  --bg:#0C110D; --bg2:#151D16; --panel:#151D16; --panel2:#1B251C; --line:#2C3A2E; --line-soft:#202B21;
+  --ink:#EAF3EA; --mut:#A7BCA8; --dim:#7A8F7B;
+  --accent:#B6FF9A; --accent-ink:#0C110D; --led:#B6FF9A; --led-ink:#0C110D;
+}
+:root[data-theme="spray"]{
+  color-scheme:dark;
+  --bg:#120E18; --bg2:#1B1424; --panel:#1B1424; --panel2:#241A30; --line:#4A2B5C; --line-soft:#2E2038;
+  --ink:#FFF3E9; --mut:#D9C3E4; --dim:#A98FBB;
+  --accent:#FF2E93; --accent-ink:#120E18; --led:#22E3FF; --led-ink:#120E18;
+}
+:root[data-theme="paper"]{
+  color-scheme:light;
+  --bg:#F4F1E8; --bg2:#EDE9DD; --panel:#EDE9DD; --panel2:#E3DED0; --line:#C9C2B0; --line-soft:#D8D2C2;
+  --ink:#1C2620; --mut:#4C5C53; --dim:#66746B;
+  --accent:#B5482A; --accent-ink:#FFFFFF; --led:#2F7D57; --led-ink:#FFFFFF;
+}
+:root[data-theme="blueprint"]{
+  color-scheme:dark;
+  --bg:#0A1626; --bg2:#102036; --panel:#102036; --panel2:#162A44; --line:#24405C; --line-soft:#1A3048;
+  --ink:#E6F1F8; --mut:#A3C1D2; --dim:#7FA0B2;
+  --accent:#7FD6FF; --accent-ink:#0A1626; --led:#7FD6FF; --led-ink:#0A1626;
+}
+:root[data-theme="observatory"]{
+  color-scheme:dark;
+  --bg:#0D0F1A; --bg2:#141827; --panel:#141827; --panel2:#1B2033; --line:#2C3252; --line-soft:#20253A;
+  --ink:#EDEBF5; --mut:#B3B0C4; --dim:#8A879C;
+  --accent:#FFE6A7; --accent-ink:#0D0F1A; --led:#FFE6A7; --led-ink:#0D0F1A;
+}
+:root[data-theme="arcade"]{
+  color-scheme:dark;
+  --bg:#141B33; --bg2:#1B2340; --panel:#1B2340; --panel2:#232C4F; --line:#33406B; --line-soft:#26304F;
+  --ink:#EAF0FF; --mut:#A9B4D0; --dim:#7E89A8;
+  --accent:#FFD23F; --accent-ink:#141B33; --led:#FFD23F; --led-ink:#141B33;
+}

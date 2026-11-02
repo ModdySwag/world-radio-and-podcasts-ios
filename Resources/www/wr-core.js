@@ -1,5 +1,5 @@
 /* ============================================================================
-   WR — the shared core of MODDYS World Radio's pages.
+   WR — the shared core of the MODDYS World Radio & Podcasts pages.
 
    One implementation of everything the stations list (index.html) and the World
    View (world.html) both need: the storage helper, the station helpers, the
@@ -136,6 +136,9 @@ window.WR = (function () {
   var ownMine = function () { var r = ownRec(); return !!(r && r.id === CID && ownFresh(r)); };
   var relOwner = function () { var r = ownRec(); return ownFresh(r) ? r : null; };
   function setOwner(playing) { ls.set("owner", { id: CID, kind: KIND, ts: Date.now(), playing: !!playing, uuid: (P.cur && P.cur.i) || null }); }
+  /* the site-wide carry record: what is playing, so the NEXT page can pick it up. Radio and
+     podcasts write the same shape; the page that boots first claims it. */
+  function setNow(m) { ls.set("now", m ? { x: "radio", ts: Date.now(), M: m } : null); }
   function bcastState() { channel.post({ type: "state", from: CID, kind: KIND, playing: P.playing, mine: ownMine(), vol: P.vol, M: P.cur }); }
   audio.addEventListener("error", function () { if (P.mine && P.playing) { audioStop(); say("⚠ That stream won't play here — try another station."); } });
   function setPlaying(on) {
@@ -171,7 +174,7 @@ window.WR = (function () {
   function audioStart(m, quiet) {
     setStation(m); P.mine = true;
     primeElement(m); audio.volume = P.vol;
-    audio.play().then(function () { lastPlayErr = ""; setOwner(true); setPlaying(true); bcastState(); })
+    audio.play().then(function () { lastPlayErr = ""; setOwner(true); setPlaying(true); bcastState(); setNow(m); })
       .catch(function (e) {
         lastPlayErr = (e && e.name) || "error"; setPlaying(false); setOwner(false); P.mine = false;
         /* a carry-over attempt stays quiet WHATEVER the failure: this page's own one-tap offer
@@ -185,7 +188,7 @@ window.WR = (function () {
       });
   }
   function audioStop(silent) {
-    handover = false; lastPlayErr = ""; try { audio.pause(); } catch (e) {} dropPrime();
+    handover = false; lastPlayErr = ""; try { audio.pause(); } catch (e) {} dropPrime(); setNow(null);
     if (ownMine()) setOwner(false); P.mine = false; setPlaying(false); bcastState();
     if (!silent) say("Playback stopped.");
   }
@@ -223,9 +226,21 @@ window.WR = (function () {
      that refuses sound without a fresh gesture makes play() reject; instead of the bare "press
      play" toast, resumePlay() then offers one tap that spends the gesture. */
   function resumePending() {
+    try {                                        // only an arrival from another site page carries
+      var ref = document.referrer || "";
+      if (!ref) return null;
+      var ru = new URL(ref);
+      if (ru.origin !== location.origin || ru.pathname === location.pathname) return null;
+    } catch (e) { return null; }
+    var n = ls.get("now", null);
+    if (n && n.x === "podcast" && Date.now() - (n.ts || 0) < 30000) return null;   // a podcast has the sound
     var r = ownRec();
     if (!r || ownFresh(r)) return null;              /* no record, or a live owner (hello/state covers it) */
-    if (!r.playing || !r.left) return null;          /* nothing was playing / a record from before this feature */
+    /* `left` is the proof: the pagehide below writes it only when this window owned the stream.
+       `playing` is NOT proof - any window that merely announces a claim overwrites the record with
+       playing:false, and reading that as "nothing was playing" lost the music on every hop through
+       a page that could not take it (measured 2026-10-31). */
+    if (!r.left) return null;                        /* the page did not leave while playing */
     if (Date.now() - r.left > 15000) return null;    /* too old to be a page switch */
     var lm = ls.get("last", null);
     if (!lm || !lm.m || !lm.m.u || (r.uuid && lm.m.i !== r.uuid)) return null;
@@ -270,7 +285,11 @@ window.WR = (function () {
     if (!m || m.from === CID) return;
     switch (m.type) {
       case "hello": if (ownMine()) bcastState(); break;
-      case "state": if (!ownMine()) {                     // mirror the owner; never touch our own audio
+      case "state": if (m.kind === "pod") {               // a podcast has the sound: stand down, do not adopt it
+        if (ownMine()) { releaseToOther("pod"); }
+        else if (P.playing) { P.remoteKind = "pod"; setPlaying(false); }
+        break; }
+        if (!ownMine()) {                                 // mirror the owner; never touch our own audio
         if (typeof m.vol === "number" && m.vol !== P.vol) { P.vol = m.vol; audio.volume = P.vol; if (hooks.onVol) hooks.onVol(P.vol); }
         if (m.M) setStation(m.M);
         P.remoteKind = m.kind || "";
@@ -332,7 +351,8 @@ window.WR = (function () {
   /* keep the ownership stamp alive while we hold the audio. The stamp says "playing" only
      while this window's element really is playing — a window that has merely RESERVED the
      stream must not look like the one making the sound. */
-  setInterval(function () { if (ownMine()) setOwner(P.playing && !audio.paused); }, 2000);
+  setInterval(function () { if (ownMine()) { setOwner(P.playing && !audio.paused);
+    if (P.playing && !audio.paused) setNow(P.cur); } }, 2000);
   /* if the owner window disappears, the next window keeps the music going
      (main tabs get first refusal, pop-outs wait ~2.6 s so audio prefers a real tab) */
   setInterval(function () {
